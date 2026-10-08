@@ -2,7 +2,7 @@
 
 PropertyIQ is a free, browser-local tool for understanding multifamily property cash flows and financing. Quick analysis turns acquisition, income and expense assumptions into annual returns, debt schedules and sensitivity tables. Monthly planner adds leasing, construction, refinancing, funding and investor scenarios. Built with React, TypeScript and Vite, it works without accounts, paid APIs or a backend. Uploaded workbooks stay in the browser.
 
-Public deployment is pending. Run locally below, then choose **Try with sample property**. [Cloudflare Pages launch guide](DEPLOYMENT.md).
+**[Open PropertyIQ](https://propertyiq.pages.dev/)** — choose **Try with sample property** to explore a fictional deal. The public site runs on Cloudflare Pages and automatically deploys updates from `main`. [Deployment settings and verification](DEPLOYMENT.md).
 
 ![Quick analysis with annual returns and operating charts](docs/screenshots/quick-desktop.png)
 ![Monthly planner with the shared sample and eight headline metrics](docs/screenshots/monthly-desktop.png)
