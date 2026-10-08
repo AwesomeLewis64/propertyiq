@@ -1,0 +1,222 @@
+import type { Project, Unit, Loan } from "./types";
+export const uid = () => crypto.randomUUID();
+export function newUnit(n = 1): Unit {
+  return {
+    id: String(n),
+    occupied: true,
+    rent: 1000,
+    marketRent: 1450,
+    availableMonth: 1,
+    leaseEnd: 12,
+    renewal: "renew",
+    renewalIncrease: 0.03,
+    turnoverMonths: 1,
+    renovationMonth: 0,
+    renovationMonths: 1,
+    renovationCost: 0,
+    renovatedRent: 1450,
+    targetMonth: 0,
+    targetRent: 1450,
+    concession: 0,
+    concessionMonths: 0,
+    saleMonth: 24,
+    salePrice: 300000,
+  };
+}
+export function newLoan(): Loan {
+  return {
+    id: uid(),
+    name: "Senior loan",
+    kind: "term",
+    amount: 1820000,
+    fundingMonth: 0,
+    rate: 0.06,
+    floating: false,
+    rateCap: 0.12,
+    ratePoints: [],
+    amortMonths: 360,
+    ioMonths: 0,
+    maturityMonth: 60,
+    fee: 0.01,
+    penalty: 0,
+    ltc: 0.7,
+    capitalizeInterest: false,
+    releasePercent: 1,
+    refiMonth: 0,
+    refiAmount: 0,
+    refiLtv: 0.65,
+    refiRate: 0.065,
+    refiAmort: 360,
+    refiIo: 0,
+    refiFee: 0.01,
+    refiMaturity: 120,
+  };
+}
+export function newProject(
+  strategy: Project["strategy"] = "acquisition",
+): Project {
+  const dev = strategy.startsWith("development");
+  const loan = newLoan();
+  if (dev) {
+    loan.kind = "construction";
+    loan.amount = 3500000;
+    loan.ioMonths = 36;
+    loan.maturityMonth = strategy === "development-sale" ? 36 : 24;
+    loan.capitalizeInterest = true;
+    if (strategy === "development-hold") loan.refiMonth = 24;
+  }
+  const units = Array.from({ length: dev ? 12 : 20 }, (_, i) => ({
+    ...newUnit(i + 1),
+    occupied: !dev,
+    availableMonth: dev ? 19 + Math.floor(i / 3) : 1,
+    leaseEnd: dev ? 30 + Math.floor(i / 3) : 12,
+    renovationMonth: dev ? 0 : 2 + Math.floor(i / 4),
+    renovationCost: dev ? 0 : 8000,
+    renovationMonths: 1,
+    targetMonth: dev ? 0 : 11,
+    saleMonth: 20 + Math.floor(i / 2),
+    rent: dev ? 1600 : 1000,
+    marketRent: dev ? 1600 : 1450,
+    renovatedRent: dev ? 1600 : 1450,
+  }));
+  return {
+    id: uid(),
+    name: dev ? "Fictional development" : "Fictional transition case",
+    location: "",
+    strategy,
+    startDate: "2026-04-01",
+    acquisitionDate: "2026-04-01",
+    months: dev && strategy === "development-sale" ? 36 : 60,
+    price: dev ? 650000 : 2800000,
+    closing: 56000,
+    initialCapex: 0,
+    openingCash: 100000,
+    minimumCash: 25000,
+    distribute: false,
+    asOfEquity: 1100000,
+    rentGrowth: 0,
+    creditLoss: 0.01,
+    otherMonthly: 850,
+    management: 0.05,
+    reservesMonthly: 500,
+    contingency: 0.1,
+    exitCap: 0.065,
+    sellingCost: 0.025,
+    discount: 0.1,
+    sellAtEnd: true,
+    units,
+    expenses: [
+      {
+        id: uid(),
+        name: "Taxes",
+        annual: 35000,
+        growth: 0.03,
+        startMonth: 1,
+        changeMonth: 0,
+        replacementAnnual: 45000,
+        reimbursement: 0,
+      },
+      {
+        id: uid(),
+        name: "Insurance",
+        annual: 12000,
+        growth: 0.04,
+        startMonth: 1,
+        changeMonth: 0,
+        replacementAnnual: 16000,
+        reimbursement: 0,
+      },
+      {
+        id: uid(),
+        name: "Repairs / utilities / admin",
+        annual: 40000,
+        growth: 0.03,
+        startMonth: 1,
+        changeMonth: 0,
+        replacementAnnual: 40000,
+        reimbursement: 0,
+      },
+    ],
+    budget: dev
+      ? [
+          {
+            id: uid(),
+            name: "Construction",
+            category: "hard",
+            amount: 2400000,
+            start: 1,
+            duration: 18,
+            debtEligible: true,
+          },
+          {
+            id: uid(),
+            name: "Design / permits / legal",
+            category: "soft",
+            amount: 300000,
+            start: 1,
+            duration: 12,
+            debtEligible: true,
+          },
+        ]
+      : [],
+    loans: [loan],
+    actuals: [],
+    historical: [],
+    partners: [
+      { id: "lp", name: "Investor", share: 0.9 },
+      { id: "gp", name: "Sponsor", share: 0.1 },
+    ],
+    evidence: [],
+    tasks: [
+      {
+        id: uid(),
+        title: "Reconcile source financials and lender quote",
+        owner: "",
+        due: "",
+        status: "open",
+        note: "",
+      },
+    ],
+    lender: {
+      minDscr: 1.25,
+      maxLtv: 0.65,
+      minYield: 0.08,
+      value: dev ? 4500000 : 2800000,
+      periodStart: 13,
+      reserveAnnual: 6000,
+      adjustmentAnnual: 0,
+      stressRate: 0.07,
+      amortMonths: 360,
+      useIO: false,
+    },
+    tax: {
+      enabled: false,
+      ordinaryRate: 0.25,
+      capitalRate: 0.2,
+      recaptureRate: 0.25,
+      depreciableBasis: 2000000,
+      annualDepreciation: 0,
+      saleBasis: 2800000,
+      lossOffset: false,
+    },
+    waterfall: {
+      enabled: false,
+      preferred: 0.08,
+      sponsorId: "gp",
+      promote: 0.2,
+      returnCapitalFirst: false,
+    },
+    risk: {
+      trials: 150,
+      seed: 42,
+      rentLow: 0.9,
+      rentHigh: 1.05,
+      capLow: 0.055,
+      capHigh: 0.08,
+      costLow: 1,
+      costHigh: 1.25,
+      delayMax: 6,
+      correlation: 0,
+    },
+  };
+}

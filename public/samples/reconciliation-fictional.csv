@@ -1,0 +1,10 @@
+Metric,Value,Definition
+NOI,200000,Fictional first-12-month benchmark before reserves
+debt,131000,Fictional first-12-month scheduled loan service
+DSCR,1.526717557,Fictional NOI divided by scheduled debt
+equity,1150000,Fictional opening owner capital
+funding,100000,Fictional cumulative owner cash calls
+IRR,20%,Fictional dated owner return
+NPV,700000,Fictional discounted owner cash flows
+Equity multiple,2.5,Fictional distributions divided by contributions
+exit,4400000,Fictional gross property sale price

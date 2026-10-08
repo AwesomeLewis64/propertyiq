@@ -1,0 +1,270 @@
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { expenseKeys, type Assumptions } from "../finance/types";
+const expenseLabels = {
+  taxes: "Property taxes",
+  insurance: "Insurance",
+  repairs: "Repairs & maintenance",
+  utilities: "Utilities",
+  payroll: "Payroll",
+  administration: "Administration",
+  marketing: "Marketing",
+  other: "Other expenses",
+};
+function NumberField({
+  label,
+  value,
+  onChange,
+  percent = false,
+  suffix = "",
+  help = "",
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+  percent?: boolean;
+  suffix?: string;
+  help?: string;
+}) {
+  const [draft, setDraft] = useState(
+    String(percent ? Number((value * 100).toFixed(8)) : value),
+  );
+  const emitted = useRef<{ value: number; percent: boolean } | null>(null);
+  useEffect(() => {
+    // Preserve partially typed values (such as '-' or '3.') on our own updates.
+    // Only an external reset/load or formatting-mode change replaces the draft.
+    if (
+      emitted.current?.percent === percent &&
+      Object.is(emitted.current.value, value)
+    )
+      return;
+    setDraft(
+      Number.isFinite(value)
+        ? String(percent ? Number((value * 100).toFixed(8)) : value)
+        : "",
+    );
+  }, [value, percent]);
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <div className="input-wrap">
+        <input
+          aria-label={label}
+          aria-invalid={!Number.isFinite(value)}
+          inputMode="decimal"
+          value={draft}
+          onChange={(e) => {
+            const raw = e.target.value;
+            setDraft(raw);
+            const clean = raw.replace(/[$,%\s]/g, "");
+            const next =
+              clean === "" ? NaN : Number(clean) / (percent ? 100 : 1);
+            emitted.current = { value: next, percent };
+            onChange(next);
+          }}
+        />
+        <span className="suffix">{percent ? "%" : suffix}</span>
+      </div>
+      {help && <small>{help}</small>}
+    </label>
+  );
+}
+export default function Inputs({
+  a,
+  set,
+}: {
+  a: Assumptions;
+  set: (a: Assumptions) => void;
+}) {
+  const update = <K extends keyof Assumptions>(key: K, value: Assumptions[K]) =>
+    set({ ...a, [key]: value });
+  const field = (
+    key: keyof Assumptions,
+    label: string,
+    percent = false,
+    suffix = "",
+    help = "",
+  ) => (
+    <NumberField
+      key={key}
+      label={label}
+      value={a[key] as number}
+      percent={percent}
+      suffix={suffix}
+      help={help}
+      onChange={(v) => update(key, v)}
+    />
+  );
+  return (
+    <div className="assumptions">
+      <div className="section-heading">
+        <h2>Assumptions</h2>
+        <span>USD · Annual model</span>
+      </div>
+      <details open>
+        <summary>
+          Property & acquisition
+          <ChevronDown size={15} />
+        </summary>
+        <div className="input-section">
+          <label className="field">
+            <span>Property name</span>
+            <input
+              value={a.name}
+              onChange={(e) => update("name", e.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>City, state</span>
+            <input
+              value={a.location}
+              onChange={(e) => update("location", e.target.value)}
+            />
+          </label>
+          {field("units", "Residential units")}
+          {field("price", "Acquisition price", false, "$")}
+          {field("closingCosts", "Closing costs", false, "$")}
+          {field("initialCapex", "Initial capital budget", false, "$")}
+        </div>
+      </details>
+      <details open>
+        <summary>
+          Income & growth
+          <ChevronDown size={15} />
+        </summary>
+        <div className="input-section">
+          {a.mode === "rentRoll" ? (
+            <div className="notice">
+              Current rent-roll mode. Occupied contractual rents already reflect
+              physical vacancy.{" "}
+              <button
+                className="text-button"
+                onClick={() => update("mode", "manual")}
+              >
+                Switch to manual underwriting
+              </button>
+            </div>
+          ) : (
+            field("rent", "Monthly rent per unit", false, "$")
+          )}
+          {a.mode === "rentRoll" &&
+            field(
+              "occupiedMonthlyRent",
+              "Occupied monthly contract rent",
+              false,
+              "$",
+            )}
+          {field("otherIncome", "Other monthly income", false, "$")}
+          {a.mode === "manual" && field("vacancy", "Economic vacancy", true)}
+          {field("creditLoss", "Credit loss", true)}
+          {field("concessions", "Concessions", true)}
+          {field("rentGrowth", "Annual rent growth", true)}
+          {field("otherGrowth", "Other income growth", true)}
+        </div>
+      </details>
+      <details>
+        <summary>
+          Operating expenses
+          <ChevronDown size={15} />
+        </summary>
+        <div className="input-section">
+          {expenseKeys.map((k) => (
+            <NumberField
+              key={k}
+              label={expenseLabels[k]}
+              value={a.expenses[k]}
+              suffix="$ / yr"
+              onChange={(v) =>
+                set({ ...a, expenses: { ...a.expenses, [k]: v } })
+              }
+            />
+          ))}
+          <label className="field">
+            <span>Management expense method</span>
+            <select
+              value={a.managementMode}
+              onChange={(e) =>
+                set({
+                  ...a,
+                  managementMode: e.target.value as "percent" | "fixed",
+                  management: e.target.value === "percent" ? 0.05 : 15000,
+                })
+              }
+            >
+              <option value="percent">Percentage of EGI</option>
+              <option value="fixed">Fixed annual dollars</option>
+            </select>
+          </label>
+          {field(
+            "management",
+            "Property management",
+            a.managementMode === "percent",
+            a.managementMode === "fixed" ? "$ / yr" : "",
+          )}
+          {field("expenseGrowth", "Annual expense growth", true)}
+          {field("reserves", "Reserves per unit / year", false, "$")}
+          {field("annualCapex", "Annual capital expenditures", false, "$")}
+        </div>
+      </details>
+      <details>
+        <summary>
+          Financing
+          <ChevronDown size={15} />
+        </summary>
+        <div className="input-section">
+          <label className="field">
+            <span>Loan sizing</span>
+            <select
+              value={a.loanMode}
+              onChange={(e) =>
+                update("loanMode", e.target.value as "ltv" | "amount")
+              }
+            >
+              <option value="ltv">Loan-to-value</option>
+              <option value="amount">Loan amount</option>
+            </select>
+          </label>
+          {a.loanMode === "ltv"
+            ? field("ltv", "Loan-to-value", true)
+            : field("loanAmount", "Loan amount", false, "$")}
+          {field("rate", "Nominal annual interest", true)}
+          {field("amortization", "Amortization term", false, "years")}
+          {field("maturity", "Loan maturity", false, "years")}
+          {field(
+            "interestOnlyMonths",
+            "Interest-only period",
+            false,
+            "months",
+            "Recasts over the remaining original amortization term.",
+          )}
+          {field("loanFee", "Origination fee (% of loan)", true)}
+        </div>
+      </details>
+      <details>
+        <summary>
+          Exit assumptions
+          <ChevronDown size={15} />
+        </summary>
+        <div className="input-section">
+          <label className="field">
+            <span>Hold period</span>
+            <select
+              value={a.hold}
+              onChange={(e) => update("hold", Number(e.target.value))}
+            >
+              <option value={3}>3 years</option>
+              <option value={4}>4 years</option>
+              <option value={5}>5 years</option>
+            </select>
+          </label>
+          {field("exitCap", "Exit capitalization rate", true)}
+          {field("sellingCosts", "Exit selling costs", true)}
+          <small>
+            Exit value uses next year's NOI. Sales occur at the end of the
+            selected hold period.
+          </small>
+        </div>
+      </details>
+    </div>
+  );
+}

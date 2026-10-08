@@ -1,0 +1,4 @@
+id,occupied,rent,marketRent,availableMonth,leaseEnd,renovationMonth,renovationMonths,renovationCost,renovatedRent,targetMonth,targetRent
+101,occupied,1000,1450,1,12,2,1,8000,1450,11,1450
+102,occupied,1000,1450,1,15,3,2,12000,1500,11,1500
+103,vacant,0,1400,4,15,0,1,0,1400,11,1450

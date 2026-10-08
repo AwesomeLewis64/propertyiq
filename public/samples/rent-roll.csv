@@ -1,0 +1,11 @@
+Unit,Occupancy Status,Monthly Contract Rent,Market Rent,Lease Expiration
+101,Occupied,1500,1600,2027-05-31
+102,Occupied,1550,1600,2027-08-31
+103,Vacant,0,1600,
+104,Occupied,1450,1600,2027-02-28
+105,Occupied,1500,1600,2027-10-31
+106,Occupied,1550,1600,2027-06-30
+107,Occupied,1550,1600,2027-09-30
+108,Occupied,1500,1600,2027-01-31
+109,Vacant,0,1600,
+110,Occupied,1600,1600,2027-12-31
