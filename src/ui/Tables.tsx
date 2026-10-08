@@ -50,7 +50,11 @@ export function CashTable({ m, a }: { m: Model; a: Assumptions }) {
               {m.years.map((y) => (
                 <th key={y.year}>
                   Year {y.year}
-                  {y.year === a.hold ? " · Exit" : ""}
+                  {y.year === a.hold
+                    ? " · Exit"
+                    : y.year > a.hold
+                      ? " · Reference beyond exit"
+                      : ""}
                 </th>
               ))}
             </tr>

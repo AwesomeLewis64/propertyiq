@@ -1,5 +1,6 @@
 import type { Assumptions } from "./types";
 export const demo: Assumptions = {
+  origin: "example",
   name: "Maple Grove · fictional value-add",
   location: "Illustrative Midwest property",
   taxesGrowth: 0.03,

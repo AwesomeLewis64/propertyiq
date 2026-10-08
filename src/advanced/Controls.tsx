@@ -1,10 +1,19 @@
+import MoneyInput from "../ui/MoneyInput";
+import FinancialChart from "../ui/FinancialChart";
 import { useId } from "react";
-import { money } from "../ui/format";
+
 export function NumberField({
   label,
   value,
   onChange,
   percent = false,
+  currency = !percent &&
+    /\b(amount|price|costs?|cash|equity|expenses?|rent|income|reserves?|funding|budget|proceeds|basis|depreciation|reimbursement|value|payment|balance|service|NOI|NPV|deposit|revenue|capex)\b/i.test(
+      label,
+    ) &&
+    !/month|year|multiplier|ratio|change|growth|rate|frequency|yield|margin|multiple|days|unit count/i.test(
+      label.replace(/monthly|annual|per unit|as-of/gi, ""),
+    ),
   min,
   max,
   help,
@@ -13,6 +22,7 @@ export function NumberField({
   value: number;
   onChange: (n: number) => void;
   percent?: boolean;
+  currency?: boolean;
   min?: number;
   max?: number;
   help?: string;
@@ -24,25 +34,36 @@ export function NumberField({
         {label}
         {percent ? " (%)" : ""}
       </span>
-      <input
-        id={id}
-        type="number"
-        step="any"
-        min={min}
-        max={max}
-        value={
-          Number.isFinite(value)
-            ? Number((value * (percent ? 100 : 1)).toFixed(8))
-            : ""
-        }
-        onChange={(e) =>
-          onChange(
-            e.target.value === ""
-              ? NaN
-              : Number(e.target.value) / (percent ? 100 : 1),
-          )
-        }
-      />
+      {currency ? (
+        <MoneyInput
+          id={id}
+          value={value}
+          onChange={onChange}
+          min={min}
+          max={max}
+        />
+      ) : (
+        <input
+          id={id}
+          aria-invalid={!Number.isFinite(value)}
+          type="number"
+          step="any"
+          min={min}
+          max={max}
+          value={
+            Number.isFinite(value)
+              ? Number((value * (percent ? 100 : 1)).toFixed(8))
+              : ""
+          }
+          onChange={(e) =>
+            onChange(
+              e.target.value === ""
+                ? NaN
+                : Number(e.target.value) / (percent ? 100 : 1),
+            )
+          }
+        />
+      )}
       {help && <small>{help}</small>}
     </label>
   );
@@ -176,6 +197,7 @@ export function Plot({
   seriesLabel = "Forecast",
   secondLabel = "Comparison",
   liquidation = false,
+  source,
 }: {
   values: number[];
   second?: number[];
@@ -184,68 +206,18 @@ export function Plot({
   seriesLabel?: string;
   secondLabel?: string;
   liquidation?: boolean;
+  source?: string;
 }) {
-  if (!values.length) return null;
-  const all = [...values, ...(second ?? [])],
-    min = Math.min(0, ...all),
-    max = Math.max(1, ...all),
-    range = max - min;
-  const path = (a: number[]) =>
-    a
-      .map(
-        (v, i) =>
-          `${i ? "L" : "M"} ${45 + (i * 710) / Math.max(1, a.length - 1)} ${170 - ((v - min) / range) * 140}`,
-      )
-      .join(" ");
   return (
-    <figure className="adv-plot">
-      <figcaption>{title}</figcaption>
-      <div className="plot-legend">
-        <span>━ {seriesLabel}</span>
-        {second && <span>┄ {secondLabel}</span>}
-      </div>
-      <p className="plot-axis-label">USD · forecast month-end dates</p>
-      <svg
-        viewBox="0 0 800 210"
-        role="img"
-        aria-label={`${title}. First: ${money(values[0])}; last: ${money(values.at(-1))}. Exact values are in the monthly table.`}
-      >
-        <line
-          x1="45"
-          x2="755"
-          y1={170 - ((0 - min) / range) * 140}
-          y2={170 - ((0 - min) / range) * 140}
-          stroke="#ced6df"
-        />
-        <path d={path(values)} fill="none" stroke="#142e58" strokeWidth="3" />
-        {second && (
-          <path
-            d={path(second)}
-            fill="none"
-            stroke="#345e95"
-            strokeWidth="2"
-            strokeDasharray="6 4"
-          />
-        )}
-        <text x="45" y="200">
-          {labels[0]}
-        </text>
-        <text x="650" y="200">
-          {labels.at(-1)}
-        </text>
-        <text x="45" y="20">
-          {money(max)}
-        </text>
-        <text x="45" y="185">
-          {money(min)}
-        </text>
-      </svg>
-      {liquidation && values.at(-1) === 0 && (
-        <p className="plot-note">
-          Final month: sale and liquidation distribute retained cash, bringing
-          ending project cash to $0.
-        </p>
-      )}
-    </figure>
+    <FinancialChart
+      source={source}
+      title={title}
+      note={`USD · recorded forecast dates.${liquidation ? " Final liquidation releases retained cash after sale and financing obligations." : ""}`}
+      series={second ? [seriesLabel, secondLabel] : [seriesLabel]}
+      rows={values.map((v, i) => ({
+        label: labels[i],
+        values: second ? [v, second[i]] : [v],
+      }))}
+    />
   );
 }

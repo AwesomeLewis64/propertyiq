@@ -81,6 +81,7 @@ export function newProject(
   }));
   return {
     id: uid(),
+    origin: "example",
     name: dev ? "Fictional development" : "Fictional transition case",
     location: "",
     strategy,

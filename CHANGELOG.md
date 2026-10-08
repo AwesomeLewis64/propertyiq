@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.4.0 — Visuals and shipping verification
+
+- Added reconciled cash-flow bridges, configurable sensitivity tornadoes in percentage points, and capital recovery with separate operating distributions and sale receipts.
+- Added responsive keyboard/touch chart inspection, data tables and PNG/SVG/CSV exports carrying provenance and assumptions.
+- Added persistent example/user/unknown provenance; removed unfinished-product labels and private test-property references.
+- Formatted monthly monetary fields, distinguished blank actuals from zero, marked stale combined stress, and confirmed destructive actions.
+- Added portable Quick backups; repaired WebKit evidence storage and prevented incomplete attachment backups from restoring silently.
+- Improved mobile project actions and actual print/PDF layouts, including long holds and concise financial limitations.
+- Expanded to 212 regressions and 91 passing browser checks across Chromium, Firefox and WebKit, with actual PDF and export evidence. Deployment remains pending the user's hosting choice.
+
 ## 2.3.0 — Financial fidelity and product review
 
 - Replaced competing demos with one fictional value-add case: annual IRR 14.17%, 41.65% operating expense ratio and 62.5 bps exit-cap expansion.
@@ -13,18 +23,18 @@
 - Split monthly engine validation, operating logic, partner allocation and results into focused modules; consolidated the three stylesheets with shared tokens and removed redundant declarations.
 - Replaced pending contact with abc@gmail.com and added launch/reconciliation guides.
 
-## 2.2 beta — Setup and interface
+## 2.2 — Setup and interface
 
 - Added the description-led setup review, grouped searchable navigation and redesigned report styling.
 - Added Privacy, Terms, Financial Disclaimer and Contact pages.
 - Kept the annual workspace available alongside monthly and development analysis.
 
-## 2.1 beta — Decision tools
+## 2.1 — Decision tools
 
 - Added lease events, rate-cap/refinance boundaries, renovation prioritization, sales pacing and restricted deposits.
 - Added break-even analysis, capital recovery, workbook cell references and prior-backup compatibility.
 
-## 2.0 beta — Monthly expansion
+## 2.0 — Monthly expansion
 
 - Added monthly unit events, expense/budget schedules, construction/refinance debt, investor allocation and entered tax scenarios.
 - Added actuals, historical inputs, diligence, portfolio backups and seeded stress analysis.

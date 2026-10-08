@@ -2,6 +2,8 @@ import type { Assumptions, Model } from "../finance/types";
 import { money, pct, multiple } from "./format";
 import { CashTable } from "./Tables";
 import { ScenarioComparison, type ScenarioSettings } from "./Sensitivity";
+import VisualAdditions from "./VisualAdditions";
+import { provenance } from "../data/provenance";
 import Methodology from "./Methodology";
 export default function Report({
   a,
@@ -33,6 +35,7 @@ export default function Report({
           Use your browser's print destination “Save as PDF”. Landscape
           orientation is recommended for the annual tables.
         </p>
+        <p className="chart-note">{provenance(a)}</p>
         <div className="report-metrics">
           {[
             ["Purchase price", money(a.price)],
@@ -47,7 +50,7 @@ export default function Report({
                   : m.years[0].operatingCash / m.initialEquity,
               ),
             ],
-            ["Levered IRR", pct(m.irr)],
+            ["Annual IRR", pct(m.irr)],
             ["Equity multiple", multiple(m.multiple)],
             ["Net sale proceeds", money(m.netSale)],
             ["Forward NOI", money(m.forwardNOI)],
@@ -140,7 +143,10 @@ export default function Report({
             <tbody>
               {m.years.map((y) => (
                 <tr key={y.year}>
-                  <th>{y.year}</th>
+                  <th>
+                    {y.year}
+                    {y.year > a.hold ? " · Reference beyond exit" : ""}
+                  </th>
                   <td>{money(y.debt?.service)}</td>
                   <td>{money(y.debt?.interest)}</td>
                   <td>{money(y.debt?.principal)}</td>
@@ -153,10 +159,32 @@ export default function Report({
           </table>
         </div>
       </section>
+      <VisualAdditions a={a} m={m} />
       <ScenarioComparison a={a} editable={false} overrides={scenarios} />
-      <div className="report-section">
+      <div className="report-section no-print">
         <Methodology />
       </div>
+      <section className="panel prose brief-methodology print-only">
+        <h2>Financial conventions and limitations</h2>
+        <p>
+          Annual IRR uses equally spaced annual owner cash flows. Monthly
+          planner XIRR uses actual dates and monthly distributions; its return
+          can differ because of cash-flow timing. Unsupported or ambiguous
+          returns remain unavailable.
+        </p>
+        <p>
+          NOI excludes financing, reserves and capital expenditure. Regular debt
+          service includes scheduled principal. Sale proceeds deduct selling
+          costs and loan payoff once; negative operating cash flow requires
+          additional owner equity.
+        </p>
+        <p>
+          Returns rely on entered assumptions and do not verify property income,
+          market value, lender terms or tax treatment. Review the calculation
+          warnings and reconcile source documents before relying on results. The
+          in-app methodology describes the full conventions.
+        </p>
+      </section>
     </div>
   );
 }

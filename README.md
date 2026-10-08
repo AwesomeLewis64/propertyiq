@@ -2,7 +2,7 @@
 
 PropertyIQ is a free, browser-local tool for understanding multifamily property cash flows and financing. Quick analysis turns acquisition, income and expense assumptions into annual returns, debt schedules and sensitivity tables. Monthly planner adds leasing, construction, refinancing, funding and investor scenarios. Built with React, TypeScript and Vite, it works without accounts, paid APIs or a backend. Uploaded workbooks stay in the browser.
 
-**Demo:** public deployment is pending. Run locally below, then choose **Try with sample property**. [Cloudflare Pages launch guide](DEPLOYMENT.md).
+Public deployment is pending. Run locally below, then choose **Try with sample property**. [Cloudflare Pages launch guide](DEPLOYMENT.md).
 
 ![Quick analysis with annual returns and operating charts](docs/screenshots/quick-desktop.png)
 ![Monthly planner with the shared sample and eight headline metrics](docs/screenshots/monthly-desktop.png)
@@ -13,7 +13,8 @@ PropertyIQ is a free, browser-local tool for understanding multifamily property 
 - Quick analysis with 3–10 year holds, separate tax/insurance growth, capital inflation and optional sale-tax reassessment.
 - Full amortization after interest-only by default; selectable original-term amortization, 30/360 or actual/360 interest, and LTV/DSCR/debt-yield loan constraints.
 - Sensitivity anchored to going-in cap rates, with a target-return color scale, labeled base case and a downside takeaway.
-- CSV/XLSX rent-roll import, explicit review and application, local snapshots, exports and printable reports.
+- Income-to-cash-flow bridge, configurable one-assumption sensitivity tornado and capital recovery timeline, with keyboard/touch inspection, data tables and PNG/SVG/CSV downloads.
+- CSV/XLSX rent-roll import, explicit review and application, local snapshots, portable backups including evidence files, and printable investment briefs.
 - Monthly leasing, expenses, capital budgets, debt, investor returns, actuals, decision tools, evidence and workbook reconciliation. All existing tools remain available through primary navigation, More tools and search.
 - Editable setup defaults, live extraction preview, exact project links, accessible chart legends and mobile results before assumptions.
 
@@ -23,9 +24,9 @@ The fictional Maple Grove value-add sample has $254,732 Year 1 NOI, a 41.65% ope
 
 Independent 40-digit Python Decimal calculations provide literal benchmark expectations for debt payments, balances, operating income, sale proceeds and returns. Both engines receive identical assumptions in parity tests: annual NOI, debt payoff, net sale and annual cash-flow IRR reconcile. Monthly XIRR is **14.81%** because distributions arrive monthly and returns use actual dates; this difference is disclosed rather than hidden.
 
-The latest full run passes **184 regression tests**. Finance coverage gates require at least 90% statements, lines and functions, and 80% branches. Playwright tests cover desktop and 390×844 mobile flows, imports, edits, storage, routing, every monthly tool and serious axe accessibility violations. GitHub Actions repeats the checks on pushes and pull requests. See [verification evidence](TESTING.md) and [financial conventions](METHODOLOGY.md).
+The latest full run passes **212 regression tests**. Finance coverage gates require at least 90% statements, lines and functions, and 80% branches. 91 browser checks pass across Chromium, Firefox and WebKit. They cover desktop and 390×844 narrow-screen flows, imports, edits, storage, routing, every monthly tool and serious axe accessibility violations. GitHub Actions repeats the checks on pushes and pull requests. See [verification evidence](TESTING.md) and [financial conventions](METHODOLOGY.md).
 
-**Real-workbook validation:** no Walnut workbook has been supplied, so no real-deal reconciliation is claimed. The [mapping checklist and discrepancy template](RECONCILIATION.md) are ready for that comparison; only anonymized results should be published afterward.
+The included examples and sample workbooks are fictional. Their provenance persists through edits, duplication and backups. To check your own workbook, use the [mapping checklist and discrepancy template](RECONCILIATION.md); private project data stays in your browser.
 
 ## Run locally
 
@@ -43,7 +44,7 @@ pnpm typecheck
 pnpm lint
 pnpm test:coverage
 pnpm build
-pnpm exec playwright install chromium
+pnpm exec playwright install chromium firefox webkit
 pnpm test:e2e
 ```
 
@@ -55,6 +56,6 @@ pnpm test:e2e
 - Annual IRR and dated monthly XIRR have different cash-flow timing. Tax, construction and investor scenarios rely on entered assumptions.
 - Actual/360 models full calendar months with nominal scheduled principal; it does not infer lender stub periods or penny-rounding rules.
 - Projects are stored locally; clearing browser data removes them. Export backups before changing devices.
-- Chromium is tested. Other browser engines and actual Cloudflare response headers still require deployment checks.
+- Chromium, Firefox and Playwright WebKit pass desktop and narrow-screen checks. These are automated browser tests, not physical-device certification. Actual Cloudflare response headers still require deployment checks.
 
 [Methodology](METHODOLOGY.md) · [Deployment](DEPLOYMENT.md) · [Reconciliation](RECONCILIATION.md) · [Changelog](CHANGELOG.md) · [Contact](mailto:abc@gmail.com)

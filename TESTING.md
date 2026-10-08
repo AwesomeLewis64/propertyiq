@@ -1,46 +1,51 @@
 # PropertyIQ verification
 
-Verification date: October 8, 2026. Release: 2.3.0.
+Verification date: October 8, 2026. Release: 2.4.0.
 
 ## Results
 
 | Check | Result |
 |---|---|
-| Regression tests | 184 pass across 10 files |
+| Regression tests | 212 pass across 11 files |
 | Application and browser-test TypeScript | Pass |
 | ESLint, including React hooks | Pass, zero warnings |
 | Production build | Pass |
-| Playwright | 18 pass: 9 desktop and 9 mobile |
+| Browser checks | 91 pass across six desktop/narrow-screen projects; five PDF-only cases deliberately skipped |
 | Serious/critical axe violations on checked screens | Zero |
 | 390×844 page-level horizontal overflow | None on checked screens |
-| Finance coverage | 91.31% statements, 83.62% branches, 100% functions, 92.36% lines |
+| Finance coverage | 91.31% statements, 83.42% branches, 100% functions, 92.36% lines |
+| Actual PDF output | Chromium A4 landscape Quick brief and 120-month Monthly brief generated and visually inspected |
 
-Coverage gates apply to src/finance: 90% statements, lines and functions; 80% branches. Coverage is aggregated across that directory, not a claim of complete coverage of the monthly engine or interface.
+Coverage gates apply to src/finance: 90% statements, lines and functions; 80% branches. This is aggregated finance coverage, not complete monthly-engine or interface coverage.
 
-## Independent financial verification
+## Financial verification
 
-Literal expectations come from 40-digit Python Decimal calculations, not the functions under test. `scripts/decimal_benchmarks.py` reproduces the shared sample, payment conventions, debt balances, interest accrual and constraint capacities. The expected values are recorded in METHODOLOGY.md.
+Literal expectations come from independent 40-digit Python Decimal calculations. scripts/decimal_benchmarks.py reproduces operating income, payments, debt balances and constraints; METHODOLOGY.md records expected values. The shared fictional sample retains 14.169371568632% annual IRR, $254,732 Year 1 NOI and $1,504,030.136914 net sale.
 
-Regression cases cover operating income, reserves/CapEx inflation, tax reassessment, 3–10 year holds, both IO amortization conventions, calendar actual/360 including leap February, LTV/DSCR/debt-yield binding constraints, debt-free cases, maturity boundaries, IRR ambiguity, invalid inputs, imports and storage validation. Parity cases feed identical inputs to both engines and reconcile annual NOI, debt, equity, sale proceeds and annual cash-flow returns. Fixed management growth, rent-roll income and category expense rates are included.
+Existing regression cases cover income, inflation, reassessment, 3–10 year holds, IO and day-count conventions, loan constraints, maturity boundaries, IRR ambiguity, imports, validation and annual/monthly parity. Twenty-eight new cases cover bridge reconciliation, physical/economic vacancy, actual overrides, additional contributions, sale/refinance timing, operating-distribution allocation, percentage-point sensitivity, invalid/unsupported cases, provenance migration, safe CSV data and blank/zero/negative monetary parsing.
 
 ## Browser verification
 
-The production build runs under the actual public/_headers CSP through scripts/preview.mjs. The desktop viewport is 1440×900 and the mobile viewport is 390×844. Both use Chromium.
+The production build runs through scripts/preview.mjs under public/_headers CSP. Chromium, Firefox and Playwright WebKit run at 1440×900 and 390×844. Firefox uses a narrow viewport because mobile emulation is unavailable; Chromium and WebKit also enable mobile emulation. These are not physical-device or installed Safari checks.
 
-- Shared demo values, money edits, result changes, save/reset/load, report navigation and reload.
-- CSV and XLSX upload, worker parsing and explicit application to annual analysis.
-- Live extraction preview, editable default assumptions, formatted setup amounts and creation of Quick analysis.
-- Eight primary monthly tools, all 19 tools through More tools, correct section headings, duplicate-project back/forward/reload and report deep links.
-- Hash changes while mounted and legal routing with the public contact link.
-- All monthly tools, all quick views, setup, home and four legal pages: serious/critical axe violations and page-width checks.
-- Captured application errors are empty in demo and monthly-tool flows.
-- Chromium print-media layout hides workspace navigation and print controls; its screenshot is saved. Native PDF pagination and physical printer output are not validated.
+- Quick inputs, formatted money, save/load/reset, reload, setup extraction/defaults and annual report.
+- Annual and monthly CSV/XLSX import, explicit mapping/application and source retention.
+- All 19 monthly tools, Decision Lab subtools, project switching, duplicate/back/forward/deep links, home and legal routes.
+- Quick snapshots and portable restore; monthly backup/restore including actual evidence-file bytes, fresh IDs and rejection of missing attachments.
+- Blank actuals, valid zero, signed historical flows, invalid monetary drafts and paused autosave.
+- Example provenance after renaming, editing, duplication, reload and restore; cancelled destructive reset.
+- Stale combined stress after editing controls, then successful recalculation.
+- Keyboard chart inspection, hold-period alignment, actual PNG/SVG/CSV downloads, safe metadata and disclosed origin.
+- Every monthly tool and checked Quick/setup/home/legal screen: zero serious/critical axe findings and no page-level overflow at 390 pixels. Tables remain scrollable and keyboard-focusable.
+- Empty application-error collection in the checked sample and monthly navigation flows.
 
-Screenshots are in docs/screenshots. CI uploads those screenshots, coverage, the HTML browser report and any failure traces. Screenshots demonstrate tested layouts; axe is an automated check rather than complete accessibility certification.
+Only Chromium desktop supports the actual page.pdf API used here. Its two PDFs are generated after report content, charts and fonts load. The other five project copies skip that PDF-only case while still testing all browser flows. Pages and exported PNGs are reviewed visually. Physical printers and native browser print dialogs are outside this scope.
 
-## Defects caught and fixed in this run
+Screenshots are in docs/screenshots; PDFs and portable chart samples are in docs/verification. CI publishes those artifacts, coverage, the browser report and failure traces. Axe is automated evidence, not complete accessibility certification.
 
-Currency focus could append typed values to the old amount in both setup and annual inputs. Delayed autosave could lose a newly duplicated project on immediate reload. Old mobile CSS hid navigation labels; sensitivity and status-header sizing could overflow the viewport. Report/setup/legal text lacked contrast, wide financial tables were not keyboard-focusable, and the unit-selector list role was invalid. These fixes remain covered by the browser suite.
+## Defects caught and fixed
+
+The previous round repaired currency focus, immediate duplicate autosave, routing, mobile navigation and contrast. This round also repaired WebKit File/Blob IndexedDB storage by retaining bytes with backward-compatible reads, incomplete attachment restore, blank actuals represented as zero, stale stress results, duplicated sale/refinance classification, SVG provenance metadata, chart text contrast and print page breaks/sidebar clipping. Meaningful regressions cover these financial and browser paths.
 
 ## Repeat verification
 
@@ -50,12 +55,12 @@ pnpm typecheck
 pnpm lint
 pnpm test:coverage
 pnpm build
-pnpm exec playwright install chromium
+pnpm exec playwright install chromium firefox webkit
 pnpm test:e2e
 ```
 
-The GitHub workflow runs the same checks on each push and pull request. A successful local run does not claim that the workflow has already run remotely.
+The GitHub workflow repeats these checks on pushes and pull requests. Local success does not imply that remote CI has finished.
 
-## Outstanding external validation
+## External checks
 
-No real Walnut workbook was supplied. Follow RECONCILIATION.md and docs/reconciliation-template.csv to compare real metrics and classify differences before publishing an anonymized validation result. No public deployment has been created; response headers and imports on Cloudflare still need the DEPLOYMENT.md launch checks. Firefox, Safari, native PDF pagination and physical printers remain outside this verification scope.
+No public deployment has been created. Live Cloudflare headers, the actual SITE_URL/sitemap and hosted imports need DEPLOYMENT.md checks after hosting is chosen. Real loan-document/workbook reconciliation uses RECONCILIATION.md; fictional benchmarks do not establish real-deal verification. No private test-property information is bundled.

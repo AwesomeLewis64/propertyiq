@@ -26,6 +26,15 @@ export default function UnitEditor({ p, set }: ProjectEditor) {
       label={label}
       value={unit[key] as number}
       percent={percent}
+      currency={[
+        "rent",
+        "marketRent",
+        "renovatedRent",
+        "targetRent",
+        "renovationCost",
+        "concession",
+        "salePrice",
+      ].includes(key)}
       onChange={(v) => update(key, v)}
     />
   );
@@ -137,6 +146,12 @@ export default function UnitEditor({ p, set }: ProjectEditor) {
                 className="button small"
                 disabled={p.units.length <= 1}
                 onClick={() => {
+                  if (
+                    !window.confirm(
+                      `Remove unit ${unit.id} and its lease events? Export a backup first if needed.`,
+                    )
+                  )
+                    return;
                   set({ ...p, units: p.units.filter((_, i) => i !== index) });
                   setIndex(Math.max(0, index - 1));
                 }}

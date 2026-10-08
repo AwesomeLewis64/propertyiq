@@ -5,6 +5,16 @@ import { resolve } from "node:path";
 const screenshotDir = resolve("docs/screenshots");
 mkdirSync(screenshotDir, { recursive: true });
 async function shot(page: Page, name: string, project: string) {
+  if (name === "quick")
+    await expect(
+      page.getByRole("heading", { name: "Sensitivity tornado", exact: true }),
+    ).toBeVisible();
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise<void>((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => r())),
+    );
+  });
   await page.screenshot({
     path: resolve(screenshotDir, `${name}-${project}.png`),
     fullPage: true,
@@ -43,10 +53,7 @@ test("shared demo, changing inputs, money formatting and no console errors", asy
   await shot(page, "start", info.project.name);
   await page.getByRole("button", { name: "Try with sample property" }).click();
   await expect(
-    page
-      .locator(".metric")
-      .filter({ hasText: "Levered IRR" })
-      .locator("strong"),
+    page.locator(".metric").filter({ hasText: "Annual IRR" }).locator("strong"),
   ).toHaveText("14.17%");
   await shot(page, "quick", info.project.name);
   await income(page);
@@ -60,21 +67,16 @@ test("shared demo, changing inputs, money formatting and no console errors", asy
     page.getByRole("textbox", { name: "Monthly rent per unit", exact: true }),
   ).toHaveValue("$2,000.00");
   await expect(
-    page
-      .locator(".metric")
-      .filter({ hasText: "Levered IRR" })
-      .locator("strong"),
+    page.locator(".metric").filter({ hasText: "Annual IRR" }).locator("strong"),
   ).not.toHaveText("14.17%");
   await page.getByRole("button", { name: "Save locally", exact: true }).click();
   await expect(page.locator(".local-message")).toBeVisible();
-  await page.getByRole("button", { name: "Reset to demo" }).click();
+  page.once("dialog", (d) => void d.accept());
+  await page.getByRole("button", { name: "Reset to example" }).click();
   await page.getByRole("button", { name: "Load saved", exact: true }).click();
   await page.getByRole("button", { name: "Load", exact: true }).click();
   await expect(
-    page
-      .locator(".metric")
-      .filter({ hasText: "Levered IRR" })
-      .locator("strong"),
+    page.locator(".metric").filter({ hasText: "Annual IRR" }).locator("strong"),
   ).not.toHaveText("14.17%");
   await page
     .getByRole("button", { name: "Investment report", exact: true })
@@ -176,6 +178,7 @@ test("monthly wayfinding, exact project history, deep links and legal routing", 
   await shot(page, "monthly", info.project.name);
   await page.getByRole("button", { name: "More tools", exact: true }).click();
   await expect(page.locator(".adv-sidebar nav button")).toHaveCount(19);
+  await page.getByText("Project actions", { exact: true }).click();
   await page.getByRole("button", { name: "Duplicate", exact: true }).click();
   const id = await page.getByLabel("Active local project").inputValue();
   await page

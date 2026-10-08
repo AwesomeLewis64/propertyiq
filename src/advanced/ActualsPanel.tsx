@@ -22,6 +22,12 @@ export default function ActualsPanel({ p, set }: ProjectEditor) {
         title="Actual performance and variance"
         note="Actuals override complete monthly income, expense, CapEx and debt-service values in matched forecast periods. Forecast-only budget remains available below. Imported historical periods can be inspected even outside the forecast."
       >
+        {!p.actuals.length && (
+          <p>
+            No actual periods recorded. Add a complete statement or import
+            actuals to compare performance.
+          </p>
+        )}
         <div className="metrics adv-metrics">
           <Metric
             label="Recorded monthly periods"
@@ -29,12 +35,12 @@ export default function ActualsPanel({ p, set }: ProjectEditor) {
           />
           <Metric
             label="Latest up-to-12-period NOI"
-            value={money(actualNoi)}
+            value={money(trailing.length ? actualNoi : null)}
             note={`${trailing.length} recorded periods; gaps are not filled`}
           />
           <Metric
             label="Recorded cash before reserves"
-            value={money(actualCash)}
+            value={money(trailing.length ? actualCash : null)}
           />
         </div>
         <div className="adv-actions">
@@ -49,11 +55,11 @@ export default function ActualsPanel({ p, set }: ProjectEditor) {
                     ...p.actuals,
                     {
                       month,
-                      rent: 0,
-                      otherIncome: 0,
-                      opex: 0,
-                      capex: 0,
-                      debtService: 0,
+                      rent: NaN,
+                      otherIncome: NaN,
+                      opex: NaN,
+                      capex: NaN,
+                      debtService: NaN,
                     },
                   ],
                 });
@@ -74,11 +80,11 @@ export default function ActualsPanel({ p, set }: ProjectEditor) {
                   ...p.actuals,
                   {
                     month: d.toISOString().slice(0, 7),
-                    rent: 0,
-                    otherIncome: 0,
-                    opex: 0,
-                    capex: 0,
-                    debtService: 0,
+                    rent: NaN,
+                    otherIncome: NaN,
+                    opex: NaN,
+                    capex: NaN,
+                    debtService: NaN,
                   },
                 ],
               });
@@ -118,6 +124,7 @@ export default function ActualsPanel({ p, set }: ProjectEditor) {
                 <NumberField
                   key={k}
                   label={label}
+                  currency
                   value={a[k]}
                   onChange={(v) =>
                     set({

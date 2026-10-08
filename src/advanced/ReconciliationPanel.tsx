@@ -318,7 +318,7 @@ export default function ReconciliationPanel({ p, set }: ProjectEditor) {
         </div>
         {!rows.length && (
           <p>
-            No benchmarks supplied. Map your workbook below; no Walnut figures
+            No benchmarks supplied. Map your workbook below; no property figures
             are prefilled.
           </p>
         )}
@@ -445,7 +445,7 @@ export default function ReconciliationPanel({ p, set }: ProjectEditor) {
           <a href="/samples/reconciliation-fictional.csv" download>
             Download fictional comparison example
           </a>{" "}
-          — illustrative values, not Walnut records.
+          — fictional figures for learning the mapping workflow.
         </p>
         {busy && <p role="status">Reading or saving workbook…</p>}
         {error && <p className="alert error">{error}</p>}

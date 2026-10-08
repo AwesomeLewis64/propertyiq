@@ -62,7 +62,7 @@ export function ScenarioComparison({
               <span className="eyebrow">{s.name}</span>
               <div className="scenario-return">
                 <strong>{pct(m.irr)}</strong>
-                <span>Levered IRR</span>
+                <span>Annual IRR</span>
               </div>
               {(
                 ["rentGrowth", "vacancy", "exitCap", "expenseGrowth"] as const
@@ -238,7 +238,7 @@ export default function Sensitivity({
                 value={metric === "noi" ? "noi" : "irr"}
                 onChange={(e) => setMetric(e.target.value as GridMetric)}
               >
-                <option value="irr">Levered IRR</option>
+                <option value="irr">Annual IRR</option>
                 <option value="noi">Exit-year NOI</option>
               </select>
             </label>
@@ -261,7 +261,7 @@ export default function Sensitivity({
               <tr>
                 <th>
                   {grid.metric === "irr"
-                    ? "Levered IRR"
+                    ? "Annual IRR"
                     : grid.metric === "dscr"
                       ? "Year 1 DSCR"
                       : grid.metric === "equity"

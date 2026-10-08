@@ -122,6 +122,7 @@ export type DiligenceTask = {
   note: string;
 };
 export type Project = {
+  origin?: import("../data/provenance").Origin;
   growthTiming?: "annual" | "monthly";
   vacancyRate?: number;
   concessionRate?: number;
@@ -210,6 +211,7 @@ export type Project = {
   };
 };
 export type Monthly = {
+  saleNetProceeds?: number | null;
   month: number;
   date: string;
   occupied: number;

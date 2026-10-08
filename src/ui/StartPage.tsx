@@ -241,7 +241,7 @@ export default function StartPage({
                 {field("name", "Property name", {
                   type: "text",
                   required: true,
-                  placeholder: "e.g. Walnut rental property",
+                  placeholder: "e.g. Riverside rental property",
                 })}
                 {field("location", "Location", {
                   type: "text",

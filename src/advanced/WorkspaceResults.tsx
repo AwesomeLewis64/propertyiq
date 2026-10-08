@@ -1,4 +1,6 @@
+import { provenance } from "../data/provenance";
 import { SlidersHorizontal } from "lucide-react";
+import VisualAdditions from "../ui/VisualAdditions";
 import { useState } from "react";
 import {
   Card,
@@ -48,6 +50,7 @@ export function Overview({
       label={label}
       value={p[key]}
       percent={percent}
+      currency={!percent && !["months"].includes(key)}
       onChange={(v) =>
         set({
           ...p,
@@ -71,7 +74,7 @@ export function Overview({
     <>
       {!m.errors.length && (
         <Verdict
-          engine="Monthly planner · dated monthly cash-flow engine"
+          engine="Monthly planner · dated monthly cash flows"
           lines={verdictLines(
             m.rows.slice(0, 12).reduce((s, r) => s + r.debtService, 0) > 0
               ? m.rows.slice(0, 12).reduce((s, r) => s + r.noi, 0) /
@@ -87,7 +90,11 @@ export function Overview({
       <div className="metrics adv-metrics">
         <Metric
           label="Year 1 NOI"
-          value={money(m.rows.slice(0, 12).reduce((s, r) => s + r.noi, 0))}
+          value={money(
+            m.errors.length
+              ? null
+              : m.rows.slice(0, 12).reduce((s, r) => s + r.noi, 0),
+          )}
           note="Effective income less operating expenses"
         />
         <Metric
@@ -103,7 +110,7 @@ export function Overview({
         <Metric
           label="Going-in cap rate"
           value={pct(
-            p.price > 0
+            !m.errors.length && p.price > 0
               ? m.rows.slice(0, 12).reduce((s, r) => s + r.noi, 0) / p.price
               : null,
           )}
@@ -273,6 +280,7 @@ export function Overview({
       <div className="adv-two">
         <Card title="Rent transition">
           <Plot
+            source={provenance(p)}
             values={m.rows.map((r) => r.rent)}
             labels={m.rows.map((r) => r.date)}
             title="Collected / billed rent before losses and concessions"
@@ -280,6 +288,7 @@ export function Overview({
         </Card>
         <Card title="Cash and equity funding">
           <Plot
+            source={provenance(p)}
             values={m.rows.map((r) => r.cash)}
             second={m.rows.map((r) => r.capitalCall)}
             labels={m.rows.map((r) => r.date)}
@@ -294,6 +303,7 @@ export function Overview({
           </p>
         </Card>
       </div>
+      <VisualAdditions p={p} f={m} />
       <AnnualSummary m={m} />
     </>
   );

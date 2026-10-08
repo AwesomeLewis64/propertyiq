@@ -1,3 +1,4 @@
+import { provenance } from "../data/provenance";
 import { useMemo, useState } from "react";
 import { Card, NumberField, TextField, Toggle, Metric, Plot } from "./Controls";
 import type { ProjectEditor } from "./UnitEditor";
@@ -213,7 +214,10 @@ function Comparison({ p, set, create }: Props) {
           </details>
         ))}
         <Plot
-          title="Base (navy) and downside (blue) owner capital calls"
+          source={provenance(p)}
+          title="Base and downside owner capital calls"
+          seriesLabel="Base owner calls"
+          secondLabel="Downside owner calls"
           values={cases[0].m.rows.map((r) => r.capitalCall)}
           second={cases[1].m.rows.map((r) => r.capitalCall)}
           labels={cases[0].m.rows.map((r) => r.date)}

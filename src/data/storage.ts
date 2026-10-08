@@ -1,3 +1,4 @@
+import { originOf } from "./provenance";
 import type { Assumptions } from "../finance/types";
 import { demo } from "../finance/demo";
 import { validate } from "../finance/model";
@@ -15,6 +16,11 @@ const record = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 export function isAssumptions(value: unknown): value is Assumptions {
   if (!record(value) || !record(value.expenses)) return false;
+  if (
+    value.origin !== undefined &&
+    !["example", "user", "unknown"].includes(value.origin as string)
+  )
+    return false;
   for (const [key, defaultValue] of Object.entries(demo)) {
     if (key === "expenses") {
       for (const expense of Object.keys(demo.expenses))
@@ -27,6 +33,7 @@ export function isAssumptions(value: unknown): value is Assumptions {
     else if (
       value[key] === undefined &&
       ![
+        "origin",
         "taxesGrowth",
         "insuranceGrowth",
         "inflation",
@@ -99,7 +106,10 @@ export function decodeSaved(text: string | null): SavedAnalysis[] {
       throw new Error(
         "A saved analysis is invalid. Export or clear damaged local data before saving new analyses.",
       );
-  return decoded.analyses as SavedAnalysis[];
+  return (decoded.analyses as SavedAnalysis[]).map((entry) => ({
+    ...entry,
+    assumptions: { ...entry.assumptions, origin: originOf(entry.assumptions) },
+  }));
 }
 export function encodeSaved(items: SavedAnalysis[]): string {
   if (items.length > 20)
@@ -134,6 +144,7 @@ export function saveAnalysis(
 export function freshAnalysis(): Assumptions {
   return {
     ...structuredClone(demo),
+    origin: "user",
     exitCapMode: "spread",
     name: "Untitled property",
     location: "",

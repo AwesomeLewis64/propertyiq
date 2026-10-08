@@ -161,7 +161,7 @@ export function newTools(): DecisionTools {
     sources: [],
     decisions: [],
     caseStudy: {
-      title: "Walnut property case study",
+      title: "Property case study",
       audience: "internal",
       narrative: "",
       rows: [

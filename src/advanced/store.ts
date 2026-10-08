@@ -1,3 +1,4 @@
+import { originOf } from "../data/provenance";
 import type { Project } from "./types";
 import { validateProject } from "./engine";
 import { newProject, newUnit, newLoan, uid } from "./defaults";
@@ -47,6 +48,13 @@ function shape(value: unknown, reference: unknown, path: string) {
     throw new Error(`${path}: invalid value.`);
 }
 export function checkProject(value: unknown): Project {
+  if (!plain(value)) throw new Error("Invalid project.");
+  if (
+    value.origin !== undefined &&
+    !["example", "user", "unknown"].includes(value.origin as string)
+  )
+    throw new Error("Invalid project origin.");
+  value = { ...value, origin: originOf(value as Project) };
   shape(value, newProject(), "project");
   const p = value as Project;
   if (p.tools) {
@@ -270,10 +278,13 @@ function database() {
   return connection;
 }
 export async function saveAttachment(id: string, file: Blob) {
+  // Store bytes, rather than platform-specific File/Blob objects. Some WebKit
+  // implementations cannot structured-clone those objects into IndexedDB.
+  const bytes = await file.arrayBuffer();
   const db = await database();
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction("files", "readwrite");
-    tx.objectStore("files").put(file, id);
+    tx.objectStore("files").put({ bytes, type: file.type }, id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -282,7 +293,19 @@ export async function getAttachment(id: string): Promise<Blob | null> {
   const db = await database();
   return new Promise((resolve, reject) => {
     const r = db.transaction("files").objectStore("files").get(id);
-    r.onsuccess = () => resolve(r.result ?? null);
+    r.onsuccess = () => {
+      const value: unknown = r.result;
+      if (value instanceof Blob)
+        resolve(value); // Existing locally stored files.
+      else if (
+        plain(value) &&
+        value.bytes instanceof ArrayBuffer &&
+        typeof value.type === "string"
+      )
+        resolve(new Blob([value.bytes], { type: value.type }));
+      else if (value === undefined) resolve(null);
+      else reject(new Error("Stored evidence file has an unsupported format."));
+    };
     r.onerror = () => reject(r.error);
   });
 }
@@ -311,24 +334,39 @@ export async function restoreBackup(text: string) {
   const w = decodeWorkspace(text);
   const raw = JSON.parse(text);
   const idMap = new Map<string, string>();
-  if (raw.attachments) {
-    if (!Array.isArray(raw.attachments) || raw.attachments.length > 500)
-      throw new Error("Invalid attachment backup.");
-    for (const a of raw.attachments) {
-      if (
-        typeof a.id !== "string" ||
-        typeof a.base64 !== "string" ||
-        a.base64.length > 14 * 1024 * 1024 ||
-        typeof a.type !== "string"
-      )
-        throw new Error("Invalid attachment.");
-      const bytes = Uint8Array.from(atob(a.base64), (c: string) =>
-        c.charCodeAt(0),
+  const refs = new Set(
+    [...w.projects, ...w.revisions.map((r) => r.project)].flatMap((p) =>
+      p.evidence.flatMap((e) => (e.attachmentId ? [e.attachmentId] : [])),
+    ),
+  );
+  const files = raw.attachments ?? [];
+  if (!Array.isArray(files) || files.length > 500)
+    throw new Error("Invalid attachment backup.");
+  const seen = new Set<string>();
+  const decodedFiles: { id: string; type: string; bytes: Uint8Array }[] = [];
+  for (const a of files) {
+    if (
+      !plain(a) ||
+      typeof a.id !== "string" ||
+      seen.has(a.id) ||
+      typeof a.type !== "string" ||
+      typeof a.base64 !== "string" ||
+      a.base64.length > 14 * 1024 * 1024
+    )
+      throw new Error("Invalid or duplicate attachment.");
+    seen.add(a.id);
+    const bytes = Uint8Array.from(atob(a.base64), (c) => c.charCodeAt(0));
+    decodedFiles.push({ id: a.id, type: a.type, bytes });
+  }
+  for (const ref of refs)
+    if (!seen.has(ref))
+      throw new Error(
+        "Backup is missing a referenced evidence file. Restore a complete portable backup.",
       );
-      const id = uid();
-      idMap.set(a.id, id);
-      await saveAttachment(id, new Blob([bytes], { type: a.type }));
-    }
+  for (const a of decodedFiles) {
+    const id = uid();
+    idMap.set(a.id, id);
+    await saveAttachment(id, new Blob([a.bytes as BlobPart], { type: a.type }));
   }
   for (const p of [...w.projects, ...w.revisions.map((r) => r.project)])
     p.evidence = p.evidence.map((e) =>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Save, FolderOpen, Plus, Trash2 } from "lucide-react";
+import { download } from "../data/export";
 import type { Assumptions } from "../finance/types";
 import type { ScenarioSettings } from "./Sensitivity";
 import {
@@ -43,6 +44,12 @@ export default function LocalAnalyses({
     }
   }
   function remove(id: string) {
+    if (
+      !window.confirm(
+        "Delete this saved analysis from this browser? Download a backup first if needed.",
+      )
+    )
+      return;
     try {
       const next = items.filter((v) => v.id !== id);
       localStorage.setItem(STORAGE_KEY, encodeSaved(next));
@@ -74,6 +81,52 @@ export default function LocalAnalyses({
             <FolderOpen size={12} />
             Load saved
           </button>
+          <button
+            className="text-button"
+            onClick={() => {
+              try {
+                download(
+                  "propertyiq-quick-backup.json",
+                  encodeSaved(decodeSaved(localStorage.getItem(STORAGE_KEY))),
+                  "application/json",
+                );
+              } catch (e) {
+                setError((e as Error).message);
+              }
+            }}
+          >
+            Download Quick backup
+          </button>
+          <label className="text-button">
+            Restore Quick backup
+            <input
+              aria-label="Restore Quick backup"
+              type="file"
+              accept=".json"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  if (file.size > 5 * 1024 * 1024)
+                    throw new Error("Quick backup limit is 5 MB.");
+                  const restored = decodeSaved(await file.text());
+                  const next = [
+                    ...decodeSaved(localStorage.getItem(STORAGE_KEY)),
+                    ...restored.map((x) => ({ ...x, id: crypto.randomUUID() })),
+                  ];
+                  localStorage.setItem(STORAGE_KEY, encodeSaved(next));
+                  setItems(next);
+                  setMessage(
+                    `Restored ${restored.length} snapshots; existing analyses were preserved.`,
+                  );
+                } catch (error) {
+                  setError((error as Error).message);
+                } finally {
+                  e.target.value = "";
+                }
+              }}
+            />
+          </label>
         </div>
         <span>Saved on this device and browser only</span>
       </div>
@@ -99,6 +152,12 @@ export default function LocalAnalyses({
             className="text-button"
             onClick={() => {
               try {
+                if (
+                  !window.confirm(
+                    "Permanently clear all saved Quick analyses from this browser?",
+                  )
+                )
+                  return;
                 localStorage.removeItem(STORAGE_KEY);
                 setItems([]);
                 setError("");

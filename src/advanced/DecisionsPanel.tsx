@@ -1,3 +1,4 @@
+import MoneyInput from "../ui/MoneyInput";
 import { useState } from "react";
 import { Card, TextField, Select, Toggle } from "./Controls";
 import type { ProjectEditor } from "./UnitEditor";
@@ -9,22 +10,31 @@ function Nullable({
   label,
   value,
   change,
+  currency = false,
 }: {
   label: string;
   value: number | null;
   change: (v: number | null) => void;
+  currency?: boolean;
 }) {
   return (
     <label className="adv-field">
       <span>{label}</span>
-      <input
-        type="number"
-        step="any"
-        value={value ?? ""}
-        onChange={(e) =>
-          change(e.target.value === "" ? null : Number(e.target.value))
-        }
-      />
+      {currency ? (
+        <MoneyInput
+          value={value ?? NaN}
+          onChange={(v) => change(Number.isFinite(v) ? v : null)}
+        />
+      ) : (
+        <input
+          type="number"
+          step="any"
+          value={value ?? ""}
+          onChange={(e) =>
+            change(e.target.value === "" ? null : Number(e.target.value))
+          }
+        />
+      )}
     </label>
   );
 }
@@ -74,7 +84,7 @@ export default function DecisionsPanel({ p, set }: ProjectEditor) {
       documented.every((r) => r.verified && r.source.trim() && r.date);
   const exportStudy = () =>
     download(
-      "propertyiq-walnut-case-study.md",
+      "propertyiq-property-case-study.md",
       `# ${c.title}\n\nAudience: ${c.audience}\nAs prepared: ${today()}\n\n${c.narrative}\n\n| Measure | Acquisition assumption | Recorded actual | Forecast | Source / date | Review |\n|---|---:|---:|---:|---|---|\n${c.rows.map((r) => `| ${r.label.replace(/\|/g, "/")} | ${fmt(r, r.acquisition)} | ${fmt(r, r.actual)} | ${fmt(r, r.forecast)} | ${r.source.replace(/\|/g, "/")} / ${r.date} | ${r.verified ? "User reviewed" : "Unverified"} |`).join("\n")}\n\n${c.rows
         .filter((r) => r.note)
         .map((r) => `- ${r.label}: ${r.note}`)
@@ -85,14 +95,14 @@ export default function DecisionsPanel({ p, set }: ProjectEditor) {
     );
   return (
     <>
-      <Card title="Decisions, milestones and Walnut case study">
+      <Card title="Decisions, milestones and property case study">
         <Select
           label="Decision records view"
           value={view}
           onChange={setView}
           options={[
             ["decisions", "Decision and milestone log"],
-            ["case", "Walnut case-study template"],
+            ["case", "Property case-study template"],
           ]}
         />
       </Card>
@@ -221,8 +231,8 @@ export default function DecisionsPanel({ p, set }: ProjectEditor) {
         </Card>
       ) : (
         <Card
-          title="Walnut case-study template"
-          note="Blank by default. Acquisition assumptions, recorded actuals and forecasts remain separate. Nothing is prefilled from previous chats."
+          title="Property case-study template"
+          note="Blank by default. Keep acquisition assumptions, recorded actuals and forecasts separate."
         >
           <div className="adv-form">
             <TextField
@@ -310,16 +320,19 @@ export default function DecisionsPanel({ p, set }: ProjectEditor) {
                   ]}
                 />
                 <Nullable
+                  currency={r.unit === "money"}
                   label="Acquisition assumption value"
                   value={r.acquisition}
                   change={(v) => casePatch(r.id, { acquisition: v })}
                 />
                 <Nullable
+                  currency={r.unit === "money"}
                   label="Recorded actual value"
                   value={r.actual}
                   change={(v) => casePatch(r.id, { actual: v })}
                 />
                 <Nullable
+                  currency={r.unit === "money"}
                   label="Forecast value"
                   value={r.forecast}
                   change={(v) => casePatch(r.id, { forecast: v })}

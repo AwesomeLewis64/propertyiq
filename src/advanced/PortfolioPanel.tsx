@@ -1,3 +1,4 @@
+import { provenance } from "../data/provenance";
 import { useMemo, useState } from "react";
 import { forecast } from "./engine";
 import type { Project } from "./types";
@@ -162,6 +163,12 @@ export default function PortfolioPanel({
                         workspace.projects.length <= 1 || !!m.errors.length
                       }
                       onClick={() => {
+                        if (
+                          !window.confirm(
+                            `Archive ${p.name}? It will remain recoverable in revisions.`,
+                          )
+                        )
+                          return;
                         const next = workspace.projects.filter(
                           (x) => x.id !== p.id,
                         );
@@ -198,10 +205,13 @@ export default function PortfolioPanel({
         note="Includes opening acquisition/as-of equity and subsequent capital calls across valid projects. Existing-property as-of equity is an opportunity-cost value, not necessarily a new cash payment."
       >
         <Plot
+          source={`Forecast sources: ${[...new Set(workspace.projects.map(provenance))].join(" ")}`}
+          seriesLabel="Owner contributions"
+          secondLabel="Owner distributions"
           values={calendar.map((v) => v.calls)}
           second={calendar.map((v) => v.distributions)}
           labels={calendar.map((v) => v.month)}
-          title="Owner contributions (navy) · distributions (blue)"
+          title="Owner contributions and distributions"
         />
         <div className="table-scroll" tabIndex={0}>
           <table>
@@ -235,7 +245,7 @@ export default function PortfolioPanel({
       </Card>
       <Card
         title="Backups, revisions and handoff"
-        note="Automatic browser saves are local convenience, not an independent backup. Shared online accounts and permissions are deferred by your choice."
+        note="Automatic browser saves are local convenience, not an independent backup. Backups preserve projects and available evidence attachments."
       >
         <div className="adv-actions">
           <button

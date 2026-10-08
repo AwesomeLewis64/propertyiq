@@ -45,7 +45,11 @@ export default function DiligencePanel({ p, set }: ProjectEditor) {
         ),
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Attachment failed.");
+      setError(
+        e && typeof e === "object" && "message" in e
+          ? String(e.message)
+          : "Attachment failed.",
+      );
     }
   }
   async function downloadAttachment(e: Evidence) {

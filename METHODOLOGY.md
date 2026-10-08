@@ -87,16 +87,26 @@ Expected values are literals derived from an independent 40-digit Python Decimal
 | Shared sample annual levered IRR | 14.1693715686322317% |
 | Shared sample equity multiple | 1.78032890021867724x |
 
-The fictional value-add sample assumes $160,000 of initial capital, $1,900 monthly rent per unit and 4% annual rent growth as a simplified improvement plan. Expenses including management are 41.6509% of Year 1 EGI. Acquisition property taxes are assumed at 2% of purchase price; insurance is $24,000. These are illustrative assumptions, not a market comp or actual reassessment. No inputs or outputs are attributed to Walnut.
+The fictional value-add sample assumes $160,000 of initial capital, $1,900 monthly rent per unit and 4% annual rent growth as a simplified improvement plan. Expenses including management are 41.6509% of Year 1 EGI. Acquisition property taxes are assumed at 2% of purchase price; insurance is $24,000. These are illustrative assumptions, not a market comp or actual reassessment. No inputs or outputs are attributed to a real property.
 
 ## Agreement between engines
 
 src/finance/sharedSample.ts maps one annual assumption set into the independently calculated monthly engine. Parity tests cover the shared sample, both IO conventions, actual/360, no debt, tax reassessment, constrained sizing, fixed management growth, rent-roll income, distinct expense growth and 10-year holds.
 
-NOI, cash-flow annual roll-ups, exit debt balance and net sale proceeds agree within $0.000001 (no internal penny rounding). Annual IRR calculated from monthly annual roll-ups agrees within 1e-10. Dated monthly XIRR intentionally uses actual 365-day year timing and earlier monthly distributions; the tested cases differ from annual IRR by less than one percentage point. The interface labels the engine and return convention, so annual IRR and monthly XIRR are never presented as interchangeable.
+NOI, cash-flow annual roll-ups, exit debt balance and net sale proceeds agree within $0.000001 (no internal penny rounding). Annual IRR calculated from monthly annual roll-ups agrees within 1e-10. Dated monthly XIRR intentionally uses actual 365-day year timing and earlier monthly distributions; the tested cases differ from annual IRR by less than one percentage point. The interface labels the analysis and return convention, so annual IRR and monthly XIRR are never presented as interchangeable.
 
-The shared sample uses annual growth steps, zero retained cash and monthly distribution of operating cash. Other monthly projects can use monthly compounding, cash retention, lease events, construction, actual overrides and refinancing, which have no direct annual equivalent. Sale receipts in monthly ledger rows are before financing payoff; annual net sale is after payoff.
+The shared sample uses annual growth steps, zero retained cash and monthly distribution of operating cash. Other monthly projects can use monthly compounding, cash retention, lease events, construction, actual overrides and refinancing, which have no direct annual equivalent. Monthly ledger netSale remains before financing payoff; saleNetProceeds separates sale-related payoff and fees from same-month refinancing. Annual net sale is after payoff. Neither reference sale series is added to total owner distributions.
 
-## Real workbook validation
+## Chart conventions
 
-No real Walnut workbook was supplied for this release. Synthetic benchmarks and engine parity are complete; real-deal reconciliation is pending. RECONCILIATION.md supplies mappings, tolerance policy and discrepancy records. Do not describe this project as reconciled to Walnut until the workbook comparison is performed.
+The bridge reconciles operating income through NOI, scheduled debt service, reserves and capital costs. Scheduled debt service already contains principal. Sale, refinancing, balloon payoffs and owner distributions are excluded from this operating bridge. Monthly physical vacancy is reconstructed from modeled potential rent; recorded actual receipts are not reduced by forecast vacancy again.
+
+Sensitivity changes one assumption at a time and reruns the existing calculation. Default shocks are ±10% rent/operating costs and ±0.5 percentage points vacancy/exit cap/interest; controls expose both magnitudes. Return differences are annual IRR or dated monthly XIRR percentage points, not relative percent changes. Actuals stay fixed; lease-event rents and loan reset rates follow the disclosed shocked inputs. Existing rate caps remain in force. Unsupported or invalid combinations remain N/A. Vacancy is not applied in the annual occupied rent-roll mode.
+
+Recovery includes opening acquisition/as-of equity and subsequent owner calls. Annual positive operating cash and net sale receipts are separate; operating deficits increase contributions. Annual shortfall and exit receipts are netted on the same annual date for the return calculation, while the recovery view shows their sources separately.
+
+Monthly owner distributions preserve the modeled dates and cash retention. The operating portion allocates retained operating surplus first, after operating deficits. This is a disclosed allocation convention, not segregated cash accounting: opening cash, refinancing and sales may also fund owner distributions. Net sale receipts are a separate cumulative reference after sale-related debt payoffs/fees; do not add this reference to total distributions. Nominal recovery does not account for time value of money, and opening equity in existing-property mode is an opportunity-cost input. No synthetic variation or forced return target is used.
+
+## Workbook validation
+
+Synthetic benchmarks and annual/monthly parity are verified. Reconciliation to a user's loan documents or real underwriting workbook is a separate comparison, not implied by the fictional sample. RECONCILIATION.md supplies mappings, tolerances and discrepancy records. The release bundles no private property data.

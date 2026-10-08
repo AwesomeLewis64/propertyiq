@@ -69,7 +69,7 @@ export function forecast(p: Project): Forecast {
       "Since-acquisition returns need dated historical contributions/distributions. Current-view returns use entered as-of equity.",
     );
   warnings.push(
-    "Experimental model: reconcile source assumptions and lender terms before relying on results. Shortfalls are assumed funded by owners and shown as capital calls.",
+    "Review source assumptions and lender terms. Cash shortfalls require additional owner contributions, shown as capital calls.",
   );
   const states: LoanState[] = p.loans.map((l) => ({
     terms: structuredClone(l),
@@ -118,6 +118,12 @@ export function forecast(p: Project): Forecast {
     afterFlows: DatedFlow[] = [...flows];
   const actualByMonth = new Map(p.actuals.map((a) => [a.month, a]));
   for (let m = 1; m <= p.months; m++) {
+    const salePeriod =
+      (p.strategy === "development-sale" &&
+        p.units.some((u) => u.saleMonth === m)) ||
+      (p.strategy !== "development-sale" && p.sellAtEnd && m === p.months);
+    let salePayoffs = 0,
+      saleFees = 0;
     const date = dateAt(p.startDate, m - 1, true),
       o = operations(p, m),
       actual = actualByMonth.get(date.slice(0, 7));
@@ -264,6 +270,7 @@ export function forecast(p: Project): Forecast {
           s.balance -= release;
           saleAfterCosts -= release;
           payoffs += release;
+          salePayoffs += release;
           record.payoff += release;
         }
         if (!s.refinanced && l.refiMonth === m) {
@@ -302,6 +309,10 @@ export function forecast(p: Project): Forecast {
           record.payoff += payoff;
           fees += payoff * l.penalty;
           record.fee += payoff * l.penalty;
+          if (salePeriod) {
+            salePayoffs += payoff;
+            saleFees += payoff * l.penalty;
+          }
           s.balance = 0;
           s.done = true;
           warnings.push(
@@ -355,6 +366,8 @@ export function forecast(p: Project): Forecast {
           const balance = s.balance;
           payoffs += balance;
           fees += balance * s.terms.penalty;
+          salePayoffs += balance;
+          saleFees += balance * s.terms.penalty;
           records.push({
             month: m,
             loan: `${s.terms.name} exit payoff`,
@@ -423,6 +436,10 @@ export function forecast(p: Project): Forecast {
     }
     const equityFlow = distribution - call;
     rows.push({
+      saleNetProceeds:
+        liquidating && p.strategy !== "development-sale" && grossExit === null
+          ? null
+          : netSale - salePayoffs - saleFees,
       month: m,
       date,
       occupied: o.occupied,

@@ -1,6 +1,6 @@
 # Workbook reconciliation
 
-Status: no real Walnut workbook supplied. Do not publish claims of real-deal reconciliation until this checklist is completed.
+Use this checklist to compare your own workbook with PropertyIQ. The bundled example is fictional; a real-deal reconciliation claim requires a completed, documented comparison.
 
 1. Make an anonymized, values-only copy of the workbook. Remove tenant identifiers, names, addresses and account details. Recalculate and save in Excel first: PropertyIQ reads cached values and does not run formulas or macros.
 2. Open Monthly planner → More tools → Workbook reconciliation. Create a separate project and enter the workbook's assumptions, forecast date, hold, cash-retention policy and financing conventions.
@@ -37,4 +37,4 @@ For every discrepancy, record: source file/version → Sheet!Cell → metric and
 
 A convention difference must have a reproducible bridge. A bug must be fixed and covered by a regression test; do not label it a convention merely because two outputs differ.
 
-After all mappings pass, publish only an anonymized summary: number of metrics checked, periods, tolerances, unresolved differences, date and reviewer. Keep actual deal figures private. Replace the README's pending real-workbook statement only after those results exist.
+After all mappings pass, publish only an anonymized summary: number of metrics checked, periods, tolerances, unresolved differences, date and reviewer. Keep actual deal figures private. Synthetic test results alone do not imply a real-workbook comparison.

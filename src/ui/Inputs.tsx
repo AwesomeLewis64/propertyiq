@@ -324,6 +324,7 @@ export default function Inputs({
           <label className="field">
             <span>Hold period</span>
             <select
+              aria-label="Hold period"
               value={a.hold}
               onChange={(e) => update("hold", Number(e.target.value))}
             >
@@ -354,7 +355,9 @@ export default function Inputs({
               {field("exitSpread", "Exit cap spread", true)}
               <p>
                 Calculated exit cap:{" "}
-                {((calculate(a).effectiveExitCap ?? 0) * 100).toFixed(2)}%
+                {calculate(a).effectiveExitCap === undefined
+                  ? "N/A"
+                  : `${(calculate(a).effectiveExitCap! * 100).toFixed(2)}%`}
               </p>
             </>
           ) : (

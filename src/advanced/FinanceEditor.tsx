@@ -32,6 +32,7 @@ export default function FinanceEditor({
         label={label}
         value={loan[key] as number}
         percent={percent}
+        currency={["amount", "refiAmount"].includes(key)}
         onChange={(v) => patch(key, v)}
       />
     );
@@ -60,6 +61,9 @@ export default function FinanceEditor({
               key={key}
               label={label}
               value={p.lender[key]}
+              currency={["value", "reserveAnnual", "adjustmentAnnual"].includes(
+                key,
+              )}
               percent={percent}
               onChange={(v) => set({ ...p, lender: { ...p.lender, [key]: v } })}
             />
@@ -291,6 +295,12 @@ export default function FinanceEditor({
             <button
               className="button small"
               onClick={() => {
+                if (
+                  !window.confirm(
+                    `Remove ${loan.name} and its financing terms? Export a backup first if needed.`,
+                  )
+                )
+                  return;
                 set({ ...p, loans: p.loans.filter((_, i) => i !== selected) });
                 setSelected(0);
               }}

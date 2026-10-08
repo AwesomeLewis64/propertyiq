@@ -16,6 +16,8 @@ export default function RiskPanel({ p, set }: ProjectEditor) {
   const active = useRef<Worker | null>(null);
   const signature = JSON.stringify(p);
   const [runSignature, setRunSignature] = useState("");
+  const [stressSignature, setStressSignature] = useState("");
+  const currentStressSignature = JSON.stringify([p, stress]);
   useEffect(() => () => active.current?.terminate(), []);
   const run = () => {
     active.current?.terminate();
@@ -95,18 +97,29 @@ export default function RiskPanel({ p, set }: ProjectEditor) {
               amount: b.amount * stress.cost,
             }));
             setStressResult(forecast(scenario));
+            setStressSignature(currentStressSignature);
           }}
         >
           Calculate combined stress
         </button>
         {stressResult && (
           <>
+            {stressSignature !== currentStressSignature && (
+              <p className="alert" role="status">
+                Inputs changed after this stress calculation. Recalculate to
+                update these results.
+              </p>
+            )}
             <div className="metrics adv-metrics">
               <Metric label="Stressed XIRR" value={pct(stressResult.irr)} />
               <Metric label="Stressed NPV" value={money(stressResult.npv)} />
               <Metric
                 label="Additional owner funding"
-                value={money(stressResult.additionalEquity)}
+                value={money(
+                  stressResult.errors.length
+                    ? null
+                    : stressResult.additionalEquity,
+                )}
               />
             </div>
             {stressResult.errors.map((e) => (

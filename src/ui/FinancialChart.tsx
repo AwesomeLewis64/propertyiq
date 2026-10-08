@@ -1,0 +1,443 @@
+import { useEffect, useId, useRef, useState } from "react";
+import { money } from "./format";
+import { csvText, download } from "../data/export";
+import type { BridgeRow } from "../analytics/visuals";
+
+export type ChartRow = { label: string; values: (number | null)[] };
+const colors = ["#183b6b", "#75613c", "#345e95", "#4f6372"];
+const xml = (s: string) =>
+  s.replace(
+    /[<>&"']/g,
+    (c) =>
+      ({
+        "<": "&lt;",
+        ">": "&gt;",
+        "&": "&amp;",
+        '"': "&quot;",
+        "'": "&apos;",
+      })[c]!,
+  );
+export function chartCsv(
+  title: string,
+  note: string,
+  series: string[],
+  rows: ChartRow[],
+) {
+  return csvText([
+    [title],
+    [note],
+    ["Period / assumption", ...series],
+    ...rows.map((r) => [r.label, ...r.values]),
+  ]);
+}
+export default function FinancialChart({
+  title,
+  note,
+  source = "",
+  series,
+  rows,
+  bridge,
+  unit = "money",
+}: {
+  title: string;
+  note: string;
+  source?: string;
+  series: string[];
+  rows: ChartRow[];
+  bridge?: BridgeRow[];
+  unit?: "money" | "points";
+}) {
+  const id = useId(),
+    wrap = useRef<HTMLDivElement>(null),
+    svg = useRef<SVGSVGElement>(null);
+  const [width, setWidth] = useState(640),
+    [selected, setSelected] = useState(0),
+    [error, setError] = useState("");
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) =>
+      setWidth(Math.max(280, entries[0].contentRect.width)),
+    );
+    if (wrap.current) observer.observe(wrap.current);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    let opened: HTMLDetailsElement | null = null;
+    const before = () => {
+      const table = wrap.current
+        ?.closest("section")
+        ?.querySelector<HTMLDetailsElement>(".chart-data");
+      if (table && !table.open) {
+        table.open = true;
+        opened = table;
+      }
+    };
+    const after = () => {
+      if (opened) {
+        opened.open = false;
+        opened = null;
+      }
+    };
+    window.addEventListener("beforeprint", before);
+    window.addEventListener("afterprint", after);
+    return () => {
+      window.removeEventListener("beforeprint", before);
+      window.removeEventListener("afterprint", after);
+    };
+  }, []);
+  const active = Math.min(selected, Math.max(0, rows.length - 1));
+  const format = (v: number | null) =>
+    v === null || !Number.isFinite(v)
+      ? "N/A"
+      : unit === "points"
+        ? `${v >= 0 ? "+" : ""}${v.toFixed(2)} pp`
+        : money(v);
+  const finite = rows.flatMap((r) =>
+    r.values.filter((v): v is number => v !== null && Number.isFinite(v)),
+  );
+  const horizontal = !!bridge || unit === "points";
+  const rangeValues = bridge
+    ? bridge.flatMap((r) => [r.start, ...(r.end === null ? [] : [r.end])])
+    : finite;
+  const low = Math.min(0, ...rangeValues),
+    high = Math.max(1, ...rangeValues),
+    range = high - low;
+  const left = horizontal ? Math.min(155, width * 0.43) : 65,
+    right = width - 18;
+  const height = horizontal ? rows.length * 48 + 55 : 255;
+  const x = (v: number) => left + ((v - low) / range) * (right - left);
+  const y = (v: number) => 205 - ((v - low) / range) * 175;
+  const xp = (i: number) =>
+    left + (i * (right - left)) / Math.max(1, rows.length - 1);
+  const stem = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-$/, " ")
+    .trim();
+  async function exportImage(kind: "svg" | "png") {
+    try {
+      setError("");
+      await document.fonts.ready;
+      const svgNode = svg.current;
+      if (!svgNode) return;
+      const clone = svgNode.cloneNode(true) as SVGSVGElement;
+      clone.querySelectorAll(".chart-cursor").forEach((n) => n.remove());
+      clone.setAttribute("width", String(width));
+      clone.setAttribute("height", String(height));
+      const words = `${note} ${source}`.split(/\s+/),
+        lines: string[] = [];
+      let line = "";
+      for (const word of words) {
+        if ((line + word).length > Math.max(35, Math.floor(width / 7))) {
+          lines.push(line);
+          line = "";
+        }
+        line += word + " ";
+      }
+      if (line) lines.push(line);
+      const legend = series
+        .map(
+          (s, i) =>
+            `<text x="16" y="${height + 58 + i * 19}" fill="${colors[i % 4]}" font-size="12">${xml(s)}</text>`,
+        )
+        .join("");
+      const foot = height + 70 + series.length * 19;
+      const total = foot + lines.length * 18 + 20;
+      const body = new XMLSerializer().serializeToString(clone);
+      const text = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${total}" viewBox="0 0 ${width} ${total}"><rect width="100%" height="100%" fill="white"/><text x="16" y="24" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#183b6b">${xml(title)}</text><g transform="translate(0 34)">${body}</g>${legend}${lines.map((s, i) => `<text x="16" y="${foot + i * 18}" font-family="Arial,sans-serif" font-size="11" fill="#263d58">${xml(s)}</text>`).join("")}</svg>`;
+      if (kind === "svg") {
+        download(`${stem}.svg`, text, "image/svg+xml");
+        return;
+      }
+      // Data URI works under the existing img-src policy without broadening it.
+      const img = new Image();
+      img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(text)}`;
+      await img.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(width * 2);
+      canvas.height = Math.ceil(total * 2);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Image export is unavailable.");
+      ctx.scale(2, 2);
+      ctx.drawImage(img, 0, 0);
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("Image export failed."))),
+          "image/png",
+        ),
+      );
+      const url = URL.createObjectURL(blob),
+        link = document.createElement("a");
+      link.href = url;
+      link.download = `${stem}.png`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Chart export failed.");
+    }
+  }
+  if (!rows.length)
+    return (
+      <section className="panel financial-chart">
+        <h2>{title}</h2>
+        <p>Complete the assumptions to see this chart.</p>
+      </section>
+    );
+  return (
+    <section className="panel financial-chart" aria-labelledby={id}>
+      <div className="panel-title">
+        <h2 id={id}>{title}</h2>
+        <details className="chart-download no-print">
+          <summary>Download</summary>
+          <div>
+            <button onClick={() => void exportImage("png")}>PNG image</button>
+            <button onClick={() => void exportImage("svg")}>SVG image</button>
+            <button
+              onClick={() =>
+                download(
+                  `${stem}.csv`,
+                  chartCsv(title, `${note} ${source}`, series, rows),
+                )
+              }
+            >
+              CSV data
+            </button>
+          </div>
+        </details>
+      </div>
+      <p className="chart-note">{note}</p>
+      {error && (
+        <p className="alert error" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="chart-legend">
+        {series.map((s, i) => (
+          <span key={s} style={{ color: colors[i % 4] }}>
+            {["━", "┄", "···", "╍"][i % 4]} {s}
+          </span>
+        ))}
+      </div>
+      <div ref={wrap} className="chart-canvas">
+        <svg
+          ref={svg}
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label={`${title}; inspect any period using the control or data table below.`}
+          fontFamily="Arial,sans-serif"
+          fontSize="12"
+          fill="#263d58"
+          onPointerMove={(e) => {
+            if (e.buttons || e.pointerType === "mouse") {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setSelected(
+                Math.max(
+                  0,
+                  Math.min(
+                    rows.length - 1,
+                    Math.round(
+                      horizontal
+                        ? (((e.clientY - rect.top) * height) / rect.height -
+                            20) /
+                            48
+                        : ((((e.clientX - rect.left) * width) / rect.width -
+                            left) /
+                            (right - left)) *
+                            (rows.length - 1),
+                    ),
+                  ),
+                ),
+              );
+            }
+          }}
+          onPointerDown={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setSelected(
+              Math.max(
+                0,
+                Math.min(
+                  rows.length - 1,
+                  Math.round(
+                    horizontal
+                      ? (((e.clientY - rect.top) * height) / rect.height - 20) /
+                          48
+                      : ((((e.clientX - rect.left) * width) / rect.width -
+                          left) /
+                          (right - left)) *
+                          (rows.length - 1),
+                  ),
+                ),
+              ),
+            );
+          }}
+        >
+          <rect width={width} height={height} fill="white" />
+          {horizontal ? (
+            <>
+              <line
+                x1={x(0)}
+                x2={x(0)}
+                y1={8}
+                y2={height - 35}
+                stroke="#b7c4d3"
+              />
+              {rows.map((r, i) => (
+                <g key={r.label}>
+                  <text x={0} y={22 + i * 48} fontSize="12">
+                    {r.label.length > 23 ? r.label.slice(0, 21) + "…" : r.label}
+                  </text>
+                  {r.values.map((v, j) => {
+                    const b = bridge?.[i],
+                      start = b?.start ?? 0,
+                      end = b?.end ?? v;
+                    return end === null || v === null ? (
+                      <text key={j} x={left + 5} y={24 + i * 48 + j * 14}>
+                        N/A
+                      </text>
+                    ) : (
+                      <rect
+                        key={j}
+                        x={Math.min(x(start), x(end))}
+                        y={12 + i * 48 + j * 14}
+                        width={Math.max(1, Math.abs(x(end) - x(start)))}
+                        height={bridge ? 22 : 12}
+                        fill={b?.total ? colors[0] : colors[j % 4]}
+                        opacity={b && !b.total && v < 0 ? 0.75 : 1}
+                      />
+                    );
+                  })}
+                  {bridge && (
+                    <text x={left} y={46 + i * 48} fontSize="11">
+                      {format(r.values[0])}
+                    </text>
+                  )}
+                </g>
+              ))}
+              <text x={left} y={height - 8}>
+                {format(low)}
+              </text>
+              <text x={right} y={height - 8} textAnchor="end">
+                {format(high)}
+              </text>
+            </>
+          ) : (
+            <>
+              {[0, 0.5, 1].map((t) => {
+                const v = low + range * t;
+                return (
+                  <g key={t}>
+                    <line
+                      x1={left}
+                      x2={right}
+                      y1={y(v)}
+                      y2={y(v)}
+                      stroke="#e0e6ee"
+                    />
+                    <text x={0} y={y(v) + 4} fontSize="11">
+                      {Math.abs(v) >= 1000000
+                        ? `$${(v / 1000000).toFixed(1)}m`
+                        : `$${(v / 1000).toFixed(0)}k`}
+                    </text>
+                  </g>
+                );
+              })}
+              {series.map((s, j) => (
+                <path
+                  key={s}
+                  d={rows
+                    .map((r, i) =>
+                      r.values[j] === null
+                        ? ""
+                        : `${i === 0 || rows[i - 1].values[j] === null ? "M" : "L"} ${xp(i)} ${y(r.values[j]!)}`,
+                    )
+                    .join(" ")}
+                  stroke={colors[j % 4]}
+                  strokeWidth="2.5"
+                  strokeDasharray={
+                    j % 4 === 1
+                      ? "7 4"
+                      : j % 4 === 2
+                        ? "2 4"
+                        : j % 4 === 3
+                          ? "10 3 2 3"
+                          : undefined
+                  }
+                  fill="none"
+                />
+              ))}
+              <line
+                className="chart-cursor"
+                x1={xp(active)}
+                x2={xp(active)}
+                y1={25}
+                y2={205}
+                stroke="#71839c"
+                strokeDasharray="3 3"
+              />
+              {[0, rows.length - 1].map((i, k) => (
+                <text
+                  key={k}
+                  x={k ? right : left}
+                  y={232}
+                  textAnchor={k ? "end" : "start"}
+                >
+                  {rows[i].label}
+                </text>
+              ))}
+            </>
+          )}
+        </svg>
+      </div>
+      <div className="chart-inspect no-print">
+        <label>
+          Inspect {horizontal ? "assumption / item" : "period"}
+          <input
+            aria-label={`Inspect ${title}`}
+            type="range"
+            min={0}
+            max={rows.length - 1}
+            value={active}
+            onChange={(e) => setSelected(Number(e.target.value))}
+          />
+        </label>
+        <output aria-live="polite">
+          <strong>{rows[active].label}</strong>
+          {series.map((s, i) => (
+            <span key={s}>
+              {s}: {format(rows[active].values[i])}
+            </span>
+          ))}
+        </output>
+      </div>
+      <details className="chart-data">
+        <summary>View chart data</summary>
+        <div className="table-scroll" tabIndex={0}>
+          <table>
+            <caption>
+              {title} · {unit === "points" ? "percentage points" : "USD"}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Period / item</th>
+                {series.map((s) => (
+                  <th scope="col" key={s}>
+                    {s}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.label}>
+                  <th scope="row">{r.label}</th>
+                  {r.values.map((v, i) => (
+                    <td key={i}>{format(v)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+  );
+}

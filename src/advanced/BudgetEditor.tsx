@@ -48,6 +48,11 @@ export function Expenses({ p, set }: ProjectEditor) {
                 label={label}
                 value={e[k]}
                 percent={percent}
+                currency={[
+                  "annual",
+                  "replacementAnnual",
+                  "reimbursement",
+                ].includes(k)}
                 onChange={(v) =>
                   set({
                     ...p,

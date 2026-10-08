@@ -25,6 +25,7 @@ import {
   readWorkspace,
   type Workspace,
 } from "./store";
+import { provenance } from "../data/provenance";
 import { money, pct, multiple } from "../ui/format";
 import { csvText, download } from "../data/export";
 
@@ -361,7 +362,7 @@ export default function AdvancedWorkspace({
       ]),
     );
   const exportMemo = () => {
-    const text = `# ${p.name}\n\nEXPERIMENTAL / UNVERIFIED MODEL\n\nStrategy: ${p.strategy}\nForecast start: ${p.startDate}; ${p.months} months\nInitial/as-of equity: ${money(m.initialEquity)}\nForecast XIRR: ${pct(m.irr)}\nNPV at ${pct(p.discount)}: ${money(m.npv)}\nEquity multiple: ${multiple(m.multiple)}\nAdditional owner funding: ${money(m.additionalEquity)}\nDebt capacity: ${money(m.sizing.maximum)} (${m.sizing.binding})\n\n## Modeling assumptions\n\nUnit schedules, expenses and financing are user-entered. Cash shortfalls are funded by disclosed owner contributions. Dated returns use a 365-day year. Taxes are illustrative entered-rate scenarios.\n\n## Warnings\n\n${m.warnings.map((w) => `- ${w}`).join("\n")}\n\n## Diligence\n\n${p.tasks.map((t) => `- [${t.status === "complete" ? "x" : " "}] ${t.title} — ${t.owner || "unassigned"}; due ${t.due || "unspecified"}; ${t.note}`).join("\n")}\n\n## Evidence\n\n${p.evidence.map((e) => `- ${e.title}: ${e.status}; ${e.date}; ${e.source}; ${e.note}`).join("\n")}`;
+    const text = `# ${p.name}\n\n${provenance(p)}\n\nStrategy: ${p.strategy}\nForecast start: ${p.startDate}; ${p.months} months\nInitial/as-of equity: ${money(m.initialEquity)}\nForecast XIRR: ${pct(m.irr)}\nNPV at ${pct(p.discount)}: ${money(m.npv)}\nEquity multiple: ${multiple(m.multiple)}\nAdditional owner funding: ${money(m.additionalEquity)}\nDebt capacity: ${money(m.sizing.maximum)} (${m.sizing.binding})\n\n## Modeling assumptions\n\nUnit schedules, expenses and financing are user-entered. Cash shortfalls are funded by disclosed owner contributions. Dated returns use a 365-day year. Taxes are illustrative entered-rate scenarios.\n\n## Warnings\n\n${m.warnings.map((w) => `- ${w}`).join("\n")}\n\n## Diligence\n\n${p.tasks.map((t) => `- [${t.status === "complete" ? "x" : " "}] ${t.title} — ${t.owner || "unassigned"}; due ${t.due || "unspecified"}; ${t.note}`).join("\n")}\n\n## Evidence\n\n${p.evidence.map((e) => `- ${e.title}: ${e.status}; ${e.date}; ${e.source}; ${e.note}`).join("\n")}`;
     download("propertyiq-investment-notes.md", text, "text/markdown");
   };
   return (
@@ -469,7 +470,7 @@ export default function AdvancedWorkspace({
           <div className="adv-heading">
             <div>
               <span className="eyebrow">
-                MONTHLY PLANNER · MONTHLY CASH-FLOW ENGINE
+                MONTHLY PLANNER · DATED CASH FLOWS
               </span>
               <h1>{tabs.find((t) => t[0] === tab)?.[1]}</h1>
               <p>
@@ -522,14 +523,14 @@ export default function AdvancedWorkspace({
             </div>
           </div>
           <div className="compact-project-header">
+            <p className="project-origin">{provenance(p)}</p>
             <details className="iq-model-status">
               <summary>
                 <ShieldCheck size={15} />
                 Model status: source reconciliation required
               </summary>
               <p>
-                The monthly model is experimental. Review outputs against source
-                documents before use. Fictional examples are not Walnut's
+                Review source documents and lender terms before relying on
                 results.
               </p>
             </details>
@@ -540,48 +541,58 @@ export default function AdvancedWorkspace({
                 onChange={setSelected}
                 options={workspace.projects.map((p) => [p.id, p.name])}
               />
-              <Select
-                label="Example strategy"
-                value={newStrategy}
-                onChange={(v) => setNewStrategy(v as Project["strategy"])}
-                options={[
-                  ["acquisition", "Rental acquisition"],
-                  ["existing", "Existing rental property"],
-                  ["development-sale", "Development → unit sales"],
-                  ["development-hold", "Development → rental hold"],
-                ]}
-              />
-              <button
-                className="button small"
-                disabled={workspace.projects.length >= 100}
-                onClick={create}
-              >
-                <Plus size={14} />
-                Create example
-              </button>
-              <button
-                className="button small"
-                onClick={() => leaveWorkspace(onHome)}
-              >
-                <Plus size={14} />
-                Add your property
-              </button>
-              <button
-                className="button small"
-                disabled={workspace.projects.length >= 100 || !!m.errors.length}
-                onClick={() => {
-                  const n = {
-                    ...structuredClone(p),
-                    id: uid(),
-                    name: `${p.name} (copy)`,
-                  };
-                  setWorkspace((w) => ({ ...w, projects: [...w.projects, n] }));
-                  setSelected(n.id);
-                }}
-              >
-                <Copy size={14} />
-                Duplicate
-              </button>
+              <details className="project-management no-print">
+                <summary className="button small">Project actions</summary>
+                <div>
+                  <Select
+                    label="Example strategy"
+                    value={newStrategy}
+                    onChange={(v) => setNewStrategy(v as Project["strategy"])}
+                    options={[
+                      ["acquisition", "Rental acquisition"],
+                      ["existing", "Existing rental property"],
+                      ["development-sale", "Development → unit sales"],
+                      ["development-hold", "Development → rental hold"],
+                    ]}
+                  />
+                  <button
+                    className="button small"
+                    disabled={workspace.projects.length >= 100}
+                    onClick={create}
+                  >
+                    <Plus size={14} />
+                    Create example
+                  </button>
+                  <button
+                    className="button small"
+                    onClick={() => leaveWorkspace(onHome)}
+                  >
+                    <Plus size={14} />
+                    Add your property
+                  </button>
+                  <button
+                    className="button small"
+                    disabled={
+                      workspace.projects.length >= 100 || !!m.errors.length
+                    }
+                    onClick={() => {
+                      const n = {
+                        ...structuredClone(p),
+                        id: uid(),
+                        name: `${p.name} (copy)`,
+                      };
+                      setWorkspace((w) => ({
+                        ...w,
+                        projects: [...w.projects, n],
+                      }));
+                      setSelected(n.id);
+                    }}
+                  >
+                    <Copy size={14} />
+                    Duplicate
+                  </button>
+                </div>
+              </details>
               <small>
                 {m.errors.length
                   ? "Autosave paused: invalid draft"
@@ -698,10 +709,10 @@ export default function AdvancedWorkspace({
             </p>
             <p>
               External research, legal diligence and lender approval require
-              human review. Shared online accounts are deferred. Tax and
-              waterfall calculations are configurable simplified scenarios. This
-              expansion has targeted regression coverage; it has not been
-              reconciled against Walnut's original workbooks.
+              human review. Projects and uploaded files stay in this browser.
+              Tax and waterfall calculations are configurable simplified
+              scenarios. This expansion has targeted regression coverage; it has
+              not been reconciled against source workbooks.
             </p>
             <p>
               <a

@@ -12,6 +12,7 @@ export function monthlyFromAnnual(a: Assumptions): Project {
   const p = newProject();
   Object.assign(p, {
     id: "maple-grove-shared",
+    origin: a.origin ?? "unknown",
     name: a.name,
     location: a.location,
     startDate: a.startDate ?? "2026-10-01",

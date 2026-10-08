@@ -10,6 +10,7 @@ export const expenseKeys = [
 ] as const;
 export type ExpenseKey = (typeof expenseKeys)[number];
 export type Assumptions = {
+  origin?: import("../data/provenance").Origin;
   taxesGrowth?: number;
   insuranceGrowth?: number;
   inflation?: number;

@@ -51,7 +51,7 @@ export default function Methodology() {
         + loan fees − loan proceeds.
       </p>
       <p>
-        Levered IRR uses equally spaced annual equity cash flows; it is periodic
+        Annual IRR uses equally spaced annual equity cash flows; it is periodic
         IRR, not XIRR. Multiple sign changes can produce ambiguous roots and
         display N/A. Equity multiple divides all positive distributions by all
         negative contributions, including negative annual equity cash flows.

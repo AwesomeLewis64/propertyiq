@@ -185,6 +185,7 @@ export function setupAnnual(v: SetupValues): Assumptions {
 
 export function setupProject(v: SetupValues, description: string): Project {
   const p = newProject(v.strategy);
+  p.origin = "user";
   const dev = v.strategy.startsWith("development");
   const count = Number(v.units);
   p.name = v.name.trim() || "Untitled property";

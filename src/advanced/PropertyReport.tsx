@@ -1,4 +1,6 @@
 import type { Project, Forecast, Monthly } from "./types";
+import VisualAdditions from "../ui/VisualAdditions";
+import { provenance } from "../data/provenance";
 import Brand from "../ui/Brand";
 import { money, pct, multiple } from "../ui/format";
 export default function PropertyReport({ p, m }: { p: Project; m: Forecast }) {
@@ -28,7 +30,7 @@ export default function PropertyReport({ p, m }: { p: Project; m: Forecast }) {
         </p>
       </div>
       <p className="iq-report-status">
-        User-entered assumptions ·{" "}
+        {provenance(p)} ·{" "}
         {first.some((r) => r.actual)
           ? "Includes posted actual overrides"
           : "Forecast"}{" "}
@@ -151,20 +153,20 @@ export default function PropertyReport({ p, m }: { p: Project; m: Forecast }) {
           </p>
         </>
       )}
+      {!m.errors.length && <VisualAdditions p={p} f={m} />}
       <div className="iq-report-notes">
         <h3>Review before relying on results</h3>
         <p>
-          Fictional samples illustrate the tool. This report does not verify
-          rents, costs, lender terms or market value. Reconcile the source
-          workbook and review incomplete funding, sales and maturity
-          assumptions.
+          This report does not verify rents, costs, lender terms or market
+          value. Reconcile the source workbook and review incomplete funding,
+          sales and maturity assumptions.
         </p>
         {m.warnings.map((w) => (
           <p key={w}>{w}</p>
         ))}
       </div>
       <div className="iq-report-bottom">
-        PropertyIQ · Calculated locally · No paid AI API
+        PropertyIQ · Calculated locally in your browser
       </div>
     </article>
   );

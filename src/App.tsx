@@ -28,6 +28,7 @@ const ImportRentRoll = lazy(() => import("./ui/ImportRentRoll"));
 const AdvancedWorkspace = lazy(() => import("./advanced/AdvancedWorkspace"));
 import type { ScenarioSettings } from "./ui/Sensitivity";
 import Insights from "./ui/Insights";
+import { originOf, provenance } from "./data/provenance";
 import { download, projectionCsv, debtCsv } from "./data/export";
 import LocalAnalyses from "./ui/LocalAnalyses";
 import { freshAnalysis } from "./data/storage";
@@ -69,7 +70,7 @@ function Metrics({ m, a }: { m: Model; a: Assumptions }) {
       "Year 1 NOI divided by acquisition price",
     ],
     [
-      "Levered IRR",
+      "Annual IRR",
       pct(m.irr),
       m.irrReason ?? "Annual equity cash-flow IRR, including sale",
     ],
@@ -144,7 +145,9 @@ function WorkspaceApp() {
       const saved: unknown = JSON.parse(
         sessionStorage.getItem("propertyiq:quick:draft") ?? "null",
       );
-      return isAssumptions(saved) ? saved : structuredClone(demo);
+      return isAssumptions(saved)
+        ? { ...saved, origin: originOf(saved) }
+        : structuredClone(demo);
     } catch {
       return structuredClone(demo);
     }
@@ -163,7 +166,7 @@ function WorkspaceApp() {
     downside: {},
   });
   const m = useMemo(() => calculate(a), [a]);
-  const isDemo = JSON.stringify(a) === JSON.stringify(demo);
+
   useEffect(() => {
     const restore = () => {
       const route = readRoute();
@@ -370,12 +373,18 @@ function WorkspaceApp() {
               <button
                 className="button small"
                 onClick={() => {
+                  if (
+                    !window.confirm(
+                      "Replace the current analysis with fictional example assumptions? Saved snapshots will remain available.",
+                    )
+                  )
+                    return;
                   setA(structuredClone(demo));
                   setScenarios({ upside: {}, downside: {} });
                 }}
               >
                 <RotateCcw size={14} />
-                Reset to demo
+                Reset to example
               </button>
               <button
                 className="button small"
@@ -405,12 +414,7 @@ function WorkspaceApp() {
           </div>
           <div className="model-notice">
             <span className="dot" />
-            Browser-local model{" "}
-            <span>
-              {isDemo
-                ? "Fictional sample assumptions · edit to analyze your property"
-                : "Your assumptions · calculated locally in your browser"}
-            </span>
+            Browser-local model <span>{provenance(a)}</span>
           </div>
           <LocalAnalyses
             a={a}
@@ -429,7 +433,7 @@ function WorkspaceApp() {
           <div className="analysis-layout">
             {!m.errors.length && (
               <div className="mobile-summary">
-                IRR {pct(m.irr)} · Multiple {multiple(m.multiple)} · DSCR{" "}
+                Annual IRR {pct(m.irr)} · Multiple {multiple(m.multiple)} · DSCR{" "}
                 {multiple(m.years[0]?.dscr ?? null)}
               </div>
             )}
@@ -480,7 +484,7 @@ function WorkspaceApp() {
                   {view === "overview" ? (
                     <>
                       <Verdict
-                        engine="Quick analysis · annual cash-flow engine"
+                        engine="Quick analysis · annual cash flows"
                         lines={verdictLines(
                           m.years[0].dscr,
                           m.irr,
