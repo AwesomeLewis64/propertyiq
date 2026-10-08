@@ -60,7 +60,7 @@ export default function CalendarPanel({ p }: ProjectEditor) {
           ]}
         />
       </div>
-      <div className="table-scroll">
+      <div className="table-scroll" tabIndex={0}>
         <table className="decision-calendar">
           <thead>
             <tr>

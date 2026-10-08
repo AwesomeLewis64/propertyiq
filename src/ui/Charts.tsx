@@ -40,7 +40,7 @@ export default function Charts({ m, a }: { m: Model; a: Assumptions }) {
             <h2>Income & operating performance</h2>
             <p>Effective income, expenses and net operating income</p>
           </div>
-          <span className="badge">5-year outlook</span>
+          <span className="badge">{a.hold}-year outlook</span>
         </div>
         <div
           className="chart"
@@ -58,25 +58,28 @@ export default function Charts({ m, a }: { m: Model; a: Assumptions }) {
                 dataKey="name"
                 tickLine={false}
                 axisLine={false}
-                fontSize={11}
+                fontSize={12}
               />
               <YAxis
                 tickFormatter={compact}
                 tickLine={false}
                 axisLine={false}
-                fontSize={11}
+                fontSize={12}
                 width={58}
               />
               {tip}
-              <Legend iconType="square" wrapperStyle={{ fontSize: 11 }} />
+              <Legend
+                iconType="square"
+                wrapperStyle={{ fontSize: 13, color: "#263d58" }}
+              />
               <Bar
                 dataKey="Effective income"
-                fill="#b7cbe9"
+                fill="#345e95"
                 radius={[3, 3, 0, 0]}
               />
               <Bar
                 dataKey="Operating expenses"
-                fill="#e1eafb"
+                fill="#75613c"
                 radius={[3, 3, 0, 0]}
               />
               <Bar dataKey="NOI" fill="#183b6b" radius={[3, 3, 0, 0]}>
@@ -111,13 +114,13 @@ export default function Charts({ m, a }: { m: Model; a: Assumptions }) {
                 dataKey="name"
                 tickLine={false}
                 axisLine={false}
-                fontSize={11}
+                fontSize={12}
               />
               <YAxis
                 tickFormatter={compact}
                 axisLine={false}
                 tickLine={false}
-                fontSize={11}
+                fontSize={12}
                 width={58}
               />
               {tip}
@@ -164,13 +167,13 @@ export default function Charts({ m, a }: { m: Model; a: Assumptions }) {
                 dataKey="name"
                 tickLine={false}
                 axisLine={false}
-                fontSize={11}
+                fontSize={12}
               />
               <YAxis
                 tickFormatter={compact}
                 axisLine={false}
                 tickLine={false}
-                fontSize={11}
+                fontSize={12}
                 width={58}
                 domain={["auto", "auto"]}
               />

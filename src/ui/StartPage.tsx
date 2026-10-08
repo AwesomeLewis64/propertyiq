@@ -17,10 +17,14 @@ import {
   extractBrief,
   sampleProject,
   setupProject,
+  setupAnnual,
   type SetupValues,
   type WorkspaceLaunch,
 } from "./startFlow";
 import { money } from "./format";
+import { sampleSummary } from "../finance/sharedSample";
+import { calculate } from "../finance/model";
+import type { Assumptions } from "../finance/types";
 type Intent = "overview" | "monthly" | "price" | "financing";
 const now = new Date();
 const blank: SetupValues = {
@@ -35,13 +39,19 @@ const blank: SetupValues = {
   rate: "",
   start: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
   equity: "",
+  exitCap: "",
+  sellingCosts: "2.5",
+  requiredReturn: "10",
+  amortization: "30",
+  maturity: "10",
+  hold: "5",
 };
 export default function StartPage({
   onOpen,
   onAnnual,
 }: {
   onOpen: (launch?: WorkspaceLaunch) => void;
-  onAnnual: () => void;
+  onAnnual: (a?: Assumptions) => void;
 }) {
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -50,6 +60,9 @@ export default function StartPage({
   const [recognized, setRecognized] = useState<string[]>([]);
   const [intent, setIntent] = useState<Intent>("overview");
   const [fileError, setFileError] = useState("");
+  const [moneyDrafts, setMoneyDrafts] = useState<Record<string, string>>({});
+  const summary = sampleSummary();
+  const live = extractBrief(description);
   const start = (next: Intent = "overview") => {
     const numbers = extractBrief(description);
     setValues({
@@ -58,6 +71,7 @@ export default function StartPage({
         Object.entries(numbers).map(([key, n]) => [key, String(n)]),
       ),
     });
+    setMoneyDrafts({});
     setRecognized(Object.keys(numbers));
     setIntent(next);
     setReview(true);
@@ -86,9 +100,46 @@ export default function StartPage({
         )}
       </span>
       <input
-        type={opts.type ?? "number"}
-        value={values[key]}
-        onChange={(e) => update(key, e.target.value)}
+        aria-label={label}
+        type={
+          ["price", "rent", "expenses", "loan", "equity"].includes(key)
+            ? "text"
+            : (opts.type ?? "number")
+        }
+        inputMode={
+          ["price", "rent", "expenses", "loan", "equity"].includes(key)
+            ? "decimal"
+            : undefined
+        }
+        value={
+          ["price", "rent", "expenses", "loan", "equity"].includes(key) &&
+          moneyDrafts[key] === undefined &&
+          values[key]
+            ? new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+                maximumFractionDigits: 2,
+              }).format(Number(values[key]))
+            : (moneyDrafts[key] ?? values[key] ?? "")
+        }
+        onFocus={(e) => e.currentTarget.select()}
+        onBlur={() =>
+          setMoneyDrafts((d) => {
+            const next = { ...d };
+            delete next[key];
+            return next;
+          })
+        }
+        onChange={(e) => {
+          if (["price", "rent", "expenses", "loan", "equity"].includes(key))
+            setMoneyDrafts((d) => ({ ...d, [key]: e.target.value }));
+          update(
+            key,
+            ["price", "rent", "expenses", "loan", "equity"].includes(key)
+              ? e.target.value.replace(/[$,\s]/g, "")
+              : e.target.value,
+          );
+        }}
         min={opts.min}
         max={opts.max}
         step={key === "units" ? 1 : "any"}
@@ -120,7 +171,7 @@ export default function StartPage({
             Sample report
           </button>
           <button className="iq-header-pill" onClick={() => onOpen()}>
-            Open workspace <ArrowUpRight size={14} />
+            Monthly planner <ArrowUpRight size={14} />
           </button>
         </nav>
       </header>
@@ -148,6 +199,20 @@ export default function StartPage({
               className="iq-setup"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (
+                  !file &&
+                  intent === "overview" &&
+                  values.strategy === "acquisition"
+                ) {
+                  const a = setupAnnual(values);
+                  const errors = calculate(a).errors;
+                  if (errors.length) {
+                    setFileError(errors.join(" "));
+                    return;
+                  }
+                  onAnnual(a);
+                  return;
+                }
                 onOpen({
                   project: setupProject(values, description),
                   tab: file
@@ -243,15 +308,45 @@ export default function StartPage({
                   <span>{file.name} · ready for column mapping</span>
                 </div>
               )}
-              <p className="iq-setup-disclosure">
-                This creates a starting model, not completed underwriting. Empty
-                amounts start at zero. A loan starts with 30-year amortization
-                and five-year maturity. Default rental exit cap: 6.5%; selling
-                costs: 2.5%; required return: 10%. Review these, closing costs,
-                reserves, vacancy and capital plans in the workspace.
-                Development units remain unavailable until you enter delivery
-                dates.
-              </p>
+              <section className="iq-defaults-panel">
+                <h2>Assumptions we filled in</h2>
+                <p>
+                  Editable defaults · not verified against your deal. Unentered
+                  dollar amounts start at $0. Vacancy, collection loss,
+                  management, closing costs and CapEx start at zero; review them
+                  before relying on returns.
+                </p>
+                <div className="iq-setup-grid">
+                  {field(
+                    "exitCap",
+                    "Exit cap (%) · blank = going-in cap + 0.625%",
+                    { min: 0.001, max: 100 },
+                  )}
+                  {field("sellingCosts", "Selling costs (%) · default 2.5%", {
+                    min: 0,
+                    max: 100,
+                  })}
+                  {field("requiredReturn", "Target return (%) · default 10%", {
+                    min: 0,
+                    max: 100,
+                  })}
+                  {field("amortization", "Amortization years · default 30", {
+                    min: 1,
+                    max: 50,
+                  })}
+                  {field("maturity", "Maturity years · default 10", {
+                    min: 1,
+                    max: 50,
+                  })}
+                  {field("hold", "Hold years · default 5", { min: 3, max: 10 })}
+                </div>
+                <p>
+                  Full amortization starts after IO; interest accrues at 30/360.
+                  No real-time market or tax data is used. Development delivery
+                  dates need entry in the monthly planner.
+                </p>
+              </section>
+              {fileError && <p role="alert">{fileError}</p>}
               <div className="iq-setup-footer">
                 <span>Saved on this browser. No account needed.</span>
                 <button className="button primary" type="submit">
@@ -270,7 +365,7 @@ export default function StartPage({
                 <br />A clearer picture.
               </h1>
               <p className="iq-hero-subtitle">
-                Start with a question, a spreadsheet, or the numbers you have.
+                Paste deal details, map a spreadsheet, or enter your numbers.
               </p>
               <form
                 className="iq-composer"
@@ -280,18 +375,18 @@ export default function StartPage({
                 }}
               >
                 <label className="sr-only" htmlFor="property-brief">
-                  Describe a property or what you want to analyze
+                  Paste deal details
                 </label>
                 <textarea
                   id="property-brief"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe a property or ask what you want to analyze"
+                  placeholder="Paste deal details"
                   rows={3}
                 />
                 {!description && (
                   <span className="iq-composer-example">
-                    e.g. Evaluate an 8-unit rental with $9,600 in monthly rent
+                    Simple text matching · review every extracted figure.
                   </span>
                 )}
                 {file && (
@@ -342,8 +437,30 @@ export default function StartPage({
                   </p>
                 )}
               </form>
+              <p className="composer-formats">
+                Try: “$2.8M purchase; 20 units at $1,900/mo; 6.25% rate; 65%
+                LTV.”
+                <br />
+                Or: “24 units for $3.1 million; rents are $1,100; annual
+                expenses $120k.”
+              </p>
+              <div className="brief-preview" aria-live="polite">
+                {Object.entries(live).map(([key, n]) => (
+                  <span key={key}>
+                    {key}: {n?.toLocaleString("en-US")}
+                  </span>
+                ))}
+              </div>
+              <div className="mode-cards">
+                <button className="button primary" onClick={() => onAnnual()}>
+                  Quick analysis · annual underwriting, debt and sensitivity
+                </button>
+                <button className="button" onClick={() => onOpen()}>
+                  Monthly planner · leasing, development and cash timing
+                </button>
+              </div>
               <div className="iq-secondary-actions">
-                <button onClick={() => onOpen({ project: sampleProject() })}>
+                <button onClick={() => onAnnual()}>
                   <Play size={17} className="iq-play" />
                   Try with sample property
                 </button>
@@ -394,8 +511,11 @@ export default function StartPage({
               <article className="iq-sample-card">
                 <div className="iq-sample-heading">
                   <div>
-                    <h3>Maple Court</h3>
-                    <p>8-unit multifamily · Illustrative sample</p>
+                    <h3>{summary.name}</h3>
+                    <p>
+                      {summary.units}-unit multifamily · Fictional value-add
+                      case
+                    </p>
                   </div>
                   <button
                     className="iq-text-link"
@@ -408,9 +528,9 @@ export default function StartPage({
                 </div>
                 <div className="iq-sample-metrics">
                   {[
-                    ["Annual rental income", 115200],
-                    ["Operating expenses", 42000],
-                    ["Net operating income", 73200],
+                    ["Annual potential rent", summary.rent],
+                    ["Operating expenses", summary.expenses],
+                    ["Net operating income", summary.noi],
                   ].map(([label, n]) => (
                     <div key={label}>
                       <span>{label}</span>
@@ -420,7 +540,8 @@ export default function StartPage({
                 </div>
                 <div
                   className="iq-income-bar"
-                  aria-label="Illustrative income: $73,200 net operating income and $42,000 expenses"
+                  role="img"
+                  aria-label={`Illustrative NOI ${money(summary.noi)}; operating expenses ${money(summary.expenses)}`}
                 >
                   <span />
                   <span />
@@ -428,11 +549,11 @@ export default function StartPage({
                 <div className="iq-bar-legend">
                   <span>
                     <i />
-                    Net operating income &nbsp; $73,200
+                    Net operating income &nbsp; {money(summary.noi)}
                   </span>
                   <span>
                     <i />
-                    Operating expenses &nbsp; $42,000
+                    Operating expenses &nbsp; {money(summary.expenses)}
                   </span>
                 </div>
                 <small>
@@ -492,8 +613,8 @@ export default function StartPage({
           <Brand />
         </span>
         <p>Local analysis. Transparent assumptions.</p>
-        <button onClick={onAnnual}>
-          Open annual model <ArrowUpRight size={14} />
+        <button onClick={() => onAnnual()}>
+          Quick analysis <ArrowUpRight size={14} />
         </button>
       </div>
     </div>

@@ -50,7 +50,7 @@ export const legalDocuments: Record<LegalId, LegalDocument> = {
           "Operating the website and identifying input or calculation errors.",
         ],
         after: [
-          "If you contact the operator through a contact method added in the future, voluntarily provided information may be used to respond to your inquiry and meet applicable legal obligations. Contact details are currently pending.",
+          "If you contact the operator by email, voluntarily provided information may be used to respond to your inquiry and meet applicable legal obligations. Contact the operator at abc@gmail.com.",
         ],
       },
       {
@@ -111,7 +111,7 @@ export const legalDocuments: Record<LegalId, LegalDocument> = {
           "Opt out of certain forms of information sharing or processing.",
         ],
         after: [
-          "For local-only information, use the browser controls described in section 6. A public contact method for the operator is pending; the Contact page will be updated when one is available. No privacy-request submission channel is currently provided by this website. Applicable requests received by the operator will be addressed in accordance with legal requirements.",
+          "For local-only information, use the browser controls described in section 6. Email abc@gmail.com for privacy inquiries. Applicable requests received by the operator will be addressed in accordance with legal requirements.",
         ],
       },
       {
@@ -302,9 +302,9 @@ export const legalDocuments: Record<LegalId, LegalDocument> = {
     introduction: ["PropertyIQ is operated by Lewis Adkins."],
     sections: [
       {
-        title: "Contact details pending",
+        title: "Contact: abc@gmail.com",
         paragraphs: [
-          "A public contact email address has not been added yet. There is currently no contact form or privacy-request submission channel on this website. This page will be updated when contact details are available.",
+          "For support, feedback, or privacy inquiries, email abc@gmail.com. This website has no contact-submission form.",
           "Do not enter sensitive personal information into project notes as a support request. Project notes stay in your browser and are not delivered to the operator.",
         ],
       },

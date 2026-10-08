@@ -2,7 +2,7 @@
 
 ## Timeline and revenue
 
-Year 0 is the acquisition equity outflow. Year 1 uses input annual income and expense assumptions. Subsequent years compound the relevant growth rate from Year 1, not from a pre-growth acquisition-year base. Sale occurs at the end of Year 3, 4 or 5. The model computes an additional forward year of NOI for valuation.
+Year 0 is the acquisition equity outflow. Year 1 uses input annual income and expense assumptions. Subsequent years compound the relevant growth rate from Year 1, not from a pre-growth acquisition-year base. Sale occurs at the end of the selected whole-year hold, from 3 through 10 years. The model computes an additional forward year of NOI for valuation.
 
 Manual stabilized residential rent = units × average monthly rent × 12. Vacancy, credit loss and concessions are separate additive percentages of this gross potential rent. Their combined total must be between zero and 100%. Annual other income = monthly other income × 12, and it grows independently. EGI = gross residential rent less those losses plus other income.
 
@@ -10,19 +10,21 @@ Current rent-roll performance uses only occupied contractual monthly rents × 12
 
 ## Operating performance
 
-NOI = EGI − annual operating expenses. Management is either a percentage of each year's EGI or an annual dollar expense compounded by expense growth. Other expense categories grow at the common expense growth rate. Reserves, capital spending, loan costs, debt service, depreciation, income taxes and amortization of debt are excluded from NOI.
+NOI = EGI − annual operating expenses. Management is either a percentage of each year's EGI or an annual dollar expense compounded by expense growth. Taxes and insurance use their own growth rates; remaining expense categories and fixed management use the common expense growth rate. Legacy files without category rates inherit common expense growth. Reserves, capital spending, loan costs, debt service, depreciation, income taxes and amortization of debt are excluded from NOI.
 
-Reserves = per-unit annual reserve allowance × units, held constant. They are a cash outflow below NOI, without a terminal reserve-account release. Annual capital spending is a separate constant cash outflow. Initial CapEx is funded in Year 0 and is not deducted again in annual operating cash flow.
+Reserves = per-unit annual reserve allowance × units, compounded by entered inflation from Year 2. They are a cash outflow below NOI, without a terminal reserve-account release. Annual capital spending compounds at entered inflation and remains a separate below-NOI cash outflow. Initial CapEx is funded in Year 0 and is not deducted again in annual operating cash flow.
 
 NOI margin = NOI / EGI. Operating expense ratio = operating expenses / EGI. Going-in cap rate = Year 1 NOI / acquisition price. Zero EGI makes related ratios unavailable.
 
 ## Debt
 
-Loan = price × LTV, or the entered loan amount. Borrowing above acquisition price is unsupported. Origination fees are a percentage of loan proceeds and funded from equity at acquisition.
+Loan = price × LTV, entered loan amount, or the minimum of LTV, DSCR and debt-yield limits. DSCR capacity uses Year 1 NOI / minimum DSCR / annual amortizing service per dollar (including actual/360 cash interest when selected), even during IO. Debt-yield capacity uses Year 1 NOI / minimum debt yield. The UI identifies the binding constraint; this is modeled capacity, not lender approval. Borrowing above acquisition price is unsupported. Origination fees are a percentage of loan proceeds and funded from equity at acquisition.
 
 Monthly rate r = nominal annual interest / 12. With n amortization months, payment = P × r / [1 − (1+r)^−n]. For zero interest, payment = P / n. Monthly interest = opening balance × r. Principal = payment − interest, limited to outstanding principal. Closing balance = opening balance − principal. No currency rounding is applied internally, so display totals can differ by a few cents from lender schedules.
 
-Interest-only months consume the original amortization term. They charge monthly interest without scheduled principal repayment. Afterward the opening principal recasts over the remaining original amortization months. This convention is explicitly disclosed and may differ from a particular loan agreement.
+Interest-only periods charge interest with no scheduled principal. By default, the full original amortization term starts after IO. The selectable “IO consumes original term” convention recasts over original term minus IO months. Neither convention substitutes for loan documents.
+
+30/360 uses annual rate / 12. Actual/360 uses actual calendar days in each modeled month, including leap years, divided by 360. Scheduled principal remains based on the nominal 30/360 amortization schedule; total cash payment varies by accrued interest. Full calendar months only; no stub periods, lender penny rounding, or lender-specific payment rules are inferred. See [Fannie Mae interest calculation guidance](https://mfguide.fanniemae.com/node/5436).
 
 The schedule stops at the earliest of modeled sale, loan maturity or complete amortization. Fully amortized debt remains debt-free through sale. Annual regular debt service aggregates monthly principal and interest; it excludes a balloon repayment. Balloon due at contractual maturity is displayed separately. Sale payoff occurs after the exit year's final regular payment and is deducted from net sale proceeds exactly once.
 
@@ -36,7 +38,7 @@ Initial equity = acquisition price + closing costs + initial CapEx + loan origin
 
 Operating equity cash = NOI − regular debt service − reserves − annual CapEx. No extra subtraction of regular principal occurs because regular debt service already includes it.
 
-Gross exit value = next year's NOI / exit cap rate. Selling costs = gross exit value × selling cost percentage. Net sale proceeds = gross exit value − selling costs − outstanding loan balance after regular payments. The selected exit year's equity cash flow adds net sale proceeds exactly once. Cash flows after sale are unavailable; later annual operating values are explicitly reference values.
+Gross exit value = next year's NOI / effective exit cap rate. New analyses default to going-in cap plus 62.5 bps; manual rates remain editable. Compression produces a warning. Optional tax reassessment replaces forward tax with an entered effective rate times sale value: gross value = (forward NOI + original forward tax) / (exit cap + effective tax rate). This solves the circular valuation algebraically; it does not assert actual jurisdiction rules. Selling costs = gross exit value × selling cost percentage. Net sale proceeds = gross exit value − selling costs − outstanding loan balance after regular payments. The selected exit year's equity cash flow adds net sale proceeds exactly once. Cash flows after sale are unavailable; later annual operating values are explicitly reference values.
 
 Nonpositive forward NOI makes capitalization-based sale and return metrics unavailable. The model does not characterize an investment as good or safe. Sale values and scenarios are hypothetical.
 
@@ -60,22 +62,41 @@ CSV parsing uses [Papa Parse](https://www.papaparse.com/docs). XLSX reading uses
 
 ## Independent benchmarks
 
-Financial reference values were derived with 40-digit Python Decimal arithmetic using closed-form loan balances and an independent rate-domain bisection solver. They are literal expectations in the test suite, not outputs from the TypeScript implementation.
+Expected values are literals derived from an independent 40-digit Python Decimal implementation using closed-form payments, independently scheduled debt balances and a separate rate-domain root solver. The reproducible generator is scripts/decimal_benchmarks.py.
 
-| Benchmark | Expected value |
+| Benchmark | Expected |
 |---|---:|
-| $500,000 loan, nominal 6%, 360 months: monthly payment | $2,997.75262576376197 |
+| $500,000, 6%, 360 months: monthly payment | $2,997.75262576376197 |
 | Balance after 12 payments | $493,859.94143861640561 |
-| Principal paid in Year 1 | $6,140.05856138359439 |
-| Interest paid in Year 1 | $29,832.97294778154928 |
 | Balance after 60 payments | $465,271.78411409780075 |
-| $120,000 loan, 6%, 12 IO months then 108 amortizing months: recast payment | $1,440.68995571107103 |
-| Microsoft IRR example (-70,000; 12,000; 15,000; 18,000; 21,000; 26,000) | 8.663094803653161% |
-| Fictional demo initial equity | $1,134,200 |
-| Fictional demo Year 1 NOI | $247,119 |
-| Fictional demo Year 5 loan balance | $1,693,589.294175316 |
-| Fictional demo net sale proceeds | $2,634,440.990040503 |
-| Fictional demo levered IRR | 25.79549071435082% |
-| Fictional demo equity multiple | 2.835137409921938x |
+| $1M, 6%, 24 IO months then 360 amortizing months | $5,995.50525152752395 |
+| Same loan with IO consuming original term (336 months) | $6,151.24016636376617 |
+| $1M at 6%, January actual/360 IO interest (31 days) | $5,166.66666666666667 |
+| Same loan, 365-day calendar-year IO interest | $60,833.33333333333333 |
+| DSCR loan limit at 3x coverage for shared sample | $1,180,198.9310385654 |
+| Debt-yield loan limit at 30% for shared sample | $849,106.6666666667 |
+| LTV loan limit at 20% for shared sample | $560,000 |
+| Shared sample initial equity | $1,214,200 |
+| Shared sample Year 1 NOI | $254,732 |
+| Shared sample Year 5 NOI | $304,920.48843992 |
+| Shared sample forward NOI | $318,862.3930272588 |
+| Shared sample going-in cap | 9.09757142857143% |
+| Shared sample exit cap | 9.72257142857143% |
+| Shared sample final debt balance | $1,693,589.29417531599473 |
+| Shared sample net sale proceeds | $1,504,030.13691440352392 |
+| Shared sample annual levered IRR | 14.1693715686322317% |
+| Shared sample equity multiple | 1.78032890021867724x |
 
-The periodic IRR example is from [Microsoft's IRR documentation](https://support.microsoft.com/en-us/excel/functions/irr-function?nochrome=true). Loan maturity and balloon concepts are consistent with the [CFPB explanation of balloon payments](https://www.consumerfinance.gov/ask-cfpb/what-is-a-balloon-payment-when-is-one-allowed-en-104/); those consumer-credit materials do not establish multifamily lending terms or legal requirements for this model.
+The fictional value-add sample assumes $160,000 of initial capital, $1,900 monthly rent per unit and 4% annual rent growth as a simplified improvement plan. Expenses including management are 41.6509% of Year 1 EGI. Acquisition property taxes are assumed at 2% of purchase price; insurance is $24,000. These are illustrative assumptions, not a market comp or actual reassessment. No inputs or outputs are attributed to Walnut.
+
+## Agreement between engines
+
+src/finance/sharedSample.ts maps one annual assumption set into the independently calculated monthly engine. Parity tests cover the shared sample, both IO conventions, actual/360, no debt, tax reassessment, constrained sizing, fixed management growth, rent-roll income, distinct expense growth and 10-year holds.
+
+NOI, cash-flow annual roll-ups, exit debt balance and net sale proceeds agree within $0.000001 (no internal penny rounding). Annual IRR calculated from monthly annual roll-ups agrees within 1e-10. Dated monthly XIRR intentionally uses actual 365-day year timing and earlier monthly distributions; the tested cases differ from annual IRR by less than one percentage point. The interface labels the engine and return convention, so annual IRR and monthly XIRR are never presented as interchangeable.
+
+The shared sample uses annual growth steps, zero retained cash and monthly distribution of operating cash. Other monthly projects can use monthly compounding, cash retention, lease events, construction, actual overrides and refinancing, which have no direct annual equivalent. Sale receipts in monthly ledger rows are before financing payoff; annual net sale is after payoff.
+
+## Real workbook validation
+
+No real Walnut workbook was supplied for this release. Synthetic benchmarks and engine parity are complete; real-deal reconciliation is pending. RECONCILIATION.md supplies mappings, tolerance policy and discrepancy records. Do not describe this project as reconciled to Walnut until the workbook comparison is performed.

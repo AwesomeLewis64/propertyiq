@@ -1,13 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Card,
-  Select,
-  NumberField,
-  TextField,
-  Toggle,
-  Metric,
-  Plot,
-} from "./Controls";
+import { Card, NumberField, TextField, Toggle, Metric, Plot } from "./Controls";
 import type { ProjectEditor } from "./UnitEditor";
 import type { Project } from "./types";
 import { forecast } from "./engine";
@@ -40,17 +32,28 @@ export default function DecisionLab(props: Props) {
         title="Decision Lab"
         note="Saved assumptions, transparent comparisons, and practical funding questions. Calculations use the operating plan with actual overrides removed."
       >
-        <Select
-          label="Decision tool"
-          value={section}
-          onChange={setSection}
-          options={[
+        <div
+          className="decision-tabs"
+          role="tablist"
+          aria-label="Decision tools"
+        >
+          {[
             ["comparison", "Base / downside / upside"],
             ["renovations", "Renovation prioritization"],
             ["lenders", "Lender quote comparison"],
             ["breakeven", "Break-even dashboard"],
-          ]}
-        />
+          ].map(([id, label]) => (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={section === id}
+              key={id}
+              onClick={() => setSection(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </Card>
       {section === "comparison" ? (
         <Comparison {...props} />
@@ -99,7 +102,7 @@ function Comparison({ p, set, create }: Props) {
         title="Three operating and financing scenarios"
         note="Base uses the current operating plan. Scenario rates are hypothetical new fixed-rate quotes or floating reset shocks. A refinance delayed beyond contractual maturity is invalid; maturity is never silently extended."
       >
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>
@@ -178,7 +181,7 @@ function Comparison({ p, set, create }: Props) {
               </p>
             ))}
             {c.m.irrReason && <p>{c.m.irrReason}</p>}
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table>
                 <thead>
                   <tr>
@@ -284,7 +287,7 @@ function Renovations({ p, set }: Props) {
           value={money(selected.reduce((s, r) => s + r.cost, 0))}
         />
       </div>
-      <div className="table-scroll">
+      <div className="table-scroll" tabIndex={0}>
         <table>
           <thead>
             <tr>
@@ -414,7 +417,7 @@ function Lenders({ p, set, create }: Props) {
           financing remains in the debt editor.
         </p>
       )}
-      <div className="table-scroll">
+      <div className="table-scroll" tabIndex={0}>
         <table>
           <thead>
             <tr>

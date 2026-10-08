@@ -1,469 +1,18 @@
-import { payment } from "../finance/debt";
+import { payment, accruedInterest } from "../finance/debt";
 import { dateAt, equityMultiple, xirr, xnpv } from "./returns";
-import { validateTools } from "./toolSchema";
 import type {
   Project,
-  Unit,
   Monthly,
   DebtRecord,
   Forecast,
   DatedFlow,
   Loan,
 } from "./types";
-export function validateProject(p: Project): string[] {
-  const errors: string[] = [];
-  const visit = (v: unknown, path: string) => {
-    if (typeof v === "number" && (!Number.isFinite(v) || Math.abs(v) > 1e12))
-      errors.push(`${path}: enter a finite number within the supported range.`);
-    else if (Array.isArray(v))
-      v.forEach((x, i) => visit(x, `${path} ${i + 1}`));
-    else if (v && typeof v === "object")
-      Object.entries(v).forEach(([k, x]) => visit(x, `${path} ${k}`));
-  };
-  visit(p, "");
-  if (p.tools) errors.push(...validateTools(p.tools));
-  if (p.tools && Array.isArray(p.tools.absorption?.deposits))
-    for (const d of p.tools.absorption.deposits) {
-      const u = p.units.find((u) => u.id === d.unit);
-      if (
-        !u ||
-        (u.saleMonth > 0 &&
-          (d.month > u.saleMonth || d.refundMonth > u.saleMonth))
-      )
-        errors.push(
-          "Buyer deposits require an existing unit and collection/refund before or at its closing.",
-        );
-    }
-  if (p.tools && Array.isArray(p.tools.absorption?.deposits)) {
-    for (const u of p.units) {
-      const remaining = p.tools.absorption.deposits
-        .filter((d) => d.unit === u.id && !d.refundMonth)
-        .reduce((sum, d) => sum + d.amount, 0);
-      if (u.saleMonth > 0 && remaining > u.salePrice)
-        errors.push(
-          `Unit ${u.id}: unrefunded buyer deposits exceed its sale price.`,
-        );
-    }
-  }
-  if (
-    !/^\d{4}-\d{2}-01$/.test(p.startDate) ||
-    !Number.isFinite(Date.parse(p.startDate))
-  )
-    errors.push("Forecast start must be a valid first-of-month date.");
-  if (!Number.isInteger(p.months) || p.months < 12 || p.months > 120)
-    errors.push("Forecast horizon must be 12–120 whole months.");
-  if (
-    p.price < 0 ||
-    p.closing < 0 ||
-    p.openingCash < 0 ||
-    p.minimumCash < 0 ||
-    p.initialCapex < 0 ||
-    p.asOfEquity < 0 ||
-    p.reservesMonthly < 0 ||
-    p.otherMonthly < 0
-  )
-    errors.push("Property costs and cash balances cannot be negative.");
-  if (!p.units.length || p.units.length > 500)
-    errors.push("Use 1–500 units per project.");
-  if (
-    new Set(p.units.map((u) => u.id.trim().toLowerCase())).size !==
-      p.units.length ||
-    p.units.some((u) => !u.id.trim())
-  )
-    errors.push("Unit IDs must be present and unique.");
-  const rate = (v: number, min = 0, max = 1) => v >= min && v <= max;
-  if (
-    !rate(p.creditLoss) ||
-    !rate(p.management) ||
-    !rate(p.contingency) ||
-    !rate(p.sellingCost) ||
-    !rate(p.exitCap, 0.001) ||
-    !rate(p.discount, 0, 2) ||
-    !rate(p.rentGrowth, -0.99, 1)
-  )
-    errors.push("Check property percentages; exit cap must be positive.");
-  for (const u of p.units) {
-    if (
-      [
-        u.rent,
-        u.marketRent,
-        u.renovationCost,
-        u.renovatedRent,
-        u.targetRent,
-        u.concession,
-        u.salePrice,
-      ].some((v) => v < 0) ||
-      !rate(u.renewalIncrease, -0.99)
-    )
-      errors.push(
-        `Unit ${u.id}: costs/rents must be nonnegative and renewal growth valid.`,
-      );
-    if (
-      [
-        u.availableMonth,
-        u.leaseEnd,
-        u.turnoverMonths,
-        u.renovationMonth,
-        u.renovationMonths,
-        u.targetMonth,
-        u.concessionMonths,
-        u.saleMonth,
-      ].some((v) => !Number.isInteger(v) || v < 0 || v > 240)
-    )
-      errors.push(
-        `Unit ${u.id}: schedule months must be whole numbers from 0–240.`,
-      );
-    if (
-      u.renovationEnabled !== false &&
-      u.renovationCost > 0 &&
-      (u.renovationMonth < 1 || u.renovationMonths < 1)
-    )
-      errors.push(
-        `Unit ${u.id}: renovation spending needs a positive start and duration.`,
-      );
-    for (const event of u.events ?? []) {
-      if (
-        !["rent", "lease", "vacant", "concession"].includes(event.kind) ||
-        !Number.isInteger(event.month) ||
-        event.month < 1 ||
-        event.month > 240 ||
-        !Number.isInteger(event.duration) ||
-        event.duration < 1 ||
-        event.duration > 240 ||
-        event.amount < 0
-      )
-        errors.push(`Unit ${u.id}: invalid dated lease event.`);
-    }
-    if (
-      (u.events?.length ?? 0) > 500 ||
-      new Set((u.events ?? []).map((e) => e.id)).size !==
-        (u.events?.length ?? 0)
-    )
-      errors.push(`Unit ${u.id}: use at most 500 unique events.`);
-    if (
-      p.strategy === "development-sale" &&
-      u.saleMonth > 0 &&
-      u.saleMonth < u.availableMonth
-    )
-      errors.push(`Unit ${u.id}: sale cannot precede delivery / availability.`);
-  }
-  for (const e of p.expenses)
-    if (
-      e.annual < 0 ||
-      e.replacementAnnual < 0 ||
-      e.reimbursement < 0 ||
-      !rate(e.growth, -0.99)
-    )
-      errors.push(`Expense ${e.name}: invalid amount or growth.`);
-  for (const b of p.budget)
-    if (
-      b.amount < 0 ||
-      !Number.isInteger(b.start) ||
-      b.start < 1 ||
-      !Number.isInteger(b.duration) ||
-      b.duration < 1
-    )
-      errors.push(
-        `Budget ${b.name}: use a nonnegative amount and positive whole start/duration.`,
-      );
-  for (const l of p.loans) {
-    if (
-      l.rateCapExpiry !== undefined &&
-      (!Number.isInteger(l.rateCapExpiry) ||
-        l.rateCapExpiry < 0 ||
-        l.rateCapExpiry > 240)
-    )
-      errors.push(`${l.name}: invalid rate-cap expiry month.`);
-    if (
-      l.amount < 0 ||
-      !rate(l.rate) ||
-      !rate(l.rateCap) ||
-      !rate(l.fee) ||
-      !rate(l.penalty) ||
-      !rate(l.ltc) ||
-      !rate(l.releasePercent, 0, 2) ||
-      l.amortMonths < 1 ||
-      l.ioMonths < 0 ||
-      (l.kind === "term" && l.ioMonths >= l.amortMonths) ||
-      l.maturityMonth <= l.fundingMonth
-    )
-      errors.push(`${l.name}: invalid debt terms.`);
-    if (
-      [
-        l.fundingMonth,
-        l.amortMonths,
-        l.ioMonths,
-        l.maturityMonth,
-        l.refiMonth,
-        l.refiAmort,
-        l.refiIo,
-        l.refiMaturity,
-      ].some((v) => !Number.isInteger(v) || v < 0)
-    )
-      errors.push(`${l.name}: debt months must be whole numbers.`);
-    if (
-      l.refiMonth > 0 &&
-      (l.refiMonth <= l.fundingMonth ||
-        l.refiMonth > l.maturityMonth ||
-        l.refiAmort <= l.refiIo ||
-        l.refiMaturity <= l.refiMonth ||
-        l.refiAmount < 0 ||
-        !rate(l.refiRate) ||
-        !rate(l.refiLtv) ||
-        !rate(l.refiFee))
-    )
-      errors.push(
-        `${l.name}: refinance must occur before maturity, with valid replacement terms.`,
-      );
-    if (
-      l.ratePoints.some(
-        (r) => !Number.isInteger(r.month) || r.month < 1 || !rate(r.annual),
-      )
-    )
-      errors.push(`${l.name}: invalid rate reset.`);
-  }
-  if (
-    p.loans.length > 20 ||
-    new Set(p.loans.map((l) => l.name.trim().toLowerCase())).size !==
-      p.loans.length ||
-    p.loans.some((l) => !l.name.trim())
-  )
-    errors.push("Use at most 20 loans with unique names.");
-  if (p.budget.length > 500 || p.expenses.length > 100)
-    errors.push("Use at most 500 budget lines and 100 expense categories.");
-  if (
-    p.expenses.some((e) =>
-      [e.startMonth, e.changeMonth].some((v) => !Number.isInteger(v) || v < 0),
-    )
-  )
-    errors.push(
-      "Expense start/change months must be nonnegative whole months.",
-    );
-  if (
-    p.lender.minDscr <= 0 ||
-    !rate(p.lender.maxLtv) ||
-    !rate(p.lender.minYield, 0.0001) ||
-    p.lender.value <= 0 ||
-    p.lender.amortMonths < 1 ||
-    p.lender.periodStart < 1 ||
-    p.lender.periodStart > p.months - 11 ||
-    p.lender.reserveAnnual < 0 ||
-    !rate(p.lender.stressRate)
-  )
-    errors.push(
-      "Lender sizing requires positive value, DSCR, yield, amortization and a complete 12-month forecast period.",
-    );
-  if (
-    !p.partners.length ||
-    Math.abs(p.partners.reduce((s, v) => s + v.share, 0) - 1) > 1e-6 ||
-    p.partners.some((v) => v.share < 0 || v.share > 1) ||
-    new Set(p.partners.map((v) => v.id)).size !== p.partners.length
-  )
-    errors.push(
-      "Partner ownership shares must total 100%, with unique partners.",
-    );
-  if (
-    !p.partners.some((v) => v.id === p.waterfall.sponsorId) ||
-    !rate(p.waterfall.preferred) ||
-    !rate(p.waterfall.promote)
-  )
-    errors.push("Choose a valid sponsor and waterfall percentages.");
-  if (
-    [p.tax.ordinaryRate, p.tax.capitalRate, p.tax.recaptureRate].some(
-      (v) => !rate(v),
-    ) ||
-    p.tax.annualDepreciation < 0 ||
-    p.tax.depreciableBasis < 0 ||
-    p.tax.saleBasis < 0
-  )
-    errors.push("Tax rates and user-entered basis/depreciation must be valid.");
-  if (
-    p.historical.some(
-      (f) =>
-        !/^\d{4}-\d{2}-\d{2}$/.test(f.date) ||
-        !Number.isFinite(Date.parse(f.date)) ||
-        new Date(f.date).toISOString().slice(0, 10) !== f.date ||
-        f.date >= p.startDate,
-    )
-  )
-    errors.push(
-      "Historical flows require valid dates before the forecast start.",
-    );
-  if (
-    p.actuals.some(
-      (r) =>
-        !/^\d{4}-(0[1-9]|1[0-2])$/.test(r.month) ||
-        [r.rent, r.otherIncome, r.opex, r.capex, r.debtService].some(
-          (v) => v < 0,
-        ),
-    ) ||
-    new Set(p.actuals.map((r) => r.month)).size !== p.actuals.length
-  )
-    errors.push(
-      "Actuals require unique valid YYYY-MM periods and nonnegative values.",
-    );
-  return [...new Set(errors)].slice(0, 30);
-}
-function legacyUnitMonth(u: Unit, m: number, p: Project) {
-  let vacant = !u.occupied && m < u.availableMonth;
-  const renovation =
-    u.renovationMonth > 0 &&
-    m >= u.renovationMonth &&
-    m < u.renovationMonth + u.renovationMonths;
-  if (renovation) vacant = true;
-  if (
-    u.leaseEnd > 0 &&
-    u.renewal === "vacate" &&
-    m > u.leaseEnd &&
-    m <= u.leaseEnd + u.turnoverMonths
-  )
-    vacant = true;
-  if (p.strategy.startsWith("development") && m < u.availableMonth)
-    vacant = true;
-  if (p.strategy === "development-sale")
-    return {
-      rent: 0,
-      potential: 0,
-      concession: 0,
-      occupied: 0,
-      capex: renovation
-        ? (u.renovationCost / u.renovationMonths) * (1 + p.contingency)
-        : 0,
-    };
-  let rent = u.occupied ? u.rent : u.marketRent,
-    baseMonth = u.occupied ? 1 : Math.max(1, u.availableMonth);
-  const events: { month: number; rent: number }[] = [];
-  if (u.renovationMonth > 0)
-    events.push({
-      month: u.renovationMonth + u.renovationMonths,
-      rent: u.renovatedRent,
-    });
-  if (u.targetMonth > 0)
-    events.push({ month: u.targetMonth, rent: u.targetRent });
-  if (u.leaseEnd > 0 && u.renewal === "vacate")
-    events.push({
-      month: u.leaseEnd + u.turnoverMonths + 1,
-      rent: u.marketRent,
-    });
-  for (const event of events.sort((a, b) => a.month - b.month))
-    if (m >= event.month && event.month >= baseMonth) {
-      rent = event.rent;
-      baseMonth = event.month;
-    }
-  if (u.leaseEnd > 0 && u.renewal === "renew" && m > u.leaseEnd) {
-    const first = u.leaseEnd + 1,
-      start = Math.max(0, Math.floor((baseMonth - first) / 12) + 1),
-      last = Math.floor((m - first) / 12);
-    rent *= Math.pow(1 + u.renewalIncrease, Math.max(0, last - start + 1));
-  }
-  rent *= Math.pow(1 + p.rentGrowth, Math.max(0, m - baseMonth) / 12);
-  const leaseStart = Math.max(
-    !u.occupied ? u.availableMonth : 1,
-    u.renovationMonth > 0 ? u.renovationMonth + u.renovationMonths : 1,
-    u.renewal === "vacate" ? u.leaseEnd + u.turnoverMonths + 1 : 1,
-  );
-  const concession =
-    !vacant && m >= leaseStart && m < leaseStart + u.concessionMonths
-      ? Math.min(rent, u.concession)
-      : 0;
-  return {
-    rent: vacant ? 0 : rent,
-    potential: rent,
-    concession,
-    occupied: vacant ? 0 : 1,
-    capex: renovation
-      ? (u.renovationCost / u.renovationMonths) * (1 + p.contingency)
-      : 0,
-  };
-}
-export function unitMonth(original: Unit, m: number, p: Project) {
-  const u =
-    original.renovationEnabled === false
-      ? { ...original, renovationMonth: 0, renovationCost: 0 }
-      : original;
-  const base = legacyUnitMonth(u, m, p);
-  if (p.strategy === "development-sale" || !u.events?.length) return base;
-  const events = u.events
-    .filter((e) => e.month <= m)
-    .sort((a, b) => a.month - b.month);
-  const rentEvent = events
-    .filter((e) => e.kind === "rent" || e.kind === "lease")
-    .at(-1);
-  let rent = rentEvent
-    ? rentEvent.amount * Math.pow(1 + p.rentGrowth, (m - rentEvent.month) / 12)
-    : base.potential;
-  let occupied = base.occupied;
-  const lease = events.filter((e) => e.kind === "lease").at(-1);
-  if (lease) occupied = 1;
-  const vacant = events
-    .filter((e) => e.kind === "vacant" && m < e.month + e.duration)
-    .at(-1);
-  if (vacant && (!lease || vacant.month >= lease.month)) occupied = 0;
-  if (
-    u.renovationMonth > 0 &&
-    m >= u.renovationMonth &&
-    m < u.renovationMonth + u.renovationMonths
-  )
-    occupied = 0;
-  const concession = events
-    .filter((e) => e.kind === "concession" && m < e.month + e.duration)
-    .at(-1);
-  return {
-    ...base,
-    potential: rent,
-    rent: occupied ? rent : 0,
-    occupied,
-    concession: occupied
-      ? Math.min(rent, concession?.amount ?? base.concession)
-      : 0,
-  };
-}
-function operations(p: Project, m: number) {
-  const units = p.units.map((u) => unitMonth(u, m, p));
-  const rent = units.reduce((s, u) => s + u.rent, 0),
-    concessions = units.reduce((s, u) => s + u.concession, 0),
-    creditLoss = Math.max(0, rent - concessions) * p.creditLoss;
-  let reimbursements = 0;
-  const baseExpense = p.expenses.reduce((s, e) => {
-    if (m < e.startMonth) return s;
-    reimbursements += e.reimbursement;
-    const changed = e.changeMonth > 0 && m >= e.changeMonth;
-    return (
-      s +
-      ((changed ? e.replacementAnnual : e.annual) / 12) *
-        Math.pow(1 + e.growth, (m - (changed ? e.changeMonth : 1)) / 12)
-    );
-  }, 0);
-  const other = p.otherMonthly + reimbursements,
-    egi = rent - concessions - creditLoss + other,
-    expenses = baseExpense + Math.max(0, egi) * p.management;
-  const budget = p.budget.filter(
-      (b) => m >= b.start && m < b.start + b.duration,
-    ),
-    unitCapex = units.reduce((s, u) => s + u.capex, 0),
-    capex =
-      unitCapex +
-      budget.reduce(
-        (s, b) => s + (b.amount / b.duration) * (1 + p.contingency),
-        0,
-      );
-  return {
-    rent,
-    concessions,
-    creditLoss,
-    other,
-    expenses,
-    noi: egi - expenses,
-    occupied: units.reduce((s, u) => s + u.occupied, 0),
-    vacancy: units.reduce((s, u) => s + u.potential - u.rent, 0),
-    capex,
-    eligible:
-      unitCapex +
-      budget
-        .filter((b) => b.debtEligible)
-        .reduce((s, b) => s + (b.amount / b.duration) * (1 + p.contingency), 0),
-  };
-}
+import { validateProject } from "./engine/validation";
+import { operations, growthPeriod } from "./engine/operations";
+import { partnerReturns } from "./engine/partners";
+export { validateProject } from "./engine/validation";
+export { unitMonth, operations } from "./engine/operations";
 type LoanState = {
   terms: Loan;
   balance: number;
@@ -507,6 +56,14 @@ export function forecast(p: Project): Forecast {
     partners: [],
   };
   if (errors.length) return empty;
+  const goingInNoi = Array.from(
+    { length: 12 },
+    (_, i) => operations(p, i + 1).noi,
+  ).reduce((s, v) => s + v, 0);
+  if (p.price > 0 && p.exitCap < goingInNoi / p.price)
+    warnings.push(
+      "Exit cap is below the going-in cap: this assumes cap-rate compression.",
+    );
   if (p.strategy === "existing" && !p.historical.length)
     warnings.push(
       "Since-acquisition returns need dated historical contributions/distributions. Current-view returns use entered as-of equity.",
@@ -617,7 +174,10 @@ export function forecast(p: Project): Forecast {
               : Math.min(l.rateCap, reset?.annual ?? l.rate);
         }
         s.age++;
-        const charged = (s.balance * rate) / 12;
+        const charged = accruedInterest(s.balance, rate, m, {
+          ...l,
+          startDate: p.startDate,
+        });
         if (l.kind === "construction" && !s.refinanced) {
           capitalized = l.capitalizeInterest
             ? Math.min(charged, Math.max(0, l.amount - s.balance))
@@ -637,9 +197,13 @@ export function forecast(p: Project): Forecast {
                       rate,
                       Math.max(
                         1,
-                        l.amortMonths - Math.max(s.age - 1, l.ioMonths),
+                        l.amortMonths -
+                          (l.ioConvention === "consumes-term"
+                            ? Math.max(s.age - 1, l.ioMonths)
+                            : Math.max(0, s.age - 1 - l.ioMonths)),
                       ),
-                    ) - charged,
+                    ) -
+                      (s.balance * rate) / 12,
                   ),
                 );
           regular = charged + principal;
@@ -763,7 +327,20 @@ export function forecast(p: Project): Forecast {
         );
         grossExit = null;
       } else {
-        grossExit = forward / p.exitCap;
+        const forwardTaxes = p.expenses
+          .filter((e) => e.name.toLowerCase() === "taxes")
+          .reduce(
+            (sum, e) =>
+              sum +
+              e.annual *
+                (1 + e.growth) **
+                  (p.growthTiming === "annual" ? Math.floor(m / 12) : m / 12),
+            0,
+          );
+        grossExit = p.taxReassessment
+          ? (forward + forwardTaxes) /
+            (p.exitCap + (p.reassessmentRate ?? 0.02))
+          : forward / p.exitCap;
         netSale = grossExit * (1 - p.sellingCost);
       }
     }
@@ -799,7 +376,8 @@ export function forecast(p: Project): Forecast {
       }
     }
     if (actual) service = actual.debtService;
-    const reserves = p.reservesMonthly,
+    const reserves =
+        p.reservesMonthly * (1 + (p.inflation ?? 0)) ** growthPeriod(p, m - 1),
       preFin = o.noi - o.capex - reserves - service,
       net = preFin + draws + refinance - payoffs - fees + netSale,
       cashBefore = cash + net;
@@ -988,67 +566,4 @@ export function forecast(p: Project): Forecast {
   )
     return { ...empty, errors: ["Numerical overflow: reduce extreme inputs."] };
   return result;
-}
-function partnerReturns(p: Project, initial: number, rows: Monthly[]) {
-  const states = p.partners.map((v) => ({
-    ...v,
-    capital: initial * v.share,
-    pref: 0,
-    contributed: initial * v.share,
-    distributed: 0,
-    flows: [{ date: p.startDate, amount: -initial * v.share }],
-  }));
-  for (const r of rows) {
-    for (const s of states) {
-      s.pref += p.waterfall.enabled
-        ? (s.capital * p.waterfall.preferred) / 12
-        : 0;
-      s.capital += r.capitalCall * s.share;
-      s.contributed += r.capitalCall * s.share;
-    }
-    let remaining = r.distribution;
-    const paid = new Map(states.map((s) => [s.id, 0]));
-    const allocate = (kind: "pref" | "capital") => {
-      const total = states.reduce((a, s) => a + s[kind], 0),
-        amount = Math.min(remaining, total);
-      if (total > 0)
-        for (const s of states) {
-          const v = (amount * s[kind]) / total;
-          s[kind] -= v;
-          paid.set(s.id, (paid.get(s.id) ?? 0) + v);
-        }
-      remaining -= amount;
-    };
-    if (p.waterfall.enabled) {
-      if (p.waterfall.returnCapitalFirst) {
-        allocate("capital");
-        allocate("pref");
-      } else {
-        allocate("pref");
-        allocate("capital");
-      }
-      const promote = remaining * p.waterfall.promote;
-      paid.set(
-        p.waterfall.sponsorId,
-        (paid.get(p.waterfall.sponsorId) ?? 0) + promote,
-      );
-      remaining -= promote;
-    }
-    for (const s of states) {
-      const amount = (paid.get(s.id) ?? 0) + remaining * s.share;
-      if (!p.waterfall.enabled) s.capital = Math.max(0, s.capital - amount);
-      s.distributed += amount;
-      s.flows.push({ date: r.date, amount: amount - r.capitalCall * s.share });
-    }
-  }
-  return states.map((s) => ({
-    id: s.id,
-    name: s.name,
-    contributed: s.contributed,
-    distributed: s.distributed,
-    endingCapital: s.capital,
-    unpaidPref: s.pref,
-    irr: xirr(s.flows).value,
-    multiple: equityMultiple(s.flows),
-  }));
 }

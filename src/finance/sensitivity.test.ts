@@ -23,7 +23,7 @@ describe("Phase 2 scenarios, exports and rule-based insights", () => {
     const grid = buildGrid(demo, "debt", "dscr"),
       cell = grid.cells[2][4];
     expect(cell.model.loan).toBe(3360000 * 0.65);
-    expect(cell.model.initialEquity).toBeCloseTo(1333840, 8);
+    expect(cell.model.initialEquity).toBeCloseTo(1413840, 8);
     expect(cell.value!).toBeLessThan(grid.cells[2][2].value!);
   });
   it("higher exit cap reduces value and IRR; higher rent growth raises returns", () => {
@@ -69,13 +69,13 @@ describe("Phase 2 scenarios, exports and rule-based insights", () => {
     const rows = csv.split("\r\n").map((r) => r.split(","));
     expect(rows).toHaveLength(7);
     expect(rows.every((r) => r.length === 27)).toBe(true);
-    expect(rows[1][25]).toBe('"-1134200"');
+    expect(rows[1][25]).toBe('"-1214200"');
   });
   it("monthly CSV contains every monthly debt row exactly once", () =>
     expect(debtCsv(calculate(demo)).split("\r\n")).toHaveLength(61));
   it("insights reference actual debt coverage and respond to input changes", () => {
     const m = calculate(demo);
-    expect(insights(demo, m)[0].title).toContain("1.89x");
+    expect(insights(demo, m)[0].title).toContain("1.95x");
     const a = { ...demo, annualCapex: 1000000 };
     expect(
       insights(a, calculate(a)).some((v) =>

@@ -169,6 +169,26 @@ export default function FinanceEditor({
               {n("rate", "Annual interest rate", true)}
               {n("amortMonths", "Original / remaining amortization months")}
               {n("ioMonths", "Interest-only months")}
+              <Select
+                label="Interest-only amortization"
+                value={loan.ioConvention ?? "after-io"}
+                onChange={(v) =>
+                  patch("ioConvention", v as typeof loan.ioConvention)
+                }
+                options={[
+                  ["after-io", "Full amortization after IO"],
+                  ["consumes-term", "IO consumes original term"],
+                ]}
+              />
+              <Select
+                label="Interest accrual"
+                value={loan.accrual ?? "30/360"}
+                onChange={(v) => patch("accrual", v as typeof loan.accrual)}
+                options={[
+                  ["30/360", "30/360"],
+                  ["actual/360", "Actual calendar days / 360"],
+                ]}
+              />
               {n("maturityMonth", "Maturity forecast month")}
               {n("fee", "Origination fee on commitment", true)}
               {n("penalty", "Payoff penalty", true)}
@@ -283,7 +303,7 @@ export default function FinanceEditor({
         )}
       </Card>
       <Card title="Debt audit trail">
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>

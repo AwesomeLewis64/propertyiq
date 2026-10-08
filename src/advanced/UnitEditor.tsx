@@ -51,11 +51,12 @@ export default function UnitEditor({ p, set }: ProjectEditor) {
           </span>
         </div>
         <div className="adv-unit-layout">
-          <div className="adv-unit-list" role="list" aria-label="Units">
+          <div className="adv-unit-list" role="group" aria-label="Units">
             {p.units.map((u, i) =>
               !filter || u.id.toLowerCase().includes(filter.toLowerCase()) ? (
                 <button
                   key={u.id + i}
+                  aria-pressed={i === index}
                   onClick={() => setIndex(i)}
                   className={i === index ? "selected" : ""}
                 >

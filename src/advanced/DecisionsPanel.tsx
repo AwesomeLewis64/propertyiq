@@ -260,7 +260,7 @@ export default function DecisionsPanel({ p, set }: ProjectEditor) {
               }
             />
           </div>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table>
               <thead>
                 <tr>

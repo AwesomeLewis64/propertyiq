@@ -1,7 +1,7 @@
 {
   "name": "propertyiq",
   "private": true,
-  "version": "2.2.0-beta.1",
+  "version": "2.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -9,7 +9,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview --host 127.0.0.1",
-    "format": "prettier --write src vite.config.ts"
+    "format": "prettier --write src vite.config.ts",
+    "typecheck": "tsc -b && tsc -p tsconfig.e2e.json",
+    "lint": "eslint src --max-warnings 0",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
   },
   "engines": {
     "node": ">=22.12"
@@ -24,6 +28,12 @@
     "recharts": "^3.2.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@axe-core/playwright": "^4.10.2",
+    "@vitest/coverage-v8": "^4.0.0",
+    "eslint": "^9.39.0",
+    "typescript-eslint": "^8.46.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "@types/node": "24.0.0",
     "@types/papaparse": "^5.3.16",
     "@types/react": "^19.2.0",

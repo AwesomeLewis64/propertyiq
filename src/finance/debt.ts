@@ -11,8 +11,31 @@ export function payment(
     ? principal / months
     : (principal * r) / -Math.expm1(-months * Math.log1p(r));
 }
-// Interest-only months consume the original amortization term; the remaining balance
-// recasts over the remaining months. Maturity stops this schedule without refinancing.
+export type DebtOptions = {
+  ioConvention?: "after-io" | "consumes-term";
+  accrual?: "30/360" | "actual/360";
+  startDate?: string;
+};
+// Calendar-month accrual. Scheduled principal uses the nominal 30/360 payment;
+// actual/360 changes cash interest and total payment, never the principal schedule.
+export function monthDays(startDate: string, month: number): number {
+  const [year, initialMonth] = startDate.split("-").map(Number);
+  return new Date(Date.UTC(year, initialMonth - 1 + month, 0)).getUTCDate();
+}
+export function accruedInterest(
+  balance: number,
+  annualRate: number,
+  month: number,
+  options: DebtOptions = {},
+) {
+  return (
+    balance *
+    annualRate *
+    (options.accrual === "actual/360"
+      ? monthDays(options.startDate ?? "2026-10-01", month) / 360
+      : 1 / 12)
+  );
+}
 export function debtSchedule(
   principal: number,
   annualRate: number,
@@ -20,20 +43,29 @@ export function debtSchedule(
   maturityYears: number,
   ioMonths: number,
   horizonYears: number,
+  options: DebtOptions = {},
 ) {
   const term = amortizationYears * 12;
-  const pmt = payment(principal, annualRate, term - ioMonths);
+  const consumes = options.ioConvention === "consumes-term";
+  const pmt = payment(principal, annualRate, term - (consumes ? ioMonths : 0));
   const months: DebtMonth[] = [];
   let balance = principal;
   for (
     let month = 1;
-    month <= Math.min(horizonYears * 12, maturityYears * 12, term);
+    month <=
+    Math.min(
+      horizonYears * 12,
+      maturityYears * 12,
+      term + (consumes ? 0 : ioMonths),
+    );
     month++
   ) {
     const opening = balance;
-    const interest = (opening * annualRate) / 12;
+    const interest = accruedInterest(opening, annualRate, month, options);
     const principalPaid =
-      month <= ioMonths ? 0 : Math.min(opening, Math.max(0, pmt - interest));
+      month <= ioMonths
+        ? 0
+        : Math.min(opening, Math.max(0, pmt - (opening * annualRate) / 12));
     balance = Math.max(0, opening - principalPaid);
     if (balance < 1e-7) balance = 0;
     months.push({
@@ -63,6 +95,7 @@ export function debtSchedule(
   return {
     months,
     years,
-    monthlyPayment: ioMonths > 0 ? (principal * annualRate) / 12 : pmt,
+    monthlyPayment: months[0]?.payment ?? 0,
+    postIoPayment: pmt,
   };
 }

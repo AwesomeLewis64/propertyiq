@@ -10,6 +10,19 @@ export const expenseKeys = [
 ] as const;
 export type ExpenseKey = (typeof expenseKeys)[number];
 export type Assumptions = {
+  taxesGrowth?: number;
+  insuranceGrowth?: number;
+  inflation?: number;
+  taxReassessment?: boolean;
+  reassessmentRate?: number;
+  exitCapMode?: "manual" | "spread";
+  exitSpread?: number;
+  requiredReturn?: number;
+  minDscr?: number;
+  minDebtYield?: number;
+  ioConvention?: "after-io" | "consumes-term";
+  accrual?: "30/360" | "actual/360";
+  startDate?: string;
   name: string;
   location: string;
   units: number;
@@ -29,7 +42,7 @@ export type Assumptions = {
   management: number;
   reserves: number;
   annualCapex: number;
-  loanMode: "ltv" | "amount";
+  loanMode: "ltv" | "amount" | "constraints";
   ltv: number;
   loanAmount: number;
   rate: number;
@@ -81,6 +94,9 @@ export type Projection = {
   debtYield: number | null;
 };
 export type Model = {
+  bindingConstraint?: string;
+  loanLimits?: { ltv: number; dscr: number; debtYield: number };
+  effectiveExitCap?: number;
   errors: string[];
   warnings: string[];
   loan: number;

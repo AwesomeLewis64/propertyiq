@@ -4,7 +4,11 @@ export default function Brand() {
   const colorsId = `propertyiq-colors-${useId().replace(/:/g, "")}`;
   return (
     <>
-      <svg className="iq-brand-mark" viewBox="140 180 980 870" aria-hidden="true">
+      <svg
+        className="iq-brand-mark"
+        viewBox="140 180 980 870"
+        aria-hidden="true"
+      >
         <defs>
           <filter
             id={colorsId}

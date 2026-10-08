@@ -1,9 +1,9 @@
-# Legal pages — October 8, 2026
+# Public legal and contact pages
 
-The start page, annual workspace, and monthly workspace share a footer with links to Privacy Policy, Terms of Service, Financial Disclaimer, and Contact. Legal documents have shareable hash links: `#privacy`, `#terms`, `#disclaimer`, and `#contact`. They keep the underlying workspace mounted so current edits survive returning from a document.
+Operator: Lewis Adkins. Public contact supplied for this release: abc@gmail.com.
 
-Content is based on Lewis Adkins's supplied copy. Changes remove the duplicated financial disclaimer, complete Privacy Policy sections 3–6, distinguish local software calculations from possible future AI output, and describe current browser storage, attachments, exported backups, deletion controls, and the absence of AI API uploads and analytics tracking. Missouri remains the governing-law jurisdiction. Third-party/open-source license rights are preserved.
+The app includes Privacy, Terms, Disclaimer and Contact hash routes. The Contact page provides a mailto link. There is no contact form, account system, analytics service or AI API.
 
-Contact information is intentionally pending at the owner's request. The Contact page has no submission form and does not claim privacy requests can currently be submitted through the website. Add a real contact method when ready. Changes to hosting, remote processing, AI, tracking, or team accounts require reviewing these descriptions against the new implementation.
+Financial assumptions, selected imports and local documents are processed in the browser. Hosting providers receive ordinary web requests. Browser storage and exported backups have separate deletion controls.
 
-Content: `src/ui/legalContent.ts`. Shared footer, legal page layout, and navigation: `src/ui/LegalShell.tsx`.
+The copy describes the current product; no jurisdiction-specific legal or tax compliance claim is made. Keep the policy aligned with any future hosting, analytics or data-processing changes.

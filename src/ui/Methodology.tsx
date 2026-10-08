@@ -18,20 +18,23 @@ export default function Methodology() {
       <p>
         NOI is effective gross income less operating expenses. Reserves, CapEx,
         depreciation, income taxes and financing costs are excluded from NOI.
-        Reserves are a constant annual per-unit allowance and are treated as a
-        below-NOI cash outflow; no reserve-account release is modeled. Annual
-        CapEx is a separate constant annual amount. There is no double deduction
-        of loan principal.
+        Reserves grow at the entered inflation rate from the annual per-unit
+        allowance and are treated as a below-NOI cash outflow; no
+        reserve-account release is modeled. Annual CapEx grows at the entered
+        inflation rate. Taxes and insurance have separate growth rates. There is
+        no double deduction of loan principal.
       </p>
       <h3>Debt and coverage</h3>
       <p>
         Monthly interest uses nominal annual rate ÷ 12. Payments amortize
         monthly; no lender penny-rounding is applied internally. Zero-interest
-        loans divide principal evenly. Interest-only months count toward the
-        original amortization term, then the balance recasts over the remaining
-        months. Maturity and amortization are separate. Refinancing is not
-        modeled; when a remaining loan matures before exit, incomplete
-        investment returns are suppressed.
+        loans divide principal evenly. Full amortization starts after
+        interest-only by default. You can also select IO consuming the original
+        amortization term. Actual/360 uses calendar-month days and nominal
+        scheduled principal, so cash interest and total payment vary by month.
+        Maturity and amortization are separate. Refinancing is not modeled; when
+        a remaining loan matures before exit, incomplete investment returns are
+        suppressed.
       </p>
       <p>
         DSCR = NOI ÷ annual regular debt service; a debt-free year displays N/A.
@@ -40,10 +43,12 @@ export default function Methodology() {
       </p>
       <h3>Sale and investment returns</h3>
       <p>
-        Exit value = next year's NOI ÷ exit cap rate. Selling costs are a
-        percentage of gross exit value. Sale occurs after the selected year's
-        operating cash flow. Year 0 is negative initial equity: price + closing
-        costs + initial CapEx + loan fees − loan proceeds.
+        Exit value = next year's NOI ÷ exit cap rate. An optional tax scenario
+        solves sale value after replacing forward taxes with an entered
+        effective rate on sale value. Selling costs are a percentage of gross
+        exit value. Sale occurs after the selected year's operating cash flow.
+        Year 0 is negative initial equity: price + closing costs + initial CapEx
+        + loan fees − loan proceeds.
       </p>
       <p>
         Levered IRR uses equally spaced annual equity cash flows; it is periodic

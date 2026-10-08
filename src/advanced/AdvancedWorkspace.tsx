@@ -9,22 +9,12 @@ import {
   FileText,
   Building2,
   Landmark,
-  CalendarDays,
   FolderOpen,
-  SlidersHorizontal,
   ShieldCheck,
   Home,
 } from "lucide-react";
 import Brand from "../ui/Brand";
-import {
-  Card,
-  NumberField,
-  TextField,
-  Toggle,
-  Select,
-  Metric,
-  Plot,
-} from "./Controls";
+import { Select } from "./Controls";
 import { newProject, uid } from "./defaults";
 import { forecast } from "./engine";
 import type { Project, Forecast } from "./types";
@@ -37,7 +27,10 @@ import {
 } from "./store";
 import { money, pct, multiple } from "../ui/format";
 import { csvText, download } from "../data/export";
-import "./advanced.css";
+
+import { sampleProject } from "../ui/startFlow";
+import { navigate, readRoute } from "../ui/routes";
+import { Overview, MonthlyTable } from "./WorkspaceResults";
 const UnitEditor = lazy(() => import("./UnitEditor")),
   FinanceEditor = lazy(() => import("./FinanceEditor")),
   ImportPanel = lazy(() => import("./ImportPanel")),
@@ -113,7 +106,7 @@ function initial() {
   try {
     const w = readWorkspace();
     return {
-      workspace: w.projects.length ? w : { ...w, projects: [newProject()] },
+      workspace: w.projects.length ? w : { ...w, projects: [sampleProject()] },
       error: "",
       locked: false,
     };
@@ -121,7 +114,7 @@ function initial() {
     return {
       workspace: {
         version: 2 as const,
-        projects: [newProject()],
+        projects: [sampleProject()],
         revisions: [],
       },
       error: e instanceof Error ? e.message : "Unable to load local data.",
@@ -215,7 +208,8 @@ export default function AdvancedWorkspace({
       if (
         initialProject &&
         !loaded.locked &&
-        loaded.workspace.projects.length < 100
+        loaded.workspace.projects.length < 100 &&
+        !loaded.workspace.projects.some((p) => p.id === initialProject.id)
       )
         loaded.workspace = {
           ...loaded.workspace,
@@ -224,11 +218,18 @@ export default function AdvancedWorkspace({
       return loaded;
     }),
     [workspace, setWorkspace] = useState<Workspace>(loaded.workspace),
-    [selected, setSelected] = useState(
-      loaded.workspace.projects.find((p) => p.id === initialProject?.id)?.id ??
-        loaded.workspace.projects[0].id,
+    [selected, setSelectedState] = useState(
+      loaded.workspace.projects.find(
+        (p) => p.id === (initialProject?.id ?? readRoute().project),
+      )?.id ?? loaded.workspace.projects[0].id,
     ),
-    [tab, setTab] = useState<Tab>(initialTab ?? "overview"),
+    [tab, setTabState] = useState<Tab>(
+      initialTab ??
+        (tabs.some(([id]) => id === readRoute().section)
+          ? (readRoute().section as Tab)
+          : "overview"),
+    ),
+    [showMore, setShowMore] = useState(false),
     [toolSearch, setToolSearch] = useState(""),
     [traceMetric, setTraceMetric] = useState<MetricKey>("noi"),
     [saveError, setSaveError] = useState(loaded.error),
@@ -238,6 +239,30 @@ export default function AdvancedWorkspace({
   const p =
     workspace.projects.find((p) => p.id === selected) ?? workspace.projects[0];
   const m = useMemo(() => forecast(p), [p]);
+  const setSelected = (id: string) => {
+    setSelectedState(id);
+    navigate(`#monthly/${encodeURIComponent(id)}/${tab}`);
+  };
+  const setTab = (next: Tab) => {
+    setTabState(next);
+    navigate(`#monthly/${encodeURIComponent(selected)}/${next}`);
+  };
+  useEffect(() => {
+    const restore = () => {
+      const route = readRoute();
+      if (route.mode !== "monthly") return;
+      if (workspace.projects.some((q) => q.id === route.project))
+        setSelectedState(route.project!);
+      if (tabs.some(([id]) => id === route.section))
+        setTabState(route.section as Tab);
+    };
+    window.addEventListener("hashchange", restore);
+    window.addEventListener("popstate", restore);
+    return () => {
+      window.removeEventListener("hashchange", restore);
+      window.removeEventListener("popstate", restore);
+    };
+  }, [workspace.projects]);
   const setProject = (next: Project) =>
     setWorkspace((w) => ({
       ...w,
@@ -267,25 +292,23 @@ export default function AdvancedWorkspace({
   }, [tab]);
   useEffect(() => {
     if (loaded.locked) return;
-    const timeout = setTimeout(() => {
-      try {
-        if (workspace.projects.some((p) => forecast(p).errors.length)) return;
-        persistWorkspace(workspace);
-        setSaveTime(new Date().toLocaleTimeString());
-        setSaveError("");
-      } catch (e) {
-        setSaveError(
-          e instanceof Error
-            ? e.message
-            : "Local save failed. Export a backup.",
-        );
-      }
-    }, 650);
-    return () => clearTimeout(timeout);
+    try {
+      if (workspace.projects.some((p) => forecast(p).errors.length)) return;
+      persistWorkspace(workspace);
+      setSaveTime(new Date().toLocaleTimeString());
+      setSaveError("");
+    } catch (e) {
+      setSaveError(
+        e instanceof Error ? e.message : "Local save failed. Export a backup.",
+      );
+    }
   }, [workspace, loaded.locked]);
   const create = () => {
     if (workspace.projects.length >= 100) return;
-    const n = newProject(newStrategy);
+    const n =
+      newStrategy === "acquisition"
+        ? { ...sampleProject(), id: uid() }
+        : newProject(newStrategy);
     setWorkspace((w) => ({ ...w, projects: [...w.projects, n] }));
     setSelected(n.id);
     setTab("overview");
@@ -354,7 +377,7 @@ export default function AdvancedWorkspace({
         >
           <Brand />
         </button>
-        <span className="adv-header-label">YOUR PROPERTY WORKSPACE</span>
+        <span className="adv-header-label">MONTHLY PLANNER</span>
         <div className="iq-workspace-header-actions">
           <button
             className="iq-text-link"
@@ -368,7 +391,7 @@ export default function AdvancedWorkspace({
             onClick={() => leaveWorkspace(onBack)}
           >
             <ArrowLeft size={15} />
-            Annual workspace
+            Quick analysis
           </button>
         </div>
       </header>
@@ -388,6 +411,18 @@ export default function AdvancedWorkspace({
               const visible = tabs.filter(
                 ([id, label]) =>
                   group.ids.includes(id) &&
+                  (showMore ||
+                    !!toolSearch ||
+                    [
+                      "overview",
+                      "report",
+                      "units",
+                      "monthly",
+                      "finance",
+                      "expenses",
+                      "imports",
+                      "decisionlab",
+                    ].includes(id)) &&
                   label.toLowerCase().includes(toolSearch.toLowerCase()),
               );
               if (!visible.length) return null;
@@ -415,6 +450,13 @@ export default function AdvancedWorkspace({
                 label.toLowerCase().includes(toolSearch.toLowerCase()),
               ) && <p className="iq-no-tools">No matching tools.</p>}
           </nav>
+          <button
+            className="button small more-tools"
+            aria-expanded={showMore}
+            onClick={() => setShowMore(!showMore)}
+          >
+            {showMore ? "Fewer tools" : "More tools"}
+          </button>
           <p>
             Your work stays here.
             <br />
@@ -427,22 +469,24 @@ export default function AdvancedWorkspace({
           <div className="adv-heading">
             <div>
               <span className="eyebrow">
-                {tabs.find((t) => t[0] === tab)?.[1]}
+                MONTHLY PLANNER · MONTHLY CASH-FLOW ENGINE
               </span>
-              <h1>{p.name}</h1>
+              <h1>{tabs.find((t) => t[0] === tab)?.[1]}</h1>
               <p>
-                {p.location || "Location not supplied"} · {p.units.length} units
-                · {p.months}-month forecast
+                {p.name} · {p.location || "Location not supplied"} ·{" "}
+                {p.units.length} units · {p.months}-month forecast
               </p>
             </div>
             <div className="adv-actions">
-              <button
-                className="button primary small"
-                onClick={() => setTab("report")}
-              >
-                <FileText size={15} />
-                View report
-              </button>
+              {tab !== "report" && (
+                <button
+                  className="button primary small"
+                  onClick={() => setTab("report")}
+                >
+                  <FileText size={15} />
+                  View report
+                </button>
+              )}
               <details className="iq-export-menu">
                 <summary className="button small">
                   <Download size={14} />
@@ -477,72 +521,75 @@ export default function AdvancedWorkspace({
               </details>
             </div>
           </div>
-          <details className="iq-model-status">
-            <summary>
-              <ShieldCheck size={15} />
-              Model status: source reconciliation required
-            </summary>
-            <p>
-              The monthly model is experimental. Review outputs against source
-              documents before use. Fictional examples are not Walnut's results.
-            </p>
-          </details>
-          <div className="adv-project-bar">
-            <Select
-              label="Active local project"
-              value={p.id}
-              onChange={setSelected}
-              options={workspace.projects.map((p) => [p.id, p.name])}
-            />
-            <Select
-              label="Example strategy"
-              value={newStrategy}
-              onChange={(v) => setNewStrategy(v as Project["strategy"])}
-              options={[
-                ["acquisition", "Rental acquisition"],
-                ["existing", "Existing rental property"],
-                ["development-sale", "Development → unit sales"],
-                ["development-hold", "Development → rental hold"],
-              ]}
-            />
-            <button
-              className="button small"
-              disabled={workspace.projects.length >= 100}
-              onClick={create}
-            >
-              <Plus size={14} />
-              Create example
-            </button>
-            <button
-              className="button small"
-              onClick={() => leaveWorkspace(onHome)}
-            >
-              <Plus size={14} />
-              Add your property
-            </button>
-            <button
-              className="button small"
-              disabled={workspace.projects.length >= 100 || !!m.errors.length}
-              onClick={() => {
-                const n = {
-                  ...structuredClone(p),
-                  id: uid(),
-                  name: `${p.name} (copy)`,
-                };
-                setWorkspace((w) => ({ ...w, projects: [...w.projects, n] }));
-                setSelected(n.id);
-              }}
-            >
-              <Copy size={14} />
-              Duplicate
-            </button>
-            <small>
-              {m.errors.length
-                ? "Autosave paused: invalid draft"
-                : saveTime
-                  ? `Browser saved ${saveTime}`
-                  : "Saving locally…"}
-            </small>
+          <div className="compact-project-header">
+            <details className="iq-model-status">
+              <summary>
+                <ShieldCheck size={15} />
+                Model status: source reconciliation required
+              </summary>
+              <p>
+                The monthly model is experimental. Review outputs against source
+                documents before use. Fictional examples are not Walnut's
+                results.
+              </p>
+            </details>
+            <div className="adv-project-bar">
+              <Select
+                label="Active local project"
+                value={p.id}
+                onChange={setSelected}
+                options={workspace.projects.map((p) => [p.id, p.name])}
+              />
+              <Select
+                label="Example strategy"
+                value={newStrategy}
+                onChange={(v) => setNewStrategy(v as Project["strategy"])}
+                options={[
+                  ["acquisition", "Rental acquisition"],
+                  ["existing", "Existing rental property"],
+                  ["development-sale", "Development → unit sales"],
+                  ["development-hold", "Development → rental hold"],
+                ]}
+              />
+              <button
+                className="button small"
+                disabled={workspace.projects.length >= 100}
+                onClick={create}
+              >
+                <Plus size={14} />
+                Create example
+              </button>
+              <button
+                className="button small"
+                onClick={() => leaveWorkspace(onHome)}
+              >
+                <Plus size={14} />
+                Add your property
+              </button>
+              <button
+                className="button small"
+                disabled={workspace.projects.length >= 100 || !!m.errors.length}
+                onClick={() => {
+                  const n = {
+                    ...structuredClone(p),
+                    id: uid(),
+                    name: `${p.name} (copy)`,
+                  };
+                  setWorkspace((w) => ({ ...w, projects: [...w.projects, n] }));
+                  setSelected(n.id);
+                }}
+              >
+                <Copy size={14} />
+                Duplicate
+              </button>
+              <small>
+                {m.errors.length
+                  ? "Autosave paused: invalid draft"
+                  : saveTime
+                    ? `Browser saved ${saveTime}`
+                    : "Saving locally…"}
+              </small>
+            </div>
           </div>
           {saveError && (
             <div className="alert error">
@@ -677,336 +724,5 @@ export default function AdvancedWorkspace({
         </main>
       </div>
     </div>
-  );
-}
-function Overview({
-  p,
-  set,
-  m,
-  onTrace,
-}: {
-  p: Project;
-  set: (p: Project) => void;
-  m: Forecast;
-  onTrace: (key: MetricKey) => void;
-}) {
-  const n = (
-    key:
-      | "price"
-      | "closing"
-      | "initialCapex"
-      | "openingCash"
-      | "minimumCash"
-      | "asOfEquity"
-      | "months"
-      | "rentGrowth"
-      | "creditLoss"
-      | "otherMonthly"
-      | "management"
-      | "reservesMonthly"
-      | "exitCap"
-      | "sellingCost",
-    label: string,
-    percent = false,
-  ) => (
-    <NumberField
-      key={key}
-      label={label}
-      value={p[key]}
-      percent={percent}
-      onChange={(v) =>
-        set({
-          ...p,
-          [key]: v,
-          ...(key === "months"
-            ? {
-                lender: {
-                  ...p.lender,
-                  periodStart: Math.max(
-                    1,
-                    Math.min(p.lender.periodStart, v - 11),
-                  ),
-                },
-              }
-            : {}),
-        })
-      }
-    />
-  );
-  return (
-    <>
-      <div className="metrics adv-metrics">
-        <Metric
-          label="Initial / as-of equity"
-          onInspect={() => onTrace("equity")}
-          value={m.errors.length ? "N/A" : money(m.initialEquity)}
-        />
-        <Metric
-          label="Forecast XIRR"
-          onInspect={() => onTrace("irr")}
-          value={pct(m.irr)}
-          note={m.irrReason ?? "Dated owner cash flows"}
-        />
-        <Metric
-          label="NPV"
-          onInspect={() => onTrace("npv")}
-          value={money(m.npv)}
-          note={`At ${pct(p.discount)} required return`}
-        />
-        <Metric
-          label="Additional equity calls"
-          onInspect={() => onTrace("funding")}
-          value={m.errors.length ? "N/A" : money(m.additionalEquity)}
-        />
-      </div>
-      <details className="adv-details iq-property-settings">
-        <summary>
-          <SlidersHorizontal size={16} />
-          Property details & model settings{" "}
-          <span>Review or edit assumptions</span>
-        </summary>
-        <Card title="Project and cash policy">
-          <div className="adv-form">
-            <TextField
-              label="Project name"
-              value={p.name}
-              onChange={(v) => set({ ...p, name: v })}
-            />
-            <TextField
-              label="Location"
-              value={p.location}
-              onChange={(v) => set({ ...p, location: v })}
-            />
-            <TextField
-              label="Forecast start (first of month)"
-              value={p.startDate}
-              type="date"
-              onChange={(v) => set({ ...p, startDate: v })}
-            />
-            <TextField
-              label="Original acquisition date"
-              value={p.acquisitionDate}
-              type="date"
-              onChange={(v) => set({ ...p, acquisitionDate: v })}
-            />
-            {n("months", "Forecast months (12–120)")}
-            {n(
-              "price",
-              p.strategy.startsWith("development")
-                ? "Land / acquisition cost"
-                : "Acquisition price",
-            )}
-            {n("closing", "Closing costs")}
-            {n("initialCapex", "Capital funded at time zero")}
-            {n("openingCash", "Opening project cash funded in initial equity")}
-            {n("minimumCash", "Minimum retained project cash")}
-            {p.strategy === "existing" &&
-              n("asOfEquity", "As-of owner equity / opportunity cost")}
-            {n("rentGrowth", "General annual rent growth", true)}
-            {n("creditLoss", "Collection loss on billed rent", true)}
-            {n("otherMonthly", "Other monthly income")}
-            {n("management", "Management share of effective income", true)}
-            {n("reservesMonthly", "Monthly below-NOI reserve funding")}
-            {n("exitCap", "Terminal rental cap rate", true)}
-            {n("sellingCost", "Disposition transaction costs", true)}
-            <Toggle
-              label="Distribute cash above minimum monthly"
-              value={p.distribute}
-              onChange={(v) => set({ ...p, distribute: v })}
-            />
-            {p.strategy !== "development-sale" && (
-              <Toggle
-                label="Sell rental property at end of horizon"
-                value={p.sellAtEnd}
-                onChange={(v) => set({ ...p, sellAtEnd: v })}
-              />
-            )}
-          </div>
-          <p>
-            Month 0 capital is separate from unit/budget spending. Existing mode
-            does not charge the acquisition price again; enter current debt
-            balances and as-of equity. Reserve funding is treated as
-            spent/unavailable cash, with no automatic reserve release.
-          </p>
-        </Card>
-      </details>
-      <div className="adv-two">
-        <Card title="Rent transition">
-          <Plot
-            values={m.rows.map((r) => r.rent)}
-            labels={m.rows.map((r) => r.date)}
-            title="Collected / billed rent before losses and concessions"
-          />
-        </Card>
-        <Card title="Cash and equity funding">
-          <Plot
-            values={m.rows.map((r) => r.cash)}
-            second={m.rows.map((r) => r.capitalCall)}
-            labels={m.rows.map((r) => r.date)}
-            title="Ending cash (navy) · owner capital calls (blue)"
-          />
-          <p>
-            Lowest cumulative unfunded cash: {money(m.lowestUnfundedCash)}.
-            Owner calls are shown separately, rather than assumed debt.
-          </p>
-        </Card>
-      </div>
-      <AnnualSummary m={m} />
-    </>
-  );
-}
-function AnnualSummary({ m }: { m: Forecast }) {
-  const years = Array.from({ length: Math.ceil(m.rows.length / 12) }, (_, i) =>
-    m.rows.slice(i * 12, i * 12 + 12),
-  );
-  return (
-    <Card title="Annual roll-up of monthly forecast">
-      <div className="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              {[
-                "Year",
-                "Rent",
-                "NOI",
-                "Regular debt",
-                "NOI DSCR",
-                "Lender NCF DSCR",
-                "CapEx",
-                "Owner calls",
-                "Distributions",
-                "Ending debt",
-              ].map((v) => (
-                <th key={v}>{v}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {years.map((a, i) => {
-              const sum = (k: keyof (typeof a)[number]) =>
-                  a.reduce(
-                    (s, r) =>
-                      s + (typeof r[k] === "number" ? (r[k] as number) : 0),
-                    0,
-                  ),
-                service = sum("debtService");
-              return (
-                <tr key={i}>
-                  <td>{i + 1}</td>
-                  <td>{money(sum("rent"))}</td>
-                  <td>{money(sum("noi"))}</td>
-                  <td>{money(service)}</td>
-                  <td>{multiple(service ? sum("noi") / service : null)}</td>
-                  <td>
-                    {multiple(service ? sum("lenderNcf") / service : null)}
-                  </td>
-                  <td>{money(sum("capex"))}</td>
-                  <td className="negative">{money(sum("capitalCall"))}</td>
-                  <td>{money(sum("distribution"))}</td>
-                  <td>{money(a.at(-1)?.balance)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  );
-}
-function MonthlyTable({ p, m }: { p: Project; m: Forecast }) {
-  const [from, setFrom] = useState(1),
-    [to, setTo] = useState(p.months);
-  return (
-    <Card
-      title="Monthly operating cash and funding ledger"
-      note="Capital calls restore the minimum cash balance. Ending cash includes disclosed owner funding. Payoffs include maturity and exit obligations; regular service excludes balloons."
-    >
-      <div className="adv-form">
-        <NumberField
-          label="First month to display"
-          value={from}
-          onChange={setFrom}
-        />
-        <NumberField
-          label="Last month to display"
-          value={to}
-          onChange={setTo}
-        />
-      </div>
-      <div className="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              {[
-                "Month / date",
-                "Occupied",
-                "Rent",
-                "NOI",
-                "CapEx",
-                "Reserves",
-                "Regular debt",
-                "Draws",
-                "Refi proceeds",
-                "Payoffs",
-                "Fees",
-                "Disposition receipts",
-                "Before funding",
-                "Owner call",
-                "Distribution",
-                "Ending cash",
-                "Debt balance",
-                "Owner flow",
-              ].map((v) => (
-                <th key={v}>{v}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {m.rows
-              .filter((r) => r.month >= from && r.month <= to)
-              .map((r) => (
-                <tr key={r.month}>
-                  <td>
-                    {r.month} · {r.date}
-                    {r.actual ? " · actual" : ""}
-                  </td>
-                  <td>{r.occupied}</td>
-                  {(
-                    [
-                      "rent",
-                      "noi",
-                      "capex",
-                      "reserves",
-                      "debtService",
-                      "draws",
-                      "refinance",
-                      "payoffs",
-                      "fees",
-                      "netSale",
-                      "cashBefore",
-                      "capitalCall",
-                      "distribution",
-                      "cash",
-                      "balance",
-                      "equityFlow",
-                    ] as const
-                  ).map((k) => (
-                    <td
-                      key={k}
-                      className={
-                        (k === "capitalCall" && r[k] > 0) || r[k] < 0
-                          ? "negative"
-                          : ""
-                      }
-                    >
-                      {money(r[k])}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
   );
 }

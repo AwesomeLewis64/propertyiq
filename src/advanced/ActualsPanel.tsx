@@ -142,7 +142,7 @@ export default function ActualsPanel({ p, set }: ProjectEditor) {
         ))}
       </Card>
       <Card title="Monthly NOI budget versus actual">
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>

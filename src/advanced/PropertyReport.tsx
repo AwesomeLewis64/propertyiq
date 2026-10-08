@@ -13,7 +13,7 @@ export default function PropertyReport({ p, m }: { p: Project; m: Forecast }) {
   );
   return (
     <article className="iq-report">
-      <div className="iq-report-masthead">
+      <div className="iq-report-masthead print-only">
         <span className="brand">
           <Brand />
         </span>
@@ -85,7 +85,7 @@ export default function PropertyReport({ p, m }: { p: Project; m: Forecast }) {
             Development unit sales use their individual sale schedules.
           </p>
           <h3>Through the hold</h3>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table>
               <thead>
                 <tr>

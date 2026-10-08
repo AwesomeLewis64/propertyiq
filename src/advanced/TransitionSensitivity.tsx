@@ -98,7 +98,7 @@ export default function TransitionSensitivity({ p }: { p: Project }) {
           ]}
         />
       </div>
-      <div className="table-scroll">
+      <div className="table-scroll" tabIndex={0}>
         <table>
           <thead>
             <tr>

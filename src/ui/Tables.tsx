@@ -41,7 +41,7 @@ export function CashTable({ m, a }: { m: Model; a: Assumptions }) {
           </p>
         </div>
       </div>
-      <div className="table-scroll">
+      <div className="table-scroll" tabIndex={0}>
         <table>
           <thead>
             <tr>
@@ -105,7 +105,7 @@ export function DebtTable({ m }: { m: Model }) {
             </p>
           </div>
         </div>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>
@@ -156,7 +156,7 @@ export function DebtTable({ m }: { m: Model }) {
             </p>
           </div>
         </div>
-        <div className="table-scroll debt-scroll">
+        <div className="table-scroll debt-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>

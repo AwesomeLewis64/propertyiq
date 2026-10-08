@@ -1,8 +1,21 @@
 import { newProject, newUnit, newLoan, uid } from "../advanced/defaults";
 import type { Project } from "../advanced/types";
+import { sharedSample } from "../finance/sharedSample";
+import { freshAnalysis } from "../data/storage";
+import type { Assumptions } from "../finance/types";
 
 export type BriefNumbers = Partial<
-  Record<"units" | "rent" | "price" | "expenses" | "loan" | "rate", number>
+  Record<
+    | "units"
+    | "rent"
+    | "price"
+    | "expenses"
+    | "loan"
+    | "rate"
+    | "ltv"
+    | "exitCap",
+    number
+  >
 >;
 const amount = "(\\$?\\s*\\d[\\d,]*(?:\\.\\d+)?\\s*(?:million|thousand|[km])?)";
 function value(text: string): number {
@@ -19,7 +32,7 @@ function read(text: string, patterns: string[]): number | undefined {
     const found = text.match(new RegExp(pattern, "i"));
     if (found) {
       const n = value(found[1]);
-      if (Number.isFinite(n) && n >= 0) return n;
+      if (Number.isFinite(n) && n >= 0 && n <= 1e12) return n;
     }
   }
 }
@@ -43,13 +56,22 @@ export function extractBrief(text: string): BriefNumbers {
     `(?:monthly expenses|monthly operating expenses)\\s*(?:of|is|:|=)?\\s*${amount}`,
   ]);
   const result: BriefNumbers = {};
+  const perUnit = read(text, [
+    `units?\\s+at\\s*${amount}\\s*(?:/mo|per month|monthly)`,
+    `(?:rents? are|rent per unit|per-unit rent)\\s*(?:is|of|:|=)?\\s*${amount}`,
+  ]);
   const put = (key: keyof BriefNumbers, n: number | undefined) => {
     if (n !== undefined) result[key] = n;
   };
   put("units", unitMatch ? Number(unitMatch[1]) : undefined);
   put(
     "rent",
-    monthlyRent ?? (annualRent === undefined ? undefined : annualRent / 12),
+    monthlyRent ??
+      (annualRent === undefined
+        ? perUnit !== undefined && unitMatch
+          ? perUnit * Number(unitMatch[1])
+          : undefined
+        : annualRent / 12),
   );
   put(
     "expenses",
@@ -61,6 +83,8 @@ export function extractBrief(text: string): BriefNumbers {
     read(text, [
       `(?:purchase price|asking price|price|buy for|priced at)\\s*(?:of|is|:|=)?\\s*${amount}`,
       `${amount}\\s*(?:purchase price|asking price)`,
+      `${amount}\\s*purchase\\b`,
+      `\\bfor\\s*${amount}`,
     ]),
   );
   put(
@@ -73,8 +97,23 @@ export function extractBrief(text: string): BriefNumbers {
   const rate =
     text.match(
       /(?:interest rate|loan rate|mortgage rate)\s*(?:of|is|:|=)?\s*(\d+(?:\.\d+)?)\s*%/i,
-    ) ?? text.match(/(\d+(?:\.\d+)?)\s*%\s*(?:interest|loan rate)/i);
+    ) ?? text.match(/(\d+(?:\.\d+)?)\s*%\s*(?:interest|loan rate|rate)/i);
   put("rate", rate ? Number(rate[1]) : undefined);
+  const ltv = text.match(/(\d+(?:\.\d+)?)\s*%\s*LTV\b/i);
+  if (ltv && Number(ltv[1]) <= 100) {
+    result.ltv = Number(ltv[1]);
+    if (result.loan === undefined && result.price !== undefined)
+      result.loan = (result.price * result.ltv) / 100;
+  }
+  const cap =
+    text.match(
+      /(?:exit cap\s*(?:of|is|:|=)?\s*)?(\d+(?:\.\d+)?)\s*%?\s*(?:cap\b|exit cap\b)/i,
+    ) ?? text.match(/exit cap\s*(?:of|is|:|=)?\s*(\d+(?:\.\d+)?)\s*%/i);
+  if (cap && Number(cap[1]) > 0 && Number(cap[1]) <= 100)
+    result.exitCap = Number(cap[1]);
+  if (result.rate !== undefined && result.rate > 100) delete result.rate;
+  if (result.units !== undefined && (result.units < 1 || result.units > 500))
+    delete result.units;
   return result;
 }
 export type SetupValues = {
@@ -89,6 +128,12 @@ export type SetupValues = {
   rate: string;
   start: string;
   equity: string;
+  exitCap?: string;
+  sellingCosts?: string;
+  requiredReturn?: string;
+  amortization?: string;
+  maturity?: string;
+  hold?: string;
 };
 export type WorkspaceLaunch = {
   project?: Project;
@@ -96,6 +141,47 @@ export type WorkspaceLaunch = {
   file?: File;
   decision?: "lenders" | "breakeven";
 };
+export function setupAnnual(v: SetupValues): Assumptions {
+  return {
+    ...freshAnalysis(),
+    name: v.name || "Untitled property",
+    location: v.location,
+    units: Number(v.units),
+    rent: Number(v.rent || 0) / Number(v.units),
+    price: Number(v.price || 0),
+    loanMode: "amount",
+    loanAmount: Number(v.loan || 0),
+    rate: Number(v.rate || 0) / 100,
+    loanFee: 0,
+    vacancy: 0,
+    concessions: 0,
+    creditLoss: 0,
+    management: 0,
+    rentGrowth: 0,
+    otherGrowth: 0,
+    expenseGrowth: 0,
+    taxesGrowth: 0,
+    insuranceGrowth: 0,
+    expenses: {
+      taxes: 0,
+      insurance: 0,
+      repairs: 0,
+      utilities: 0,
+      payroll: 0,
+      administration: 0,
+      marketing: 0,
+      other: Number(v.expenses || 0),
+    },
+    hold: Number(v.hold ?? 5),
+    amortization: Number(v.amortization ?? 30),
+    maturity: Number(v.maturity ?? 10),
+    startDate: v.start + "-01",
+    exitCapMode: v.exitCap ? "manual" : "spread",
+    exitCap: v.exitCap ? Number(v.exitCap) / 100 : 0.001,
+    sellingCosts: Number(v.sellingCosts ?? 2.5) / 100,
+    requiredReturn: Number(v.requiredReturn ?? 10) / 100,
+  };
+}
 
 export function setupProject(v: SetupValues, description: string): Project {
   const p = newProject(v.strategy);
@@ -105,7 +191,7 @@ export function setupProject(v: SetupValues, description: string): Project {
   p.location = v.location.trim();
   p.startDate = v.start + "-01";
   p.acquisitionDate = p.startDate;
-  p.months = 60;
+  p.months = Number(v.hold ?? 5) * 12;
   p.price = Number(v.price || 0);
   p.closing = 0;
   p.initialCapex = 0;
@@ -165,6 +251,19 @@ export function setupProject(v: SetupValues, description: string): Project {
   p.lender.value = p.price;
   p.lender.reserveAnnual = 0;
   p.waterfall.enabled = false;
+  const goingInCap =
+    p.price > 0
+      ? (Number(v.rent || 0) * 12 - Number(v.expenses || 0)) / p.price
+      : 0;
+  p.exitCap = v.exitCap
+    ? Number(v.exitCap) / 100
+    : Math.max(0.001, goingInCap + 0.00625);
+  p.sellingCost = Number(v.sellingCosts ?? 2.5) / 100;
+  p.discount = Number(v.requiredReturn ?? 10) / 100;
+  if (p.loans[0]) {
+    p.loans[0].amortMonths = Number(v.amortization ?? 30) * 12;
+    p.loans[0].maturityMonth = Number(v.maturity ?? 10) * 12;
+  }
   p.tax.enabled = false;
   p.tax.depreciableBasis = 0;
   p.tax.saleBasis = 0;
@@ -198,25 +297,5 @@ export function setupProject(v: SetupValues, description: string): Project {
 }
 
 export function sampleProject(): Project {
-  const p = setupProject(
-    {
-      name: "Maple Court · illustrative sample",
-      location: "Fictional property",
-      strategy: "acquisition",
-      units: "8",
-      rent: "9600",
-      price: "1200000",
-      expenses: "42000",
-      loan: "780000",
-      rate: "6",
-      start: "2026-10",
-      equity: "",
-    },
-    "Illustrative sample only. These figures are not Walnut's actual results.",
-  );
-  p.closing = 24000;
-  p.openingCash = 25000;
-  p.minimumCash = 10000;
-  p.loans[0].fee = 0.01;
-  return p;
+  return sharedSample();
 }

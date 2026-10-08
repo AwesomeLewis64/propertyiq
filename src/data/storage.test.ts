@@ -49,7 +49,7 @@ describe("Local saved analysis validation", () => {
     const a = structuredClone(demo);
     const saved = saveAnalysis(storage, a, { upside: {}, downside: {} });
     a.rent = 2000;
-    expect(saved[0].assumptions.rent).toBe(1550);
+    expect(saved[0].assumptions.rent).toBe(1900);
     expect(values.has(STORAGE_KEY)).toBe(true);
   });
   it("does not overwrite malformed existing data or exceed the saved limit", () => {

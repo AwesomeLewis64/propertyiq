@@ -161,6 +161,7 @@ export default function Sensitivity({
       null,
     );
   const grid = useMemo(() => buildGrid(a, kind, metric), [a, kind, metric]);
+  const [target, setTarget] = useState(a.requiredReturn ?? 0.1);
   const selected: ScenarioCell | null = selection
     ? grid.cells[selection.row][selection.col]
     : null;
@@ -187,6 +188,18 @@ export default function Sensitivity({
           <span className="badge">25 scenarios</span>
         </div>
         <div className="sensitivity-controls">
+          <label>
+            Target IRR (%)
+            <input
+              aria-label="Sensitivity target IRR"
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={target * 100}
+              onChange={(e) => setTarget(Number(e.target.value) / 100)}
+            />
+          </label>
           <label>
             Compare
             <select
@@ -242,7 +255,7 @@ export default function Sensitivity({
           <span>{grid.rowLabel} ↓</span>
           <span>{grid.colLabel} →</span>
         </div>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="heatmap">
             <thead>
               <tr>
@@ -279,7 +292,13 @@ export default function Sensitivity({
                             background:
                               cell.value === null
                                 ? "#f2f4f5"
-                                : `hsl(${35 + ratio * 115} 26% ${95 - ratio * 14}%)`,
+                                : grid.metric === "irr"
+                                  ? Math.abs(cell.value - target) < 0.0005
+                                    ? "#edf0f3"
+                                    : cell.value < target
+                                      ? "#f6dddd"
+                                      : "#dcefe3"
+                                  : `hsl(${35 + ratio * 115} 26% ${95 - ratio * 14}%)`,
                           }}
                           aria-label={`${grid.rowLabel} ${rowFormat(cell.row)}, ${grid.colLabel} ${colFormat(cell.col)}: ${format(cell.value, grid.metric)}`}
                           aria-pressed={
@@ -299,6 +318,27 @@ export default function Sensitivity({
           </table>
         </div>
         <div className="heatmap-footnote">
+          {grid.metric === "irr" && (
+            <p>
+              Green: above {pct(target)} · Neutral: within 0.05 percentage
+              points of target · Red: below target. Values remain visible
+              without color.
+            </p>
+          )}
+          {kind === "rent" && (
+            <p>
+              {grid.cells.filter(
+                (row) => row[2].value !== null && row[2].value! < target,
+              ).length
+                ? `At base rent growth, return is below ${pct(target)} in tested exit-cap cases: ${grid.cells
+                    .filter(
+                      (row) => row[2].value !== null && row[2].value! < target,
+                    )
+                    .map((row) => pct(row[2].row))
+                    .join(", ")}.`
+                : `At base rent growth, all tested exit-cap cases meet ${pct(target)}. Expand assumptions to test a larger downside.`}
+            </p>
+          )}
           Click a cell to inspect its assumptions. Shading compares numerical
           values only; lower equity requirements are not automatically
           preferable. N/A cells are invalid, incomplete or ambiguous.

@@ -173,11 +173,17 @@ export function Plot({
   second,
   labels,
   title,
+  seriesLabel = "Forecast",
+  secondLabel = "Comparison",
+  liquidation = false,
 }: {
   values: number[];
   second?: number[];
   labels: string[];
   title: string;
+  seriesLabel?: string;
+  secondLabel?: string;
+  liquidation?: boolean;
 }) {
   if (!values.length) return null;
   const all = [...values, ...(second ?? [])],
@@ -194,6 +200,11 @@ export function Plot({
   return (
     <figure className="adv-plot">
       <figcaption>{title}</figcaption>
+      <div className="plot-legend">
+        <span>━ {seriesLabel}</span>
+        {second && <span>┄ {secondLabel}</span>}
+      </div>
+      <p className="plot-axis-label">USD · forecast month-end dates</p>
       <svg
         viewBox="0 0 800 210"
         role="img"
@@ -208,7 +219,13 @@ export function Plot({
         />
         <path d={path(values)} fill="none" stroke="#142e58" strokeWidth="3" />
         {second && (
-          <path d={path(second)} fill="none" stroke="#7ea9ef" strokeWidth="2" />
+          <path
+            d={path(second)}
+            fill="none"
+            stroke="#345e95"
+            strokeWidth="2"
+            strokeDasharray="6 4"
+          />
         )}
         <text x="45" y="200">
           {labels[0]}
@@ -223,6 +240,12 @@ export function Plot({
           {money(min)}
         </text>
       </svg>
+      {liquidation && values.at(-1) === 0 && (
+        <p className="plot-note">
+          Final month: sale and liquidation distribute retained cash, bringing
+          ending project cash to $0.
+        </p>
+      )}
     </figure>
   );
 }

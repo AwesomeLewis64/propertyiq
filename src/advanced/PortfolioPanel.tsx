@@ -112,7 +112,7 @@ export default function PortfolioPanel({
         title="Local portfolio comparison"
         note="Projects use their own dates, strategies and financing. Calendar funding below sums modeled owner contributions/distributions; no assumption of portfolio cross-collateralization is made."
       >
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>
@@ -203,7 +203,7 @@ export default function PortfolioPanel({
           labels={calendar.map((v) => v.month)}
           title="Owner contributions (navy) · distributions (blue)"
         />
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>
@@ -299,7 +299,7 @@ export default function PortfolioPanel({
         >
           Record named revision
         </button>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>

@@ -332,7 +332,7 @@ export default function ImportRentRoll({
               )}
               {review.rows.length > 0 && (
                 <>
-                  <div className="table-scroll">
+                  <div className="table-scroll" tabIndex={0}>
                     <table>
                       <thead>
                         <tr>

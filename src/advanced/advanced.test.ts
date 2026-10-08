@@ -247,6 +247,7 @@ describe("debt, development, sizing, and investors", () => {
       rate: 0.06,
       amortMonths: 120,
       ioMonths: 2,
+      ioConvention: "consumes-term",
     });
     const f = forecast(p);
     expect(f.rows[0].debtService).toBe(300);

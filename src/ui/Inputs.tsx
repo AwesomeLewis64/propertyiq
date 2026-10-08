@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { expenseKeys, type Assumptions } from "../finance/types";
+import { calculate } from "../finance/model";
 const expenseLabels = {
   taxes: "Property taxes",
   insurance: "Insurance",
@@ -27,7 +28,13 @@ function NumberField({
   help?: string;
 }) {
   const [draft, setDraft] = useState(
-    String(percent ? Number((value * 100).toFixed(8)) : value),
+    suffix.includes("$")
+      ? new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 2,
+        }).format(value)
+      : String(percent ? Number((value * 100).toFixed(8)) : value),
   );
   const emitted = useRef<{ value: number; percent: boolean } | null>(null);
   useEffect(() => {
@@ -40,10 +47,16 @@ function NumberField({
       return;
     setDraft(
       Number.isFinite(value)
-        ? String(percent ? Number((value * 100).toFixed(8)) : value)
+        ? suffix.includes("$")
+          ? new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: "USD",
+              maximumFractionDigits: 2,
+            }).format(value)
+          : String(percent ? Number((value * 100).toFixed(8)) : value)
         : "",
     );
-  }, [value, percent]);
+  }, [value, percent, suffix]);
   return (
     <label className="field">
       <span>{label}</span>
@@ -53,6 +66,17 @@ function NumberField({
           aria-invalid={!Number.isFinite(value)}
           inputMode="decimal"
           value={draft}
+          onFocus={(e) => e.currentTarget.select()}
+          onBlur={() => {
+            if (Number.isFinite(value) && suffix.includes("$"))
+              setDraft(
+                new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                  maximumFractionDigits: 2,
+                }).format(value),
+              );
+          }}
           onChange={(e) => {
             const raw = e.target.value;
             setDraft(raw);
@@ -88,7 +112,7 @@ export default function Inputs({
     <NumberField
       key={key}
       label={label}
-      value={a[key] as number}
+      value={(a[key] ?? 0) as number}
       percent={percent}
       suffix={suffix}
       help={help}
@@ -202,6 +226,9 @@ export default function Inputs({
             a.managementMode === "fixed" ? "$ / yr" : "",
           )}
           {field("expenseGrowth", "Annual expense growth", true)}
+          {field("taxesGrowth", "Property tax growth", true)}
+          {field("insuranceGrowth", "Insurance growth", true)}
+          {field("inflation", "Reserve and CapEx inflation", true)}
           {field("reserves", "Reserves per unit / year", false, "$")}
           {field("annualCapex", "Annual capital expenditures", false, "$")}
         </div>
@@ -217,17 +244,65 @@ export default function Inputs({
             <select
               value={a.loanMode}
               onChange={(e) =>
-                update("loanMode", e.target.value as "ltv" | "amount")
+                update("loanMode", e.target.value as Assumptions["loanMode"])
               }
             >
               <option value="ltv">Loan-to-value</option>
               <option value="amount">Loan amount</option>
+              <option value="constraints">
+                Minimum of LTV, DSCR and debt yield
+              </option>
             </select>
           </label>
-          {a.loanMode === "ltv"
+          {a.loanMode !== "amount"
             ? field("ltv", "Loan-to-value", true)
             : field("loanAmount", "Loan amount", false, "$")}
           {field("rate", "Nominal annual interest", true)}
+          {a.loanMode === "constraints" && (
+            <>
+              {field("minDscr", "Minimum DSCR", false, "x")}
+              {field("minDebtYield", "Minimum debt yield", true)}
+              <p>
+                Binding constraint: {calculate(a).bindingConstraint ?? "N/A"}.
+                Coverage uses amortizing payments, including during IO.
+              </p>
+            </>
+          )}
+          <label className="field">
+            <span>Interest-only amortization</span>
+            <select
+              value={a.ioConvention ?? "after-io"}
+              onChange={(e) =>
+                update(
+                  "ioConvention",
+                  e.target.value as Assumptions["ioConvention"],
+                )
+              }
+            >
+              <option value="after-io">Full amortization after IO</option>
+              <option value="consumes-term">IO consumes original term</option>
+            </select>
+          </label>
+          <label className="field">
+            <span>Interest accrual</span>
+            <select
+              value={a.accrual ?? "30/360"}
+              onChange={(e) =>
+                update("accrual", e.target.value as Assumptions["accrual"])
+              }
+            >
+              <option>30/360</option>
+              <option>actual/360</option>
+            </select>
+          </label>
+          <label className="field">
+            <span>Debt starting month</span>
+            <input
+              type="month"
+              value={(a.startDate ?? "2026-10-01").slice(0, 7)}
+              onChange={(e) => update("startDate", e.target.value + "-01")}
+            />
+          </label>
           {field("amortization", "Amortization term", false, "years")}
           {field("maturity", "Loan maturity", false, "years")}
           {field(
@@ -235,7 +310,7 @@ export default function Inputs({
             "Interest-only period",
             false,
             "months",
-            "Recasts over the remaining original amortization term.",
+            "Uses the selected amortization convention after IO.",
           )}
           {field("loanFee", "Origination fee (% of loan)", true)}
         </div>
@@ -252,13 +327,53 @@ export default function Inputs({
               value={a.hold}
               onChange={(e) => update("hold", Number(e.target.value))}
             >
-              <option value={3}>3 years</option>
-              <option value={4}>4 years</option>
-              <option value={5}>5 years</option>
+              {Array.from({ length: 8 }, (_, i) => (
+                <option key={i} value={i + 3}>
+                  {i + 3} years
+                </option>
+              ))}
             </select>
           </label>
-          {field("exitCap", "Exit capitalization rate", true)}
+          <label className="field">
+            <span>Exit cap method</span>
+            <select
+              value={a.exitCapMode ?? "manual"}
+              onChange={(e) =>
+                update(
+                  "exitCapMode",
+                  e.target.value as Assumptions["exitCapMode"],
+                )
+              }
+            >
+              <option value="spread">Going-in cap plus spread</option>
+              <option value="manual">Entered exit cap</option>
+            </select>
+          </label>
+          {a.exitCapMode === "spread" ? (
+            <>
+              {field("exitSpread", "Exit cap spread", true)}
+              <p>
+                Calculated exit cap:{" "}
+                {((calculate(a).effectiveExitCap ?? 0) * 100).toFixed(2)}%
+              </p>
+            </>
+          ) : (
+            field("exitCap", "Exit capitalization rate", true)
+          )}
           {field("sellingCosts", "Exit selling costs", true)}
+          {field("requiredReturn", "Target annual return", true)}
+          <label className="field">
+            <span>
+              <input
+                type="checkbox"
+                checked={a.taxReassessment ?? false}
+                onChange={(e) => update("taxReassessment", e.target.checked)}
+              />{" "}
+              Reassess property tax at sale
+            </span>
+          </label>
+          {a.taxReassessment &&
+            field("reassessmentRate", "Effective tax rate on sale value", true)}
           <small>
             Exit value uses next year's NOI. Sales occur at the end of the
             selected hold period.

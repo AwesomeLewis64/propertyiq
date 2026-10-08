@@ -89,6 +89,11 @@ function LegalPage({ id, onBack }: { id: LegalId; onBack: () => void }) {
             ))}
           </nav>
         </div>
+        {id === "contact" && (
+          <p className="contact-link">
+            <a href="mailto:abc@gmail.com">Email abc@gmail.com</a>
+          </p>
+        )}
         <div className="iq-legal-layout">
           <aside className="iq-legal-contents" aria-label="On this page">
             <span className="iq-eyebrow">ON THIS PAGE</span>

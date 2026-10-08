@@ -28,7 +28,15 @@ export function buildGrid(
   const base = calculate(a);
   let rows: number[], cols: number[], rowLabel: string, colLabel: string;
   if (kind === "rent") {
-    rows = range(a.exitCap, 0.005, 0.001, 1);
+    const going = base.years[0]?.noi / a.price;
+    const exit = base.effectiveExitCap ?? a.exitCap;
+    rows = [
+      Math.max(0.001, Math.min(exit - 0.005, going - 0.005)),
+      Math.max(0.001, going),
+      exit,
+      Math.min(1, going + 0.01),
+      Math.min(1, Math.max(exit + 0.01, going + 0.015)),
+    ];
     cols = range(a.rentGrowth, 0.01, -1, 1);
     rowLabel = "Exit cap rate";
     colLabel = "Rent growth";
@@ -46,7 +54,7 @@ export function buildGrid(
     colLabel = "Expense growth";
     metric = metric === "noi" ? "noi" : "irr";
   } else {
-    rows = range(a.exitCap, 0.005, 0.001, 1);
+    rows = range(base.effectiveExitCap ?? a.exitCap, 0.005, 0.001, 1);
     cols = range(base.forwardNOI, Math.abs(base.forwardNOI) * 0.1, -1e12, 1e12);
     rowLabel = "Exit cap rate";
     colLabel = "Forward NOI";
@@ -56,11 +64,17 @@ export function buildGrid(
     cols.map((col) => {
       let changed: Assumptions = { ...a, expenses: { ...a.expenses } };
       if (kind === "rent")
-        changed = { ...changed, exitCap: row, rentGrowth: col };
+        changed = {
+          ...changed,
+          exitCapMode: "manual",
+          exitCap: row,
+          rentGrowth: col,
+        };
       if (kind === "debt") changed = { ...changed, rate: row, price: col };
       if (kind === "vacancy")
         changed = { ...changed, vacancy: row, expenseGrowth: col };
-      if (kind === "value") changed = { ...changed, exitCap: row };
+      if (kind === "value")
+        changed = { ...changed, exitCapMode: "manual", exitCap: row };
       const model = calculate(changed);
       const value = model.errors.length
         ? null
@@ -90,7 +104,12 @@ export function buildGrid(
 export type ScenarioOverrides = Partial<
   Pick<
     Assumptions,
-    "rentGrowth" | "vacancy" | "exitCap" | "expenseGrowth" | "rate"
+    | "rentGrowth"
+    | "vacancy"
+    | "exitCap"
+    | "expenseGrowth"
+    | "rate"
+    | "exitCapMode"
   >
 >;
 export function defaultScenarios(a: Assumptions): {
@@ -100,15 +119,23 @@ export function defaultScenarios(a: Assumptions): {
   const vacancyMax = 1 - a.creditLoss - a.concessions;
   return {
     upside: {
+      exitCapMode: "manual",
       rentGrowth: Math.min(1, a.rentGrowth + 0.01),
       vacancy: Math.max(0, a.vacancy - 0.02),
-      exitCap: Math.max(0.001, a.exitCap - 0.005),
+      exitCap: Math.max(
+        0.001,
+        (calculate(a).effectiveExitCap ?? a.exitCap) - 0.005,
+      ),
       expenseGrowth: Math.max(-1, a.expenseGrowth - 0.005),
     },
     downside: {
+      exitCapMode: "manual",
       rentGrowth: Math.max(-1, a.rentGrowth - 0.01),
       vacancy: Math.min(vacancyMax, a.vacancy + 0.03),
-      exitCap: Math.min(1, a.exitCap + 0.005),
+      exitCap: Math.min(
+        1,
+        (calculate(a).effectiveExitCap ?? a.exitCap) + 0.005,
+      ),
       expenseGrowth: Math.min(1, a.expenseGrowth + 0.01),
     },
   };

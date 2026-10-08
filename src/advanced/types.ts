@@ -55,6 +55,8 @@ export type Budget = {
 };
 export type RatePoint = { month: number; annual: number };
 export type Loan = {
+  ioConvention?: "after-io" | "consumes-term";
+  accrual?: "30/360" | "actual/360";
   id: string;
   name: string;
   kind: "term" | "construction";
@@ -120,6 +122,17 @@ export type DiligenceTask = {
   note: string;
 };
 export type Project = {
+  growthTiming?: "annual" | "monthly";
+  vacancyRate?: number;
+  concessionRate?: number;
+  additiveLosses?: boolean;
+  otherGrowth?: number;
+  inflation?: number;
+  annualCapex?: number;
+  fixedManagement?: number;
+  fixedManagementGrowth?: number;
+  taxReassessment?: boolean;
+  reassessmentRate?: number;
   tools?: import("./toolSchema").DecisionTools;
   id: string;
   name: string;

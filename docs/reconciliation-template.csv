@@ -1,0 +1,11 @@
+Metric,Period,Workbook version,Sheet,Cell,Definition,Workbook value,PropertyIQ value,Absolute delta,Relative delta,Tolerance,Classification,Cause,Correction or convention bridge,Retest result,Reviewer,Review date
+Period NOI,Months 1-12,,,,,,,,,$1,,,,,,
+Period scheduled debt service,Months 1-12,,,,,,,,,$1,,,,,,
+Period NOI DSCR,Months 1-12,,,,,,,,,0.005x,,,,,,
+Initial / as-of equity,Closing,,,,,,,,,$1,,,,,,
+Forecast dated XIRR,Full hold,,,,,,,,,0.01 percentage points when timing matches,,,,,,
+Equity multiple,Full hold,,,,,,,,,0.005x,,,,,,
+Gross rental exit value,Terminal sale,,,,,,,,,$1,,,,,,
+Forward NOI,Next 12 months after sale,,,,,,,,,$1,,,,,,
+Debt balance before sale payoff,Final regular payment,,,,,,,,,$1,,,,,,
+Net sale equity proceeds,Terminal sale,,,,,,,,,$1,,,,,,

@@ -39,6 +39,7 @@ describe("focused start-flow checks", () => {
       expenses: 42000,
       loan: 780000,
       rate: 6,
+      exitCap: 7,
     });
   });
   it("creates the reviewed model without fictional renovations, costs or tax basis", () => {
@@ -60,8 +61,8 @@ describe("focused start-flow checks", () => {
     const f = forecast(sampleProject()),
       first = f.rows.slice(0, 12);
     expect(f.errors).toEqual([]);
-    expect(first.reduce((s, r) => s + r.rent, 0)).toBeCloseTo(115200, 7);
-    expect(first.reduce((s, r) => s + r.expenses, 0)).toBeCloseTo(42000, 7);
-    expect(first.reduce((s, r) => s + r.noi, 0)).toBeCloseTo(73200, 7);
+    expect(first.reduce((s, r) => s + r.rent, 0)).toBeCloseTo(456000, 7);
+    expect(first.reduce((s, r) => s + r.expenses, 0)).toBeCloseTo(181828, 7);
+    expect(first.reduce((s, r) => s + r.noi, 0)).toBeCloseTo(254732, 7);
   });
 });

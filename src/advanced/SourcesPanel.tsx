@@ -151,7 +151,7 @@ export default function SourcesPanel({
         )}
         <details className="adv-details">
           <summary>Contributing project assumptions</summary>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table>
               <tbody>
                 {Object.entries({

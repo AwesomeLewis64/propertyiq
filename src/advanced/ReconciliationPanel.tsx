@@ -255,7 +255,7 @@ export default function ReconciliationPanel({ p, set }: ProjectEditor) {
           units, so 0.01 means $0.01 for money and one percentage point for a
           decimal IRR.
         </p>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>
@@ -452,7 +452,7 @@ export default function ReconciliationPanel({ p, set }: ProjectEditor) {
         {mapping.error && <p className="alert error">{mapping.error}</p>}
         {notice && <p role="status">{notice}</p>}
         {!!cells.length && (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table>
               <thead>
                 <tr>

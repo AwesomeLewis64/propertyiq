@@ -322,7 +322,7 @@ export default function OperatingDetailPanel({ p, set }: ProjectEditor) {
         </p>
       </Card>
       <Card title="NOI variance bridge">
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <tbody>
               <tr>
@@ -354,7 +354,7 @@ export default function OperatingDetailPanel({ p, set }: ProjectEditor) {
           records alone cannot determine which cause applies.
         </p>
         <h3>Collections by unit</h3>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>
@@ -388,7 +388,7 @@ export default function OperatingDetailPanel({ p, set }: ProjectEditor) {
           </table>
         </div>
         <h3>Expenses by category</h3>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>

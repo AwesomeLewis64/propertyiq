@@ -3,18 +3,38 @@ import { calculate, operating, validate } from "./model";
 import { debtSchedule, payment } from "./debt";
 import { irr } from "./irr";
 import { demo } from "./demo";
-const input = () => structuredClone(demo);
+const input = () => ({
+  ...structuredClone(demo),
+  exitCapMode: "manual" as const,
+  rent: 1550,
+  rentGrowth: 0.03,
+  initialCapex: 80000,
+  exitCap: 0.065,
+  taxesGrowth: 0.025,
+  insuranceGrowth: 0.025,
+  inflation: 0,
+  expenses: {
+    taxes: 38000,
+    insurance: 14000,
+    repairs: 14000,
+    utilities: 12000,
+    payroll: 6000,
+    administration: 4500,
+    marketing: 2500,
+    other: 2000,
+  },
+});
 describe("Independent financial benchmarks", () => {
   it("the complete fictional demo matches a separate 40-digit Decimal model", () => {
-    const m = calculate(input());
-    expect(m.initialEquity).toBe(1134200);
-    expect(m.years[0].noi).toBe(247119);
-    expect(m.years[4].noi).toBeCloseTo(279734.919381765, 6);
-    expect(m.forwardNOI).toBeCloseTo(288535.352281054575, 6);
+    const m = calculate(demo);
+    expect(m.initialEquity).toBe(1214200);
+    expect(m.years[0].noi).toBe(254732);
+    expect(m.years[4].noi).toBeCloseTo(304920.48843992, 6);
+    expect(m.forwardNOI).toBeCloseTo(318862.3930272588, 6);
     expect(m.years[4].debt?.balance).toBeCloseTo(1693589.294175316, 6);
-    expect(m.netSale).toBeCloseTo(2634440.990040503, 6);
-    expect(m.irr).toBeCloseTo(0.257954907143508178, 10);
-    expect(m.multiple).toBeCloseTo(2.835137409921937943, 10);
+    expect(m.netSale).toBeCloseTo(1504030.1369144035, 6);
+    expect(m.irr).toBeCloseTo(0.14169371568632232, 10);
+    expect(m.multiple).toBeCloseTo(1.7803289002186773, 10);
   });
   it("Microsoft periodic IRR example matches an independently solved root", () =>
     expect(irr([-70000, 12000, 15000, 18000, 21000, 26000]).value).toBeCloseTo(
@@ -107,7 +127,9 @@ describe("Independent financial benchmarks", () => {
     expect(s.years[0].interest).toBe(0);
   });
   it("interest-only recasts over remaining original amortization months", () => {
-    const s = debtSchedule(120000, 0.06, 10, 10, 12, 5);
+    const s = debtSchedule(120000, 0.06, 10, 10, 12, 5, {
+      ioConvention: "consumes-term",
+    });
     expect(s.years[0].service).toBe(7200);
     expect(s.years[0].principal).toBe(0);
     expect(s.months[12].payment).toBeCloseTo(1440.68995571107, 8);
@@ -185,7 +207,9 @@ describe("Independent financial benchmarks", () => {
     b.loanAmount = 1e10;
     b.loanMode = "amount";
     b.interestOnlyMonths = 400;
-    expect(validate(b).length).toBeGreaterThan(3);
+    expect(validate(b).join(" ")).toContain("price: enter a finite number");
+    expect(validate(b).join(" ")).toContain("insurance");
+    expect(validate(b).join(" ")).toContain("cannot exceed maturity");
   });
   it("rent-roll contractual rent is never reduced again by physical vacancy", () => {
     const a = input();

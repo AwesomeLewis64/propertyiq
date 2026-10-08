@@ -34,6 +34,9 @@ import { freshAnalysis } from "./data/storage";
 import OperatingSummary from "./ui/OperatingSummary";
 import { CashTable, DebtTable } from "./ui/Tables";
 import Methodology from "./ui/Methodology";
+import { navigate, readRoute } from "./ui/routes";
+import Verdict, { verdictLines } from "./ui/verdict";
+import { isAssumptions } from "./data/storage";
 type View =
   | "overview"
   | "cash"
@@ -133,12 +136,28 @@ export default function App() {
 }
 function WorkspaceApp() {
   const [advanced, setAdvanced] = useState(
-    () => window.location.hash === "#monthly",
+    () => readRoute().mode === "monthly",
   );
   const [launch, setLaunch] = useState<WorkspaceLaunch | undefined>();
-  const [a, setA] = useState<Assumptions>(() => structuredClone(demo));
-  const [view, setView] = useState<View>("overview");
-  const [home, setHome] = useState(true);
+  const [a, setA] = useState<Assumptions>(() => {
+    try {
+      const saved: unknown = JSON.parse(
+        sessionStorage.getItem("propertyiq:quick:draft") ?? "null",
+      );
+      return isAssumptions(saved) ? saved : structuredClone(demo);
+    } catch {
+      return structuredClone(demo);
+    }
+  });
+  const [view, setViewState] = useState<View>(
+    () => (readRoute().section as View) ?? "overview",
+  );
+  const setView = (v: View) => {
+    setViewState(v);
+    navigate(`#quick/${v}`);
+  };
+  const [home, setHome] = useState(() => readRoute().mode === "home");
+  const [mobileEdited, setMobileEdited] = useState(false);
   const [scenarios, setScenarios] = useState<ScenarioSettings>({
     upside: {},
     downside: {},
@@ -146,13 +165,49 @@ function WorkspaceApp() {
   const m = useMemo(() => calculate(a), [a]);
   const isDemo = JSON.stringify(a) === JSON.stringify(demo);
   useEffect(() => {
-    if (advanced) window.history.replaceState(null, "", "#monthly");
-    else if (window.location.hash === "#monthly")
-      window.history.replaceState(
-        null,
-        "",
-        window.location.pathname + window.location.search,
-      );
+    const restore = () => {
+      const route = readRoute();
+      if (route.mode === "monthly") {
+        setAdvanced(true);
+        setHome(false);
+      } else if (route.mode === "quick") {
+        setAdvanced(false);
+        setHome(false);
+        setViewState(
+          [
+            "overview",
+            "cash",
+            "debt",
+            "sensitivity",
+            "import",
+            "report",
+            "methodology",
+          ].includes(route.section ?? "")
+            ? (route.section as View)
+            : "overview",
+        );
+      } else if (!window.location.hash || window.location.hash === "#home") {
+        setAdvanced(false);
+        setHome(true);
+      }
+    };
+    window.addEventListener("hashchange", restore);
+    window.addEventListener("popstate", restore);
+    return () => {
+      window.removeEventListener("hashchange", restore);
+      window.removeEventListener("popstate", restore);
+    };
+  }, []);
+  useEffect(() => {
+    if (isAssumptions(a)) {
+      try {
+        sessionStorage.setItem("propertyiq:quick:draft", JSON.stringify(a));
+      } catch {
+        /* Current draft remains available in memory. */
+      }
+    }
+  }, [a]);
+  useEffect(() => {
     if (advanced) return;
     document.title = home
       ? "PropertyIQ | Multifamily Investment Analytics"
@@ -184,6 +239,11 @@ function WorkspaceApp() {
     setLaunch(next);
     setHome(false);
     setAdvanced(true);
+    navigate(
+      next?.project
+        ? `#monthly/${encodeURIComponent(next.project.id)}/${next.tab ?? "overview"}`
+        : "#monthly",
+    );
   };
   if (advanced)
     return (
@@ -203,11 +263,13 @@ function WorkspaceApp() {
             setLaunch(undefined);
             setAdvanced(false);
             setHome(true);
+            navigate("#home");
           }}
           onBack={() => {
             setLaunch(undefined);
             setAdvanced(false);
             setHome(false);
+            navigate("#quick/overview");
           }}
         />
       </Suspense>
@@ -216,7 +278,8 @@ function WorkspaceApp() {
     return (
       <StartPage
         onOpen={openMonthly}
-        onAnnual={() => {
+        onAnnual={(next) => {
+          setA(next ?? structuredClone(demo));
           setHome(false);
           setView("overview");
         }}
@@ -232,6 +295,7 @@ function WorkspaceApp() {
           className="brand"
           onClick={() => {
             setHome(true);
+            navigate("#home");
             document.title = "PropertyIQ | Multifamily Investment Analytics";
           }}
         >
@@ -247,10 +311,10 @@ function WorkspaceApp() {
             className="button small advanced-launch"
             onClick={() => openMonthly()}
           >
-            Monthly & development
+            Monthly planner
           </button>
           <button className="button primary small" onClick={open}>
-            {home ? "Open workspace" : "Workspace"}
+            Quick analysis
             <ArrowUpRight size={15} />
           </button>
         </div>
@@ -288,14 +352,15 @@ function WorkspaceApp() {
                 Workspace <span>/</span> Multifamily acquisition
               </div>
               <h1>
-                {a.name || "Untitled property"}
-                <span className="badge">
-                  {a.mode === "manual"
-                    ? "Manual underwriting"
-                    : "Current rent roll"}
-                </span>
+                {nav.find((n) => n.id === view)?.label ?? "Investment overview"}
               </h1>
+              <span className="badge">
+                {a.mode === "manual"
+                  ? "Manual underwriting"
+                  : "Current rent roll"}
+              </span>
               <p>
+                {a.name || "Untitled property"} ·{" "}
                 {a.location || "Location not specified"} <span>·</span>{" "}
                 {Number.isFinite(a.units) ? a.units : "—"} units <span>·</span>{" "}
                 {a.hold}-year hold
@@ -362,7 +427,33 @@ function WorkspaceApp() {
             }}
           />
           <div className="analysis-layout">
-            <Inputs a={a} set={setA} />
+            {!m.errors.length && (
+              <div className="mobile-summary">
+                IRR {pct(m.irr)} · Multiple {multiple(m.multiple)} · DSCR{" "}
+                {multiple(m.years[0]?.dscr ?? null)}
+              </div>
+            )}
+            <details
+              className="mobile-assumptions"
+              open
+              onBlur={(e) => {
+                if (
+                  mobileEdited &&
+                  window.innerWidth <= 700 &&
+                  !e.currentTarget.contains(e.relatedTarget as Node | null)
+                )
+                  e.currentTarget.open = false;
+              }}
+            >
+              <summary>Edit assumptions</summary>
+              <Inputs
+                a={a}
+                set={(next) => {
+                  setA(next);
+                  setMobileEdited(true);
+                }}
+              />
+            </details>
             <div className="analysis-content">
               {view === "methodology" ? (
                 <Methodology />
@@ -388,6 +479,16 @@ function WorkspaceApp() {
                   ))}
                   {view === "overview" ? (
                     <>
+                      <Verdict
+                        engine="Quick analysis · annual cash-flow engine"
+                        lines={verdictLines(
+                          m.years[0].dscr,
+                          m.irr,
+                          a.requiredReturn ?? 0.1,
+                          m.years[0].noi / a.price,
+                          m.effectiveExitCap ?? a.exitCap,
+                        )}
+                      />
                       <Metrics m={m} a={a} />
                       <div className="results-heading">
                         <h2>Investment performance</h2>

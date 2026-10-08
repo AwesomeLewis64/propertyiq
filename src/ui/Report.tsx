@@ -97,7 +97,8 @@ export default function Report({
           {pct(a.rate)}; {a.amortization}-year amortization; {a.maturity}-year
           maturity; {a.interestOnlyMonths} interest-only months; origination fee{" "}
           {pct(a.loanFee)}. Initial monthly payment {money(m.monthlyPayment, 2)}
-          . Exit cap rate {pct(a.exitCap)}; selling costs {pct(a.sellingCosts)}.
+          . Exit cap rate {pct(m.effectiveExitCap ?? a.exitCap)}; selling costs{" "}
+          {pct(a.sellingCosts)}.
         </p>
         {m.warnings.map((w) => (
           <p className="negative" key={w}>
@@ -119,7 +120,7 @@ export default function Report({
             </p>
           </div>
         </div>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>

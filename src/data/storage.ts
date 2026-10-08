@@ -19,11 +19,34 @@ export function isAssumptions(value: unknown): value is Assumptions {
     if (key === "expenses") {
       for (const expense of Object.keys(demo.expenses))
         if (typeof value.expenses[expense] !== "number") return false;
-    } else if (typeof value[key] !== typeof defaultValue) return false;
+    } else if (
+      value[key] !== undefined &&
+      typeof value[key] !== typeof defaultValue
+    )
+      return false;
+    else if (
+      value[key] === undefined &&
+      ![
+        "taxesGrowth",
+        "insuranceGrowth",
+        "inflation",
+        "taxReassessment",
+        "reassessmentRate",
+        "exitCapMode",
+        "exitSpread",
+        "requiredReturn",
+        "minDscr",
+        "minDebtYield",
+        "ioConvention",
+        "accrual",
+        "startDate",
+      ].includes(key)
+    )
+      return false;
   }
   if (
     !["manual", "rentRoll"].includes(value.mode as string) ||
-    !["ltv", "amount"].includes(value.loanMode as string) ||
+    !["ltv", "amount", "constraints"].includes(value.loanMode as string) ||
     !["fixed", "percent"].includes(value.managementMode as string)
   )
     return false;
@@ -35,20 +58,21 @@ export function isScenarios(value: unknown): value is ScenarioSettings {
     const group = value[key];
     return (
       record(group) &&
-      Object.entries(group).every(
-        ([k, v]) =>
-          [
-            "rentGrowth",
-            "vacancy",
-            "exitCap",
-            "expenseGrowth",
-            "rate",
-          ].includes(k) &&
-          typeof v === "number" &&
-          Number.isFinite(v) &&
-          v >= (["rentGrowth", "expenseGrowth"].includes(k) ? -1 : 0) &&
-          v <= 1 &&
-          (k !== "exitCap" || v > 0),
+      Object.entries(group).every(([k, v]) =>
+        k === "exitCapMode"
+          ? ["manual", "spread"].includes(v as string)
+          : [
+              "rentGrowth",
+              "vacancy",
+              "exitCap",
+              "expenseGrowth",
+              "rate",
+            ].includes(k) &&
+            typeof v === "number" &&
+            Number.isFinite(v) &&
+            v >= (["rentGrowth", "expenseGrowth"].includes(k) ? -1 : 0) &&
+            v <= 1 &&
+            (k !== "exitCap" || v > 0),
       )
     );
   });
@@ -110,6 +134,7 @@ export function saveAnalysis(
 export function freshAnalysis(): Assumptions {
   return {
     ...structuredClone(demo),
+    exitCapMode: "spread",
     name: "Untitled property",
     location: "",
     units: 1,

@@ -1,90 +1,60 @@
 # PropertyIQ
 
-A free browser-local multifamily investment analytics application. The four core features are five-year underwriting, monthly debt modeling, sensitivity analysis and CSV/XLSX rent-roll import. No account, backend, database, API key, AI service or subscription is required to use the built website.
+PropertyIQ is a free, browser-local tool for understanding multifamily property cash flows and financing. Quick analysis turns acquisition, income and expense assumptions into annual returns, debt schedules and sensitivity tables. Monthly planner adds leasing, construction, refinancing, funding and investor scenarios. Built with React, TypeScript and Vite, it works without accounts, paid APIs or a backend. Uploaded workbooks stay in the browser.
 
-**Current release status: 2.2 beta.** The redesigned start page leads into an editable local setup flow and the monthly workspace. Grouped/searchable tools, navy-and-white styling and a readable property report follow the supplied concept. See [UI_REDESIGN.md](UI_REDESIGN.md). Four focused setup/sample checks and the production build pass; the full financial suite was not rerun. The annual model remains available. Monthly/development analysis remains experimental; no actual Walnut workbook has been reconciled. Read [DECISION_TOOLS.md](DECISION_TOOLS.md) and [EXPANSION.md](EXPANSION.md) for features and financial boundaries.
+**Demo:** public deployment is pending. Run locally below, then choose **Try with sample property**. [Cloudflare Pages launch guide](DEPLOYMENT.md).
+
+![Quick analysis with annual returns and operating charts](docs/screenshots/quick-desktop.png)
+![Monthly planner with the shared sample and eight headline metrics](docs/screenshots/monthly-desktop.png)
+![Phone layout with labeled navigation and the sticky result summary](docs/screenshots/quick-mobile.png)
+
+## Features
+
+- Quick analysis with 3–10 year holds, separate tax/insurance growth, capital inflation and optional sale-tax reassessment.
+- Full amortization after interest-only by default; selectable original-term amortization, 30/360 or actual/360 interest, and LTV/DSCR/debt-yield loan constraints.
+- Sensitivity anchored to going-in cap rates, with a target-return color scale, labeled base case and a downside takeaway.
+- CSV/XLSX rent-roll import, explicit review and application, local snapshots, exports and printable reports.
+- Monthly leasing, expenses, capital budgets, debt, investor returns, actuals, decision tools, evidence and workbook reconciliation. All existing tools remain available through primary navigation, More tools and search.
+- Editable setup defaults, live extraction preview, exact project links, accessible chart legends and mobile results before assumptions.
+
+## How the math is validated
+
+The fictional Maple Grove value-add sample has $254,732 Year 1 NOI, a 41.65% operating expense ratio, taxes equal to 2% of acquisition price, and an exit cap 62.5 bps above its going-in cap. Its calculated annual IRR is **14.17%**. These are illustrative assumptions, not a sourced market deal.
+
+Independent 40-digit Python Decimal calculations provide literal benchmark expectations for debt payments, balances, operating income, sale proceeds and returns. Both engines receive identical assumptions in parity tests: annual NOI, debt payoff, net sale and annual cash-flow IRR reconcile. Monthly XIRR is **14.81%** because distributions arrive monthly and returns use actual dates; this difference is disclosed rather than hidden.
+
+The latest full run passes **184 regression tests**. Finance coverage gates require at least 90% statements, lines and functions, and 80% branches. Playwright tests cover desktop and 390×844 mobile flows, imports, edits, storage, routing, every monthly tool and serious axe accessibility violations. GitHub Actions repeats the checks on pushes and pull requests. See [verification evidence](TESTING.md) and [financial conventions](METHODOLOGY.md).
+
+**Real-workbook validation:** no Walnut workbook has been supplied, so no real-deal reconciliation is claimed. The [mapping checklist and discrepancy template](RECONCILIATION.md) are ready for that comparison; only anonymized results should be published afterward.
 
 ## Run locally
 
-Use Node.js 24 LTS (minimum 22.12) and pnpm 11.25.0. The checked-in `pnpm-lock.yaml` fixes dependency versions. From this directory:
+Use Node.js 22.12 or later and pnpm 11.25.0:
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm test
-pnpm build
 pnpm dev
 ```
 
-Open the local address printed by the server. For a production preview, run `pnpm preview` after building. `npm install`, `npm test` and `npm run build` also use the provided scripts, but npm does not consume the pnpm lockfile. Reproducible builds use pnpm. The source uses React, TypeScript, Vite, Lucide, Recharts, Papa Parse, read-excel-file and fflate. Plain scoped CSS handles the dense financial layout without a styling framework.
+To verify and build:
 
-## Use the application
-
-1. **Explore demo** loads explicitly fictional Maple Grove Apartments assumptions. **Analyze a property** starts empty acquisition/income inputs with editable modeling defaults.
-2. Edit property, income, expenses, financing and exit assumptions. Input fields accept comma-separated amounts. Invalid inputs suppress affected model results.
-3. **Cash flows** shows Year 0 through Year 5. Sale occurs at the selected 3–5-year hold. Post-sale years show operating reference values; debt and equity cash flows after sale are unavailable.
-4. **Debt schedule** shows monthly payments and annual aggregates, including a separately disclosed balloon due at maturity. Maturity before sale suppresses incomplete cash flows and returns.
-5. **Sensitivity** supplies four matrices. Click a cell to inspect it, and explicitly apply an operating/financing scenario if desired. Edit the upside/downside assumptions independently. Terminal NOI sensitivity is a valuation identity, not a new lease-level operating forecast.
-6. **Rent roll import** accepts CSV or XLSX with headers in the first row. Map required unit ID, status and contract-rent columns; market rent and lease expiration are optional. XLSX supports worksheet selection. Inspect validation results, then use **Apply Rent Roll to Analysis**. Uploading alone does not change inputs. Duplicates and invalid rows block application; correct the source file and re-upload. Preview tables paginate in groups of 50.
-7. **Save locally** creates a browser-local snapshot of assumptions and customized scenarios. **Load saved** loads or deletes snapshots. Clearing browser data removes these records. Up to 20 snapshots can be saved. Raw uploaded files are not saved.
-8. Download annual cash-flow and monthly debt CSVs. Open **Investment report**, then use **Print / Save as PDF** with landscape orientation. Reports use your current model and customized scenarios.
-
-Sample files are in `public/samples/`. All are fictional. `rent-roll.csv` and `.xlsx` have 10 units, 8 occupied units and $12,200 monthly occupied contractual rent. Additional files exercise alternate headers and rejected/duplicate rows.
-
-## Financial conventions
-
-See [METHODOLOGY.md](METHODOLOGY.md). Year 1 starts with the entered values; growth begins in Year 2. Reserves and CapEx are below NOI. Exit value uses next year's NOI. IRR is periodic annual IRR, not XIRR. Unavailable, ambiguous or incomplete results are shown as N/A, with explanations. Financial expected values are independently derived, rather than generated by the functions under test.
-
-## Development structure
-
-```text
-src/
-  finance/        Pure financial model, monthly debt, IRR, sensitivity and tests
-  data/           Parsing worker, mapping, validation, export, local storage and tests
-  ui/             Inputs, charts, tables, scenarios, import, report and methodology
-  App.tsx         Navigation and shared analysis/scenario state
-  styles.css      Responsive layout and print styles
-public/
-  samples/        Fictional CSV/XLSX fixtures
-  _headers        Static hosting security headers
-scripts/          Deployment sitemap helper
+```sh
+pnpm typecheck
+pnpm lint
+pnpm test:coverage
+pnpm build
+pnpm exec playwright install chromium
+pnpm test:e2e
 ```
 
-The import screen, charts, sensitivity UI and reporting are loaded on demand. Spreadsheet parsing runs in a dedicated worker with a 15-second timeout. File limits are 5 MB, 5,000 data rows and 64 columns. XLSX archives are limited to 512 members and 25 MB expanded data. An empty inline-string cell emitted by some Excel writers is normalized to an empty cell before reading. Formulas are not recalculated; only stored values are read. Use a recalculated and saved workbook or a values-only rent roll.
+`pnpm preview` opens a built-site preview. Browser tests use the same security headers as the static deployment through `scripts/preview.mjs`. Reproduce the independent calculations with `python scripts/decimal_benchmarks.py`.
 
-## Deploy on Cloudflare Pages
+## Limitations
 
-The site has not been deployed publicly as part of this local build.
+- Synthetic benchmarks do not replace reconciliation to real loan documents and underwriting workbooks.
+- Annual IRR and dated monthly XIRR have different cash-flow timing. Tax, construction and investor scenarios rely on entered assumptions.
+- Actual/360 models full calendar months with nominal scheduled principal; it does not infer lender stub periods or penny-rounding rules.
+- Projects are stored locally; clearing browser data removes them. Export backups before changing devices.
+- Chromium is tested. Other browser engines and actual Cloudflare response headers still require deployment checks.
 
-**Simplest method:** run `pnpm test` and `pnpm build`, then create a Cloudflare Pages project using Direct Upload and upload the contents of `dist`. Deploy to the free `pages.dev` subdomain assigned to your project. Do not upload `src` or `node_modules` as the site. There are no Functions, Worker bindings, secrets or database settings to configure.
-
-**Git-connected build settings:** publish this project directory to your own GitHub repository and connect that repository to Cloudflare Pages.
-
-| Setting | Value |
-|---|---|
-| Framework preset | React (Vite), or None with the settings below |
-| Root directory | Directory containing this `package.json` |
-| Build command | `pnpm test && pnpm build` |
-| Build output directory | `dist` |
-| `NODE_VERSION` | `24` |
-| `PNPM_VERSION` | `11.25.0` |
-| `SITE_URL` | Your actual HTTPS `pages.dev` URL, after project creation |
-
-`SITE_URL` is optional. When set, the final build step creates a sitemap with the real homepage URL; no placeholder domain is shipped. Rebuild after assigning your real domain. The application uses one public URL with distinct view titles. A sitemap is deliberately omitted while the deployment domain is unknown.
-
-Verify the deployed landing page, financial edits, CSV/XLSX imports, exports and browser print. Security headers in `public/_headers` are applied by Cloudflare Pages; local Vite preview does not simulate Cloudflare's header processing. The built application needs only static hosting within the provider's free-tier limits.
-
-Official deployment references: [React on Pages](https://developers.cloudflare.com/pages/framework-guides/deploy-a-react-site/), [build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/) and [build image version controls](https://developers.cloudflare.com/pages/configuration/build-image/).
-
-## Annual workspace limits
-
-The following limits describe the original annual workspace. Monthly/development capabilities and their remaining limits are documented in [EXPANSION.md](EXPANSION.md) and [DECISION_TOOLS.md](DECISION_TOOLS.md).
-
-- Annual pre-tax operating model, USD; equally spaced annual investment cash flows.
-- Fixed-rate loans; optional interest-only months recast over the remaining original amortization term. No refinance, adjustable rates, prepayment penalties or lender-specific penny-rounding.
-- No tax basis calculation, waterfalls, external market feeds, lease-by-lease growth, monthly operating seasonality or reserve release at exit.
-- Physical vacancy is already reflected in occupied rent-roll contracts. Market rent metrics require every unit's market rent. The market gap includes both vacancy and loss-to-lease and is not automatically recoverable revenue.
-- Reports rely on the browser's print-to-PDF feature; print layout may vary by browser and printer. Use landscape orientation. No paid PDF service is used.
-- Local saved data is specific to the browser and device. Save snapshots before refreshing. Unsaved inputs reset to demo on reload.
-- Nonpositive forward NOI, ambiguous cash-flow signs and unmodeled maturity obligations produce unavailable return metrics.
-
-Testing evidence and phase gates are in [TESTING.md](TESTING.md). The original specification, renamed throughout, is preserved in [MASTER_BRIEF.md](MASTER_BRIEF.md). The focused release prioritizes the four requested analytical features and intentionally excludes paid AI or chatbot functionality.
+[Methodology](METHODOLOGY.md) · [Deployment](DEPLOYMENT.md) · [Reconciliation](RECONCILIATION.md) · [Changelog](CHANGELOG.md) · [Contact](mailto:abc@gmail.com)

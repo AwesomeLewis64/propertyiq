@@ -11,8 +11,11 @@ export default function DevelopmentPlanner({ p, set }: ProjectEditor) {
     a = t.absorption,
     plan = useMemo(() => absorptionPlan(p), [p]),
     ledger = useMemo(() => depositLedger(p), [p]);
-  const candidate = { ...p, units: plan, sellingCost: a.commission },
-    f = useMemo(() => forecast(candidate), [p, plan, a.commission]);
+  const candidate = useMemo(
+    () => ({ ...p, units: plan, sellingCost: a.commission }),
+    [p, plan, a.commission],
+  );
+  const f = useMemo(() => forecast(candidate), [candidate]);
   const patch = (part: Partial<typeof a>) =>
     set({ ...p, tools: { ...t, absorption: { ...a, ...part } } });
   const deposit = (id: string, part: Partial<Deposit>) =>
@@ -56,7 +59,7 @@ export default function DevelopmentPlanner({ p, set }: ProjectEditor) {
                 onChange={(v) => patch({ commission: v })}
               />
             </div>
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table>
                 <thead>
                   <tr>
@@ -119,7 +122,7 @@ export default function DevelopmentPlanner({ p, set }: ProjectEditor) {
             </p>
             <details className="adv-details">
               <summary>Proposed sales pace and remaining inventory</summary>
-              <div className="table-scroll">
+              <div className="table-scroll" tabIndex={0}>
                 <table>
                   <thead>
                     <tr>
@@ -260,7 +263,7 @@ export default function DevelopmentPlanner({ p, set }: ProjectEditor) {
         >
           Add buyer deposit
         </button>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
               <tr>
