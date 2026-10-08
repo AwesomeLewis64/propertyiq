@@ -171,7 +171,7 @@ export default function VisualAdditions(props: Props) {
             .filter((r) => r.lowerReason || r.higherReason)
             .map((r) => (
               <p key={r.label}>
-                {r.label}: lower — {r.lowerReason ?? "supported"}; higher —{" "}
+                {r.label}: lower: {r.lowerReason ?? "supported"}; higher —{" "}
                 {r.higherReason ?? "supported"}.
               </p>
             ))}

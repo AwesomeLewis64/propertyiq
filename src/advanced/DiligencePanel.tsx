@@ -1,3 +1,4 @@
+import LoadingFeedback, { BusyLabel } from "../ui/LoadingFeedback";
 import { useState, useRef, useEffect } from "react";
 import type { ProjectEditor } from "./UnitEditor";
 import type { Evidence } from "./types";
@@ -6,7 +7,14 @@ import { uid } from "./defaults";
 import { getAttachment, saveAttachment } from "./store";
 import { money } from "../ui/format";
 export default function DiligencePanel({ p, set }: ProjectEditor) {
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""),
+    [pending, setPending] = useState<Record<string, "save" | "download">>({});
+  const finish = (id: string) =>
+    setPending((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
   const latest = useRef(p);
   useEffect(() => {
     latest.current = p;
@@ -31,6 +39,9 @@ export default function DiligencePanel({ p, set }: ProjectEditor) {
   const avg = (values: Evidence[]) =>
     values.reduce((s, e) => s + e.value, 0) / values.length;
   async function attach(id: string, file: File) {
+    if (pending[id]) return;
+    setPending((current) => ({ ...current, [id]: "save" }));
+    setError("");
     try {
       if (file.size > 5 * 1024 * 1024)
         throw new Error("Attachment limit is 5 MB.");
@@ -50,9 +61,14 @@ export default function DiligencePanel({ p, set }: ProjectEditor) {
           ? String(e.message)
           : "Attachment failed.",
       );
+    } finally {
+      finish(id);
     }
   }
   async function downloadAttachment(e: Evidence) {
+    if (pending[e.id]) return;
+    setPending((current) => ({ ...current, [e.id]: "download" }));
+    setError("");
     try {
       const file = e.attachmentId ? await getAttachment(e.attachmentId) : null;
       if (!file)
@@ -67,6 +83,8 @@ export default function DiligencePanel({ p, set }: ProjectEditor) {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Download failed.");
+    } finally {
+      finish(e.id);
     }
   }
   return (
@@ -176,12 +194,23 @@ export default function DiligencePanel({ p, set }: ProjectEditor) {
                 onChange={(ev) => patch(e.id, "note", ev.target.value)}
               />
             </label>
+            {pending[e.id] && (
+              <LoadingFeedback
+                label={
+                  pending[e.id] === "save"
+                    ? "Saving source file…"
+                    : "Preparing source download…"
+                }
+              />
+            )}
             <div className="adv-actions">
               <label className="adv-field">
                 <span>Attach local source file (up to 5 MB)</span>
                 <input
                   type="file"
                   aria-label={`Attach evidence for ${e.title}`}
+                  disabled={!!pending[e.id]}
+                  aria-busy={pending[e.id] === "save"}
                   onChange={(ev) => {
                     const file = ev.target.files?.[0];
                     if (file) void attach(e.id, file);
@@ -191,9 +220,15 @@ export default function DiligencePanel({ p, set }: ProjectEditor) {
               {e.attachmentId && (
                 <button
                   className="button small"
+                  disabled={!!pending[e.id]}
+                  aria-busy={pending[e.id] === "download"}
                   onClick={() => void downloadAttachment(e)}
                 >
-                  Download attached source
+                  {pending[e.id] === "download" ? (
+                    <BusyLabel>Preparing source…</BusyLabel>
+                  ) : (
+                    "Download attached source"
+                  )}
                 </button>
               )}
               {/^https?:\/\//i.test(e.source) && (
@@ -208,6 +243,7 @@ export default function DiligencePanel({ p, set }: ProjectEditor) {
               )}
               <button
                 className="button small"
+                disabled={!!pending[e.id]}
                 onClick={() =>
                   set({
                     ...p,

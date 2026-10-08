@@ -183,9 +183,9 @@ export default function StartPage({
             </button>
             <span className="iq-eyebrow">YOUR STARTING POINT</span>
             <h1>
-              A few details.
+              Review your
               <br />
-              Then the bigger picture.
+              property inputs.
             </h1>
             <p>Review the numbers we found, and fill in what you know.</p>
             <div className="iq-review-note">
@@ -361,11 +361,13 @@ export default function StartPage({
             <section className="iq-hero">
               <span className="iq-eyebrow">PROPERTY ANALYSIS, SIMPLIFIED</span>
               <h1>
-                Your next property.
-                <br />A clearer picture.
+                Analyze cash flow
+                <br />
+                and financing.
               </h1>
               <p className="iq-hero-subtitle">
-                Paste deal details, map a spreadsheet, or enter your numbers.
+                Enter your assumptions or import a spreadsheet. Review income,
+                expenses, debt, and projected returns.
               </p>
               <form
                 className="iq-composer"
@@ -499,9 +501,9 @@ export default function StartPage({
               <div>
                 <span className="iq-eyebrow">A LOOK INSIDE</span>
                 <h2>
-                  From property details
+                  Review income,
                   <br />
-                  to the bigger picture.
+                  costs, and returns.
                 </h2>
                 <p>
                   Income, expenses, and assumptions
@@ -567,23 +569,23 @@ export default function StartPage({
                 <span className="iq-eyebrow">
                   A CLEAR PATH THROUGH THE NUMBERS
                 </span>
-                <h2>Start simply. Go deeper when you need to.</h2>
+                <h2>Three steps to a property analysis.</h2>
               </div>
               <div className="iq-how-grid">
                 {[
                   [
                     "01",
-                    "Bring what you have",
+                    "Enter property inputs",
                     "Enter a few figures, describe a property, or map a spreadsheet. Review every input before it enters your analysis.",
                   ],
                   [
                     "02",
-                    "See the full picture",
-                    "Follow monthly cash, loan payments and a five-year hold. Compare scenarios and see when more cash is needed.",
+                    "Review cash flow",
+                    "Follow monthly cash, loan payments and your forecast period. Compare scenarios and see when more cash is needed.",
                   ],
                   [
                     "03",
-                    "Make assumptions visible",
+                    "Check the assumptions",
                     "Trace calculations, connect source documents and compare against your workbook. Build a report you can explain.",
                   ],
                 ].map(([number, title, body]) => (

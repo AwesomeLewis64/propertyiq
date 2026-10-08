@@ -1,3 +1,4 @@
+import LoadingFeedback, { BusyLabel } from "../ui/LoadingFeedback";
 import { provenance } from "../data/provenance";
 import { useMemo, useState } from "react";
 import { forecast } from "./engine";
@@ -23,7 +24,7 @@ export default function PortfolioPanel({
     [note, setNote] = useState(""),
     [error, setError] = useState(""),
     [status, setStatus] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState<"backup" | "restore" | null>(null);
   const models = useMemo(
     () => workspace.projects.map((p) => ({ p, m: forecast(p) })),
     [workspace.projects],
@@ -54,7 +55,9 @@ export default function PortfolioPanel({
     return [...periods.values()].sort((a, b) => a.month.localeCompare(b.month));
   }, [models]);
   async function backup() {
-    setBusy(true);
+    setBusy("backup");
+    setError("");
+    setStatus("");
     try {
       download(
         "propertyiq-workspace-backup.json",
@@ -67,11 +70,13 @@ export default function PortfolioPanel({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Backup failed.");
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
   async function restore(file: File) {
-    setBusy(true);
+    setBusy("restore");
+    setError("");
+    setStatus("");
     try {
       if (file.size > 100 * 1024 * 1024)
         throw new Error("Backup limit is 100 MB.");
@@ -104,7 +109,7 @@ export default function PortfolioPanel({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Restore failed.");
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
   return (
@@ -160,7 +165,9 @@ export default function PortfolioPanel({
                     <button
                       className="button small"
                       disabled={
-                        workspace.projects.length <= 1 || !!m.errors.length
+                        !!busy ||
+                        workspace.projects.length <= 1 ||
+                        !!m.errors.length
                       }
                       onClick={() => {
                         if (
@@ -183,7 +190,7 @@ export default function PortfolioPanel({
                               name: p.name,
                               date: new Date().toISOString(),
                               author: "Local workspace",
-                              note: "Archived project — restore this revision as a new copy.",
+                              note: "Archived project. Restore this revision as a new copy.",
                               project: structuredClone(p),
                             },
                           ].slice(-100),
@@ -250,10 +257,15 @@ export default function PortfolioPanel({
         <div className="adv-actions">
           <button
             className="button primary"
-            disabled={busy}
+            disabled={!!busy}
+            aria-busy={busy === "backup"}
             onClick={() => void backup()}
           >
-            Download complete backup
+            {busy === "backup" ? (
+              <BusyLabel>Preparing backup…</BusyLabel>
+            ) : (
+              "Download complete backup"
+            )}
           </button>
           <label className="adv-field">
             <span>Restore backup as new project copies</span>
@@ -261,7 +273,7 @@ export default function PortfolioPanel({
               type="file"
               accept=".json"
               aria-label="Restore workspace backup"
-              disabled={busy}
+              disabled={!!busy}
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) void restore(f);
@@ -269,6 +281,15 @@ export default function PortfolioPanel({
             />
           </label>
         </div>
+        {busy && (
+          <LoadingFeedback
+            label={
+              busy === "backup"
+                ? "Preparing projects and attached files…"
+                : "Restoring projects and attached files…"
+            }
+          />
+        )}
         {error && <p className="alert error">{error}</p>}
         {status && (
           <p className="alert" role="status">
@@ -285,7 +306,7 @@ export default function PortfolioPanel({
         </div>
         <button
           className="button"
-          disabled={forecast(current).errors.length > 0}
+          disabled={!!busy || forecast(current).errors.length > 0}
           onClick={() => {
             onWorkspace({
               ...workspace,
@@ -330,7 +351,7 @@ export default function PortfolioPanel({
                   <td>
                     <button
                       className="button small"
-                      disabled={workspace.projects.length >= 100}
+                      disabled={!!busy || workspace.projects.length >= 100}
                       onClick={() => {
                         const id = uid();
                         onWorkspace({

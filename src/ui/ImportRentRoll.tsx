@@ -1,3 +1,4 @@
+import LoadingFeedback from "./LoadingFeedback";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Upload, FileSpreadsheet, ShieldCheck } from "lucide-react";
 import {
@@ -140,6 +141,8 @@ export default function ImportRentRoll({
               <input
                 type="file"
                 aria-label="Upload rent roll"
+                disabled={busy}
+                aria-busy={busy}
                 accept=".csv,.xlsx"
                 onChange={(e) => {
                   const next = e.target.files?.[0];
@@ -162,9 +165,10 @@ export default function ImportRentRoll({
             </a>
           </div>
           {busy && (
-            <div className="notice" role="status">
-              Parsing {file?.name} in a background worker…
-            </div>
+            <LoadingFeedback
+              label={`Reading ${file?.name ?? "rent roll"}…`}
+              skeleton
+            />
           )}
           {error && (
             <div className="alert error" role="alert">

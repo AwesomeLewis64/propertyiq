@@ -1,3 +1,4 @@
+import LoadingFeedback, { BusyLabel } from "./LoadingFeedback";
 import { useState } from "react";
 import { Save, FolderOpen, Plus, Trash2 } from "lucide-react";
 import { download } from "../data/export";
@@ -24,7 +25,8 @@ export default function LocalAnalyses({
   const [items, setItems] = useState<SavedAnalysis[]>([]),
     [open, setOpen] = useState(false),
     [message, setMessage] = useState(""),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [restoring, setRestoring] = useState(false);
   function read() {
     try {
       setItems(decodeSaved(localStorage.getItem(STORAGE_KEY)));
@@ -98,14 +100,23 @@ export default function LocalAnalyses({
             Download Quick backup
           </button>
           <label className="text-button">
-            Restore Quick backup
+            {restoring ? (
+              <BusyLabel>Restoring backup…</BusyLabel>
+            ) : (
+              "Restore Quick backup"
+            )}
             <input
               aria-label="Restore Quick backup"
+              disabled={restoring}
+              aria-busy={restoring}
               type="file"
               accept=".json"
               onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
+                setRestoring(true);
+                setError("");
+                setMessage("");
                 try {
                   if (file.size > 5 * 1024 * 1024)
                     throw new Error("Quick backup limit is 5 MB.");
@@ -123,6 +134,7 @@ export default function LocalAnalyses({
                   setError((error as Error).message);
                 } finally {
                   e.target.value = "";
+                  setRestoring(false);
                 }
               }}
             />
@@ -130,6 +142,7 @@ export default function LocalAnalyses({
         </div>
         <span>Saved on this device and browser only</span>
       </div>
+      {restoring && <LoadingFeedback label="Restoring Quick analyses…" />}
       {message && (
         <div className="local-message" role="status">
           {message}

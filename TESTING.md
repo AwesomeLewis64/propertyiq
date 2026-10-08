@@ -65,3 +65,9 @@ The GitHub workflow repeats these checks on pushes and pull requests. Local succ
 ## External checks
 
 The public site is https://propertyiq.pages.dev/. Cloudflare response headers, the production-origin sitemap and hosted imports were verified on October 8, 2026; DEPLOYMENT.md records the deployment settings and original hosted run. Real loan-document/workbook reconciliation uses RECONCILIATION.md; fictional benchmarks do not establish real-deal verification. No private test-property information is bundled.
+
+## Design-system preview, October 8, 2026
+
+The user approved publishing the navy-and-white update after reviewing the local preview. The production build, type checks, lint and all 212 calculation/regression tests passed. One complete browser run passed all 97 existing checks and six new delayed-import/error-recovery checks, with five intended PDF-only skips. The six new download-progress checks initially stopped at an ambiguous test locator; after making the locator specific, all six passed in a focused rerun. Final white surfaces, card shapes and matching page-heading styles were checked on Chromium desktop and mobile. The mobile heading check caught an old, more specific CSS selector, which was corrected; its focused rerun passed. The full suite was not repeated after these small corrections.
+
+Quick and monthly report PDFs were generated and visually reviewed (seven and five pages respectively). Standalone PNG/SVG downloads work; SVG colors/fonts resolve from the shared design tokens. Reduced motion, busy-state error recovery, local backup/source preservation, existing navigation, accessibility and overflow were covered by the completed checks. The final preview screenshots and design-system notes are saved with the user-facing outputs. Production deployment is triggered by the approved push to main; the deployment result is recorded separately after Cloudflare finishes.

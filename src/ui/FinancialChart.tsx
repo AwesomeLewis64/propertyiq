@@ -1,10 +1,16 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { BusyLabel } from "./LoadingFeedback";
 import { money } from "./format";
 import { csvText, download } from "../data/export";
 import type { BridgeRow } from "../analytics/visuals";
 
 export type ChartRow = { label: string; values: (number | null)[] };
-const colors = ["#183b6b", "#75613c", "#345e95", "#4f6372"];
+const colors = [
+  "var(--color-ink)",
+  "var(--color-warning)",
+  "var(--color-accent)",
+  "var(--color-muted)",
+];
 const xml = (s: string) =>
   s.replace(
     /[<>&"']/g,
@@ -52,7 +58,8 @@ export default function FinancialChart({
     svg = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(640),
     [selected, setSelected] = useState(0),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [exporting, setExporting] = useState<"svg" | "png" | null>(null);
   useEffect(() => {
     const observer = new ResizeObserver((entries) =>
       setWidth(Math.max(280, entries[0].contentRect.width)),
@@ -114,12 +121,36 @@ export default function FinancialChart({
     .replace(/-$/, " ")
     .trim();
   async function exportImage(kind: "svg" | "png") {
+    if (exporting) return;
+    setExporting(kind);
     try {
       setError("");
       await document.fonts.ready;
       const svgNode = svg.current;
       if (!svgNode) return;
       const clone = svgNode.cloneNode(true) as SVGSVGElement;
+      // Resolve shared CSS tokens before serializing a standalone download.
+      const theme = getComputedStyle(document.documentElement);
+      const token = (name: string) => theme.getPropertyValue(name).trim();
+      const exportColors = colors.map((color) => token(color.slice(4, -1)));
+      const originals = [svgNode, ...svgNode.querySelectorAll("*")];
+      const copies = [clone, ...clone.querySelectorAll("*")];
+      originals.forEach((node, index) => {
+        const computed = getComputedStyle(node);
+        for (const attribute of [
+          "fill",
+          "stroke",
+          "font-family",
+          "font-size",
+        ]) {
+          const value = node.getAttribute(attribute);
+          if (value?.includes("var("))
+            copies[index].setAttribute(
+              attribute,
+              computed.getPropertyValue(attribute),
+            );
+        }
+      });
       clone.querySelectorAll(".chart-cursor").forEach((n) => n.remove());
       clone.setAttribute("width", String(width));
       clone.setAttribute("height", String(height));
@@ -137,13 +168,13 @@ export default function FinancialChart({
       const legend = series
         .map(
           (s, i) =>
-            `<text x="16" y="${height + 58 + i * 19}" fill="${colors[i % 4]}" font-size="12">${xml(s)}</text>`,
+            `<text x="16" y="${height + 58 + i * 19}" fill="${exportColors[i % 4]}" font-size="${token("--text-12")}">${xml(s)}</text>`,
         )
         .join("");
       const foot = height + 70 + series.length * 19;
       const total = foot + lines.length * 18 + 20;
       const body = new XMLSerializer().serializeToString(clone);
-      const text = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${total}" viewBox="0 0 ${width} ${total}"><rect width="100%" height="100%" fill="white"/><text x="16" y="24" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#183b6b">${xml(title)}</text><g transform="translate(0 34)">${body}</g>${legend}${lines.map((s, i) => `<text x="16" y="${foot + i * 18}" font-family="Arial,sans-serif" font-size="11" fill="#263d58">${xml(s)}</text>`).join("")}</svg>`;
+      const text = `<svg xmlns="http://www.w3.org/2000/svg" font-family="${xml(token("--font-sans"))}" width="${width}" height="${total}" viewBox="0 0 ${width} ${total}"><rect width="100%" height="100%" fill="${token("--color-surface")}"/><text x="16" y="24" font-family="${xml(token("--font-sans"))}" font-size="${token("--text-16")}" font-weight="${token("--weight-semibold")}" fill="${token("--color-ink")}">${xml(title)}</text><g transform="translate(0 34)">${body}</g>${legend}${lines.map((s, i) => `<text x="16" y="${foot + i * 18}" font-family="${xml(token("--font-sans"))}" font-size="${token("--text-12")}" fill="${token("--color-text")}">${xml(s)}</text>`).join("")}</svg>`;
       if (kind === "svg") {
         download(`${stem}.svg`, text, "image/svg+xml");
         return;
@@ -173,6 +204,8 @@ export default function FinancialChart({
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Chart export failed.");
+    } finally {
+      setExporting(null);
     }
   }
   if (!rows.length)
@@ -189,8 +222,28 @@ export default function FinancialChart({
         <details className="chart-download no-print">
           <summary>Download</summary>
           <div>
-            <button onClick={() => void exportImage("png")}>PNG image</button>
-            <button onClick={() => void exportImage("svg")}>SVG image</button>
+            <button
+              disabled={!!exporting}
+              aria-busy={exporting === "png"}
+              onClick={() => void exportImage("png")}
+            >
+              {exporting === "png" ? (
+                <BusyLabel>Preparing PNG…</BusyLabel>
+              ) : (
+                "PNG image"
+              )}
+            </button>
+            <button
+              disabled={!!exporting}
+              aria-busy={exporting === "svg"}
+              onClick={() => void exportImage("svg")}
+            >
+              {exporting === "svg" ? (
+                <BusyLabel>Preparing SVG…</BusyLabel>
+              ) : (
+                "SVG image"
+              )}
+            </button>
             <button
               onClick={() =>
                 download(
@@ -205,6 +258,11 @@ export default function FinancialChart({
         </details>
       </div>
       <p className="chart-note">{note}</p>
+      {exporting && (
+        <p className="chart-note" role="status">
+          Preparing {exporting.toUpperCase()} download…
+        </p>
+      )}
       {error && (
         <p className="alert error" role="alert">
           {error}
@@ -223,9 +281,9 @@ export default function FinancialChart({
           viewBox={`0 0 ${width} ${height}`}
           role="img"
           aria-label={`${title}; inspect any period using the control or data table below.`}
-          fontFamily="Arial,sans-serif"
-          fontSize="12"
-          fill="#263d58"
+          fontFamily="var(--font-sans)"
+          fontSize="var(--text-12)"
+          fill="var(--color-text)"
           onPointerMove={(e) => {
             if (e.buttons || e.pointerType === "mouse") {
               const rect = e.currentTarget.getBoundingClientRect();
@@ -270,7 +328,7 @@ export default function FinancialChart({
             );
           }}
         >
-          <rect width={width} height={height} fill="white" />
+          <rect width={width} height={height} fill="var(--color-surface)" />
           {horizontal ? (
             <>
               <line
@@ -278,11 +336,11 @@ export default function FinancialChart({
                 x2={x(0)}
                 y1={8}
                 y2={height - 35}
-                stroke="#b7c4d3"
+                stroke="var(--color-border-strong)"
               />
               {rows.map((r, i) => (
                 <g key={r.label}>
-                  <text x={0} y={22 + i * 48} fontSize="12">
+                  <text x={0} y={22 + i * 48} fontSize="var(--text-12)">
                     {r.label.length > 23 ? r.label.slice(0, 21) + "…" : r.label}
                   </text>
                   {r.values.map((v, j) => {
@@ -306,7 +364,7 @@ export default function FinancialChart({
                     );
                   })}
                   {bridge && (
-                    <text x={left} y={46 + i * 48} fontSize="11">
+                    <text x={left} y={46 + i * 48} fontSize="var(--text-12)">
                       {format(r.values[0])}
                     </text>
                   )}
@@ -330,9 +388,9 @@ export default function FinancialChart({
                       x2={right}
                       y1={y(v)}
                       y2={y(v)}
-                      stroke="#e0e6ee"
+                      stroke="var(--color-border)"
                     />
-                    <text x={0} y={y(v) + 4} fontSize="11">
+                    <text x={0} y={y(v) + 4} fontSize="var(--text-12)">
                       {Math.abs(v) >= 1000000
                         ? `$${(v / 1000000).toFixed(1)}m`
                         : `$${(v / 1000).toFixed(0)}k`}
@@ -370,7 +428,7 @@ export default function FinancialChart({
                 x2={xp(active)}
                 y1={25}
                 y2={205}
-                stroke="#71839c"
+                stroke="var(--color-muted)"
                 strokeDasharray="3 3"
               />
               {[0, rows.length - 1].map((i, k) => (

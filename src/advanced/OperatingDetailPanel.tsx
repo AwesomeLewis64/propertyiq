@@ -1,3 +1,4 @@
+import LoadingFeedback from "../ui/LoadingFeedback";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Card,
@@ -20,13 +21,21 @@ export default function OperatingDetailPanel({ p, set }: ProjectEditor) {
     [month, setMonth] = useState(p.startDate.slice(0, 7)),
     [complete, setComplete] = useState(false),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useState(""),
+    [busy, setBusy] = useState(false);
   const latest = useRef(p),
-    workerRef = useRef<Worker | null>(null);
+    workerRef = useRef<Worker | null>(null),
+    timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     latest.current = p;
   }, [p]);
-  useEffect(() => () => workerRef.current?.terminate(), []);
+  useEffect(
+    () => () => {
+      workerRef.current?.terminate();
+      clearTimeout(timeoutRef.current);
+    },
+    [],
+  );
   const records = t.details.filter((d) => d.month === month);
   const budget = useMemo(() => forecast({ ...p, actuals: [] }), [p]);
   const row = budget.rows.find((r) => r.date.startsWith(month));
@@ -89,28 +98,33 @@ export default function OperatingDetailPanel({ p, set }: ProjectEditor) {
   };
   const upload = (file: File) => {
     workerRef.current?.terminate();
+    clearTimeout(timeoutRef.current);
     setError("");
-    setNotice("Reading operating detail…");
+    setNotice("");
+    setBusy(true);
     const worker = new Worker(
       new URL("../data/import.worker.ts", import.meta.url),
       { type: "module" },
     );
     workerRef.current = worker;
-    const timeout = setTimeout(() => {
+    const timeout = (timeoutRef.current = setTimeout(() => {
       worker.terminate();
       setError("Import timed out.");
       setNotice("");
-    }, 15000);
+      setBusy(false);
+    }, 15000));
     worker.onerror = () => {
       clearTimeout(timeout);
       setError("Unable to read detail file.");
       setNotice("");
+      setBusy(false);
       worker.terminate();
     };
     worker.onmessage = (e) => {
       clearTimeout(timeout);
       worker.terminate();
       setNotice("");
+      setBusy(false);
       try {
         if (e.data.error) throw new Error(e.data.error);
         const raw = e.data.raw as RawTable;
@@ -187,6 +201,8 @@ export default function OperatingDetailPanel({ p, set }: ProjectEditor) {
               type="file"
               accept=".csv,.xlsx"
               aria-label="Operating detail upload"
+              disabled={busy}
+              aria-busy={busy}
               onChange={(e) => {
                 if (e.target.files?.[0]) upload(e.target.files[0]);
               }}
@@ -232,6 +248,7 @@ export default function OperatingDetailPanel({ p, set }: ProjectEditor) {
           </button>
         </div>
         {error && <p className="alert error">{error}</p>}
+        {busy && <LoadingFeedback label="Reading operating detail…" skeleton />}
         {notice && <p role="status">{notice}</p>}
         <div className="metrics adv-metrics">
           <Metric label="Recorded collections" value={money(rent)} />

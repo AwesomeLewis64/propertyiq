@@ -207,7 +207,7 @@ function Comparison({ p, set, create }: Props) {
             <button
               className="button small"
               disabled={!!c.m.errors.length}
-              onClick={() => create({ ...c.p, name: `${p.name} — ${c.name}` })}
+              onClick={() => create({ ...c.p, name: `${p.name}: ${c.name}` })}
             >
               Create {c.name.toLowerCase()} project copy
             </button>
@@ -514,7 +514,7 @@ function Lenders({ p, set, create }: Props) {
             <button
               className="button"
               disabled={!!error || !!m.errors.length}
-              onClick={() => create({ ...q, name: `${p.name} — ${o.name}` })}
+              onClick={() => create({ ...q, name: `${p.name}: ${o.name}` })}
             >
               Create project with this offer
             </button>

@@ -1,3 +1,4 @@
+import LoadingFeedback, { BusyLabel } from "../ui/LoadingFeedback";
 import { useEffect, useRef, useState } from "react";
 import { forecast } from "./engine";
 import type { ProjectEditor } from "./UnitEditor";
@@ -159,8 +160,13 @@ export default function RiskPanel({ p, set }: ProjectEditor) {
           ))}
         </div>
         <div className="adv-actions">
-          <button className="button primary" onClick={run} disabled={busy}>
-            {busy ? "Simulating…" : "Run simulation"}
+          <button
+            className="button primary"
+            onClick={run}
+            disabled={busy}
+            aria-busy={busy}
+          >
+            {busy ? <BusyLabel>Simulating…</BusyLabel> : "Run simulation"}
           </button>
           {busy && (
             <button
@@ -175,6 +181,9 @@ export default function RiskPanel({ p, set }: ProjectEditor) {
           )}
         </div>
         {error && <p className="alert error">{error}</p>}
+        {busy && (
+          <LoadingFeedback label="Calculating simulation results…" skeleton />
+        )}
         {result && (
           <>
             {runSignature !== signature && (

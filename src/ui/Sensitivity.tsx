@@ -291,14 +291,14 @@ export default function Sensitivity({
                           style={{
                             background:
                               cell.value === null
-                                ? "#f2f4f5"
+                                ? "var(--color-surface-soft)"
                                 : grid.metric === "irr"
                                   ? Math.abs(cell.value - target) < 0.0005
-                                    ? "#edf0f3"
+                                    ? "var(--color-surface-soft)"
                                     : cell.value < target
-                                      ? "#f6dddd"
-                                      : "#dcefe3"
-                                  : `hsl(${35 + ratio * 115} 26% ${95 - ratio * 14}%)`,
+                                      ? "var(--color-danger-soft)"
+                                      : "var(--color-success-soft)"
+                                  : `color-mix(in srgb, var(--color-accent) ${8 + ratio * 24}%, var(--color-surface))`,
                           }}
                           aria-label={`${grid.rowLabel} ${rowFormat(cell.row)}, ${grid.colLabel} ${colFormat(cell.col)}: ${format(cell.value, grid.metric)}`}
                           aria-pressed={

@@ -1,3 +1,4 @@
+import LoadingFeedback from "../ui/LoadingFeedback";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -362,7 +363,7 @@ export default function AdvancedWorkspace({
       ]),
     );
   const exportMemo = () => {
-    const text = `# ${p.name}\n\n${provenance(p)}\n\nStrategy: ${p.strategy}\nForecast start: ${p.startDate}; ${p.months} months\nInitial/as-of equity: ${money(m.initialEquity)}\nForecast XIRR: ${pct(m.irr)}\nNPV at ${pct(p.discount)}: ${money(m.npv)}\nEquity multiple: ${multiple(m.multiple)}\nAdditional owner funding: ${money(m.additionalEquity)}\nDebt capacity: ${money(m.sizing.maximum)} (${m.sizing.binding})\n\n## Modeling assumptions\n\nUnit schedules, expenses and financing are user-entered. Cash shortfalls are funded by disclosed owner contributions. Dated returns use a 365-day year. Taxes are illustrative entered-rate scenarios.\n\n## Warnings\n\n${m.warnings.map((w) => `- ${w}`).join("\n")}\n\n## Diligence\n\n${p.tasks.map((t) => `- [${t.status === "complete" ? "x" : " "}] ${t.title} — ${t.owner || "unassigned"}; due ${t.due || "unspecified"}; ${t.note}`).join("\n")}\n\n## Evidence\n\n${p.evidence.map((e) => `- ${e.title}: ${e.status}; ${e.date}; ${e.source}; ${e.note}`).join("\n")}`;
+    const text = `# ${p.name}\n\n${provenance(p)}\n\nStrategy: ${p.strategy}\nForecast start: ${p.startDate}; ${p.months} months\nInitial/as-of equity: ${money(m.initialEquity)}\nForecast XIRR: ${pct(m.irr)}\nNPV at ${pct(p.discount)}: ${money(m.npv)}\nEquity multiple: ${multiple(m.multiple)}\nAdditional owner funding: ${money(m.additionalEquity)}\nDebt capacity: ${money(m.sizing.maximum)} (${m.sizing.binding})\n\n## Modeling assumptions\n\nUnit schedules, expenses and financing are user-entered. Cash shortfalls are funded by disclosed owner contributions. Dated returns use a 365-day year. Taxes are illustrative entered-rate scenarios.\n\n## Warnings\n\n${m.warnings.map((w) => `- ${w}`).join("\n")}\n\n## Diligence\n\n${p.tasks.map((t) => `- [${t.status === "complete" ? "x" : " "}] ${t.title}: ${t.owner || "unassigned"}; due ${t.due || "unspecified"}; ${t.note}`).join("\n")}\n\n## Evidence\n\n${p.evidence.map((e) => `- ${e.title}: ${e.status}; ${e.date}; ${e.source}; ${e.note}`).join("\n")}`;
     download("propertyiq-investment-notes.md", text, "text/markdown");
   };
   return (
@@ -636,7 +637,9 @@ export default function AdvancedWorkspace({
           )}
           <Suspense
             key={p.id}
-            fallback={<p role="status">Opening workspace tools…</p>}
+            fallback={
+              <LoadingFeedback label="Opening workspace tools…" skeleton />
+            }
           >
             {tab === "overview" ? (
               <Overview p={p} set={setProject} m={m} onTrace={trace} />

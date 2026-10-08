@@ -1,3 +1,4 @@
+import LoadingFeedback, { BusyLabel } from "../ui/LoadingFeedback";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RawTable } from "../data/rentRoll";
 import type { ProjectEditor } from "./UnitEditor";
@@ -25,6 +26,7 @@ export default function ImportPanel({
     [sheet, setSheet] = useState(1),
     [sheets, setSheets] = useState<string[]>([]),
     [busy, setBusy] = useState(false),
+    [applying, setApplying] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const request = useRef(0);
@@ -89,7 +91,9 @@ export default function ImportPanel({
   }, [p, raw, kind, mapping]);
   const apply = async () => {
     if (!candidate.project || !file) return;
-    if (!raw) return;
+    if (!raw || applying || busy) return;
+    setApplying(true);
+    setError("");
     try {
       const id = uid();
       await saveAttachment(id, file);
@@ -118,6 +122,8 @@ export default function ImportPanel({
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import failed.");
+    } finally {
+      setApplying(false);
     }
   };
   return (
@@ -146,6 +152,8 @@ export default function ImportPanel({
             <span>Upload CSV / XLSX</span>
             <input
               aria-label="Advanced spreadsheet upload"
+              disabled={busy || applying}
+              aria-busy={busy || applying}
               type="file"
               accept=".csv,.xlsx"
               onChange={(e) => {
@@ -218,11 +226,14 @@ export default function ImportPanel({
             discount, months.
           </p>
         )}
-        {busy && <p role="status">Reading spreadsheet in a local worker…</p>}
+        {busy && <LoadingFeedback label="Reading spreadsheet…" skeleton />}
         {error && (
           <p className="alert error" role="alert">
             {error}
           </p>
+        )}
+        {applying && (
+          <LoadingFeedback label="Saving the mapped worksheet and source file…" />
         )}
         {notice && (
           <p className="alert" role="status">
@@ -280,10 +291,15 @@ export default function ImportPanel({
             )}
             <button
               className="button primary"
-              disabled={!candidate.project || busy}
+              disabled={!candidate.project || busy || applying}
+              aria-busy={applying}
               onClick={apply}
             >
-              Apply mapped worksheet
+              {applying ? (
+                <BusyLabel>Saving worksheet…</BusyLabel>
+              ) : (
+                "Apply mapped worksheet"
+              )}
             </button>
           </>
         )}

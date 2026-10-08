@@ -1,3 +1,4 @@
+import LoadingFeedback, { BusyLabel } from "../ui/LoadingFeedback";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, Select, NumberField, TextField } from "./Controls";
 import {
@@ -445,9 +446,11 @@ export default function ReconciliationPanel({ p, set }: ProjectEditor) {
           <a href="/samples/reconciliation-fictional.csv" download>
             Download fictional comparison example
           </a>{" "}
-          — fictional figures for learning the mapping workflow.
+          : fictional figures for learning the mapping workflow.
         </p>
-        {busy && <p role="status">Reading or saving workbook…</p>}
+        {busy && (
+          <LoadingFeedback label="Reading or saving workbook…" skeleton />
+        )}
         {error && <p className="alert error">{error}</p>}
         {mapping.error && <p className="alert error">{mapping.error}</p>}
         {notice && <p role="status">{notice}</p>}
@@ -496,9 +499,14 @@ export default function ReconciliationPanel({ p, set }: ProjectEditor) {
         <button
           className="button primary"
           disabled={busy || !mapping.items.length || !!f.errors.length}
+          aria-busy={busy}
           onClick={() => void apply()}
         >
-          Save mapped workbook benchmarks
+          {busy ? (
+            <BusyLabel>Reading or saving…</BusyLabel>
+          ) : (
+            "Save mapped workbook benchmarks"
+          )}
         </button>
       </Card>
     </>

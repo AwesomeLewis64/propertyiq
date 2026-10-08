@@ -1,3 +1,4 @@
+import LoadingFeedback from "./ui/LoadingFeedback";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   ArrowUpRight,
@@ -252,9 +253,7 @@ function WorkspaceApp() {
     return (
       <Suspense
         fallback={
-          <div className="panel panel-padding" role="status">
-            Opening monthly workspace…
-          </div>
+          <LoadingFeedback label="Opening monthly workspace…" skeleton />
         }
       >
         <AdvancedWorkspace
@@ -462,7 +461,11 @@ function WorkspaceApp() {
               {view === "methodology" ? (
                 <Methodology />
               ) : view === "import" ? (
-                <Suspense fallback={<div role="status">Loading import…</div>}>
+                <Suspense
+                  fallback={
+                    <LoadingFeedback label="Loading import…" skeleton />
+                  }
+                >
                   <ImportRentRoll a={a} onApply={setA} />
                 </Suspense>
               ) : m.errors.length > 0 ? (
@@ -503,9 +506,7 @@ function WorkspaceApp() {
                       </div>
                       <Suspense
                         fallback={
-                          <div className="panel panel-padding" role="status">
-                            Loading charts…
-                          </div>
+                          <LoadingFeedback label="Loading charts…" skeleton />
                         }
                       >
                         <Charts m={m} a={a} />
@@ -523,7 +524,12 @@ function WorkspaceApp() {
                     <DebtTable m={m} />
                   ) : view === "sensitivity" ? (
                     <Suspense
-                      fallback={<div role="status">Loading sensitivity…</div>}
+                      fallback={
+                        <LoadingFeedback
+                          label="Loading sensitivity…"
+                          skeleton
+                        />
+                      }
                     >
                       <Sensitivity
                         a={a}
@@ -534,7 +540,9 @@ function WorkspaceApp() {
                     </Suspense>
                   ) : view === "report" ? (
                     <Suspense
-                      fallback={<div role="status">Loading report…</div>}
+                      fallback={
+                        <LoadingFeedback label="Loading report…" skeleton />
+                      }
                     >
                       <Report a={a} m={m} scenarios={scenarios} />
                     </Suspense>
