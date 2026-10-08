@@ -10,7 +10,7 @@ Verification date: October 8, 2026. Release: 2.4.0.
 | Application and browser-test TypeScript | Pass |
 | ESLint, including React hooks | Pass, zero warnings |
 | Production build | Pass |
-| Browser checks | 91 pass across six desktop/narrow-screen projects; five PDF-only cases deliberately skipped |
+| Browser checks | 97 pass across six desktop/narrow-screen projects; five PDF-only cases deliberately skipped |
 | Serious/critical axe violations on checked screens | Zero |
 | 390×844 page-level horizontal overflow | None on checked screens |
 | Finance coverage | 91.31% statements, 83.42% branches, 100% functions, 92.36% lines |
@@ -38,6 +38,7 @@ The production build runs through scripts/preview.mjs under public/_headers CSP.
 - Keyboard chart inspection, hold-period alignment, actual PNG/SVG/CSV downloads, safe metadata and disclosed origin.
 - Every monthly tool and checked Quick/setup/home/legal screen: zero serious/critical axe findings and no page-level overflow at 390 pixels. Tables remain scrollable and keyboard-focusable.
 - Empty application-error collection in the checked sample and monthly navigation flows.
+- Monthly planner entry with EasyList's `.adv-sidebar { display: none !important; }` cosmetic filter simulated, at 1920, 1440, 768 and 390 pixels in all six browser projects. Checks require visible navigation, correct main-content placement, readable headings and no horizontal page overflow. The test reproduced the reported collapse before the internal class was renamed to `planner-sidebar`.
 
 Only Chromium desktop supports the actual page.pdf API used here. Its two PDFs are generated after report content, charts and fonts load. The other five project copies skip that PDF-only case while still testing all browser flows. Pages and exported PNGs are reviewed visually. Physical printers and native browser print dialogs are outside this scope.
 
@@ -63,4 +64,4 @@ The GitHub workflow repeats these checks on pushes and pull requests. Local succ
 
 ## External checks
 
-No public deployment has been created. Live Cloudflare headers, the actual SITE_URL/sitemap and hosted imports need DEPLOYMENT.md checks after hosting is chosen. Real loan-document/workbook reconciliation uses RECONCILIATION.md; fictional benchmarks do not establish real-deal verification. No private test-property information is bundled.
+The public site is https://propertyiq.pages.dev/. Cloudflare response headers, the production-origin sitemap and hosted imports were verified on October 8, 2026; DEPLOYMENT.md records the deployment settings and original hosted run. Real loan-document/workbook reconciliation uses RECONCILIATION.md; fictional benchmarks do not establish real-deal verification. No private test-property information is bundled.

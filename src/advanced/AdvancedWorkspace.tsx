@@ -397,7 +397,7 @@ export default function AdvancedWorkspace({
         </div>
       </header>
       <div className="adv-shell">
-        <aside className="adv-sidebar">
+        <aside className="planner-sidebar">
           <label className="iq-tool-search">
             <Search size={15} />
             <input

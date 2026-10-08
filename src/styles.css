@@ -2799,7 +2799,7 @@ h2 {
 .advanced .adv-shell {
   grid-template-columns: 242px minmax(0, 1fr);
 }
-.advanced .adv-sidebar {
+.advanced .planner-sidebar {
   padding: 22px 17px;
   border-color: #e2e9f4;
   height: calc(100vh - 76px);
@@ -2823,7 +2823,7 @@ h2 {
   font-size: 12px;
   padding: 0;
 }
-.advanced .adv-sidebar nav {
+.advanced .planner-sidebar nav {
   gap: 15px;
   margin-top: 26px;
 }
@@ -2842,29 +2842,29 @@ h2 {
   font-weight: 550;
   letter-spacing: 0.3px;
 }
-.advanced .adv-sidebar nav button {
+.advanced .planner-sidebar nav button {
   padding: 10px 12px;
   border-radius: 8px;
   color: #536680;
   font-size: 12px;
 }
-.advanced .adv-sidebar nav button:hover {
+.advanced .planner-sidebar nav button:hover {
   background: #f5f8fd;
 }
-.advanced .adv-sidebar nav button.active {
+.advanced .planner-sidebar nav button.active {
   color: #1559af;
   background: #eaf2ff;
   font-weight: 600;
   box-shadow: inset 2px 0 #3b74c4;
 }
-.advanced .adv-sidebar p {
+.advanced .planner-sidebar p {
   color: #8995a7;
   font-size: var(--font-min);
   margin: 24px 12px 0;
   border-top: 1px solid #e9edf5;
   padding-top: 16px;
 }
-.advanced .adv-sidebar .iq-no-tools {
+.advanced .planner-sidebar .iq-no-tools {
   border: 0;
   padding: 0;
   margin: 0 12px;
@@ -3439,30 +3439,30 @@ h2 {
   .advanced .adv-shell {
     display: block;
   }
-  .advanced .adv-sidebar {
+  .advanced .planner-sidebar {
     height: auto;
     padding: 12px;
     border-bottom: 1px solid #e2e9f4;
   }
-  .advanced .adv-sidebar nav {
+  .advanced .planner-sidebar nav {
     display: flex;
     flex-direction: row;
     overflow: auto;
     gap: 4px;
     margin: 12px 0 0;
   }
-  .advanced .adv-sidebar .iq-nav-group {
+  .advanced .planner-sidebar .iq-nav-group {
     display: contents;
   }
   .iq-nav-group-label {
     display: none;
   }
-  .advanced .adv-sidebar nav button {
+  .advanced .planner-sidebar nav button {
     white-space: nowrap;
     padding: 10px;
     font-size: var(--font-min);
   }
-  .advanced .adv-sidebar p {
+  .advanced .planner-sidebar p {
     display: none;
   }
   .iq-tool-search {
@@ -3584,7 +3584,7 @@ h2 {
   display: grid;
   grid-template-columns: 215px minmax(0, 1fr);
 }
-.adv-sidebar {
+.planner-sidebar {
   border-right: 1px solid #e1e6eb;
   padding: 30px 18px;
   position: sticky;
@@ -3592,13 +3592,13 @@ h2 {
   height: calc(100vh - 70px);
   overflow: auto;
 }
-.adv-sidebar nav {
+.planner-sidebar nav {
   display: flex;
   flex-direction: column;
   gap: 4px;
   margin: 15px 0;
 }
-.adv-sidebar nav button {
+.planner-sidebar nav button {
   border: 0;
   background: transparent;
   text-align: left;
@@ -3609,12 +3609,12 @@ h2 {
   font-size: 13px;
   cursor: pointer;
 }
-.adv-sidebar nav button.active {
+.planner-sidebar nav button.active {
   background: #eaf3ef;
   color: #1c6555;
   font-weight: 700;
 }
-.adv-sidebar p {
+.planner-sidebar p {
   font-size: 12px;
   color: #53697a;
   line-height: 1.8;
@@ -3963,23 +3963,23 @@ h2 {
   .adv-shell {
     display: block;
   }
-  .adv-sidebar {
+  .planner-sidebar {
     position: static;
     height: auto;
     border-right: 0;
     padding: 10px 12px;
   }
-  .adv-sidebar .nav-label,
-  .adv-sidebar p {
+  .planner-sidebar .nav-label,
+  .planner-sidebar p {
     display: none;
   }
-  .adv-sidebar nav {
+  .planner-sidebar nav {
     flex-direction: row;
     overflow: auto;
     margin: 0;
     gap: 3px;
   }
-  .adv-sidebar nav button {
+  .planner-sidebar nav button {
     white-space: nowrap;
     padding: 12px 9px;
     font-size: 12px;
@@ -4206,7 +4206,7 @@ small,
 .heatmap button {
   color: var(--text-primary);
 }
-.adv-sidebar {
+.planner-sidebar {
   background:
     linear-gradient(white 30%, #ffffff00),
     linear-gradient(#ffffff00, white 70%) bottom,
@@ -4677,7 +4677,7 @@ select:focus-visible,
 }
 @media print {
   .workspace-heading,
-  .adv-sidebar,
+  .planner-sidebar,
   .legal-footer,
   .adv-main > details {
     display: none !important;

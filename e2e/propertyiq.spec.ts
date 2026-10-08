@@ -174,10 +174,10 @@ test("monthly wayfinding, exact project history, deep links and legal routing", 
   await expect(
     page.locator(".adv-metrics").getByText("$254,732", { exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".adv-sidebar nav button")).toHaveCount(8);
+  await expect(page.locator(".planner-sidebar nav button")).toHaveCount(8);
   await shot(page, "monthly", info.project.name);
   await page.getByRole("button", { name: "More tools", exact: true }).click();
-  await expect(page.locator(".adv-sidebar nav button")).toHaveCount(19);
+  await expect(page.locator(".planner-sidebar nav button")).toHaveCount(19);
   await page.getByText("Project actions", { exact: true }).click();
   await page.getByRole("button", { name: "Duplicate", exact: true }).click();
   const id = await page.getByLabel("Active local project").inputValue();
