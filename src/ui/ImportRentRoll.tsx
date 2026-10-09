@@ -1,6 +1,6 @@
 import LoadingFeedback from "./LoadingFeedback";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Upload, FileSpreadsheet, ShieldCheck } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, ShieldCheck } from "lucide-react";
 import {
   aggregate,
   applyRentRoll,
@@ -157,10 +157,12 @@ export default function ImportRentRoll({
             </span>
           </div>
           <div className="import-samples">
-            <a href="/samples/rent-roll.csv" download>
+            <a className="button small" href="/samples/rent-roll.csv" download>
+              <Download size={14} aria-hidden="true" />
               Download sample CSV
             </a>
-            <a href="/samples/rent-roll.xlsx" download>
+            <a className="button small" href="/samples/rent-roll.xlsx" download>
+              <Download size={14} aria-hidden="true" />
               Download sample XLSX
             </a>
           </div>

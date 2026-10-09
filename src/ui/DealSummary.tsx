@@ -42,7 +42,7 @@ export default function DealSummary({
         )}
         {m.irr === null
           ? "IRR not available"
-          : `${meets ? "Meets" : "Below"} ${pct(target)} target`}
+          : `IRR ${m.irr > target ? "above" : m.irr === target ? "at" : "below"} ${Number((target * 100).toFixed(2))}% target`}
       </p>
       <ul>
         {items.map(([label, value, view, where]) => (

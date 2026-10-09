@@ -1,5 +1,6 @@
 import LoadingFeedback, { BusyLabel } from "../ui/LoadingFeedback";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Download } from "lucide-react";
 import { Card, Select, NumberField, TextField } from "./Controls";
 import {
   toolsFor,
@@ -359,6 +360,35 @@ export default function ReconciliationPanel({ p, set }: ProjectEditor) {
         title="Map workbook cells or columns"
         note="XLSX cell addresses use the original worksheet grid. CSV addresses refer to the displayed normalized table, including its header row. Maximum 5 MB, 5,000 rows and 64 columns; no formula execution."
       >
+        <div className="recon-starters">
+          <button
+            className="button small"
+            onClick={() =>
+              download(
+                "propertyiq-benchmark-template.csv",
+                csvText([
+                  ["Metric", "Value", "Definition"],
+                  ...Object.entries(metricLabels).map(([k, v]) => [k, "", v]),
+                ]),
+              )
+            }
+          >
+            <Download size={14} aria-hidden="true" />
+            Download benchmark column template
+          </button>
+          <a
+            className="button small"
+            href="/samples/reconciliation-fictional.csv"
+            download
+          >
+            <Download size={14} aria-hidden="true" />
+            Download fictional comparison example
+          </a>
+          <small>
+            The example holds fictional figures for learning the mapping
+            workflow.
+          </small>
+        </div>
         <div className="adv-form">
           <label className="adv-field">
             Workbook for comparison
@@ -428,26 +458,6 @@ export default function ReconciliationPanel({ p, set }: ProjectEditor) {
             onChange={setDefinition}
           />
         </div>
-        <button
-          className="button small"
-          onClick={() =>
-            download(
-              "propertyiq-benchmark-template.csv",
-              csvText([
-                ["Metric", "Value", "Definition"],
-                ...Object.entries(metricLabels).map(([k, v]) => [k, "", v]),
-              ]),
-            )
-          }
-        >
-          Download benchmark column template
-        </button>
-        <p>
-          <a href="/samples/reconciliation-fictional.csv" download>
-            Download fictional comparison example
-          </a>{" "}
-          : fictional figures for learning the mapping workflow.
-        </p>
         {busy && (
           <LoadingFeedback label="Reading or saving workbook…" skeleton />
         )}

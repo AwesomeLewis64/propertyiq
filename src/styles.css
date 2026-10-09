@@ -4143,9 +4143,6 @@ small,
   flex-wrap: wrap;
   gap: var(--space-12);
   align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 5;
   background: var(--canvas);
   border-bottom: var(--stroke-thin) solid var(--border);
   padding: var(--space-8) 0;
@@ -5708,6 +5705,71 @@ h3 {
   .chart-zoom-hint {
     display: none;
   }
+}
+
+/* File pickers everywhere: the browser's own "Choose file" button, in the
+   design system's secondary-button style. Behavior stays native. */
+input[type="file"] {
+  max-width: 100%;
+  color: var(--color-muted);
+  font-size: var(--text-14);
+}
+input[type="file"]::file-selector-button {
+  margin-right: var(--space-12);
+  min-height: var(--control-height-small);
+  padding: var(--space-8) var(--space-16);
+  border: var(--stroke-thin) solid var(--color-border-strong);
+  border-radius: var(--radius-round);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+input[type="file"]:hover::file-selector-button {
+  background: var(--color-surface-soft);
+}
+input[type="file"]:focus-visible {
+  outline: var(--stroke-focus) solid var(--color-accent);
+  outline-offset: var(--stroke-emphasis);
+  border-radius: var(--radius-control);
+}
+/* Download links read as buttons, matching the actions beside them. */
+a.button {
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.recon-starters,
+.sample-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8) var(--space-12);
+  margin: 0 0 var(--space-16);
+}
+.recon-starters small {
+  flex-basis: 100%;
+  color: var(--color-muted);
+}
+.import-samples {
+  gap: var(--space-8);
+}
+
+/* Tool search: one accent focus ring on the whole box, not the inner field. */
+.iq-tool-search input:focus-visible {
+  outline: 0;
+}
+.iq-tool-search:focus-within {
+  outline: var(--stroke-focus) solid var(--color-accent);
+  outline-offset: var(--stroke-focus);
+}
+/* Tool search: a topic match shows which topic matched under the tool name. */
+.iq-tool-hit {
+  display: block;
+  color: var(--color-muted);
+  font-size: var(--text-12);
+  font-weight: var(--weight-body);
 }
 
 /* Deal summary: the key answers above the results; each jumps to its detail. */

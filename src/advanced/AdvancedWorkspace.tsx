@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Brand from "../ui/Brand";
 import ThemeToggle from "../ui/ThemeToggle";
+import { toolMatch } from "./toolTopics";
 import { Select } from "./Controls";
 import { newProject, uid } from "./defaults";
 import { forecast } from "./engine";
@@ -406,7 +407,7 @@ export default function AdvancedWorkspace({
             <input
               value={toolSearch}
               onChange={(e) => setToolSearch(e.target.value)}
-              placeholder="Find a tool"
+              placeholder="Search tools or topics"
               aria-label="Find a workspace tool"
             />
           </label>
@@ -427,7 +428,7 @@ export default function AdvancedWorkspace({
                       "imports",
                       "decisionlab",
                     ].includes(id)) &&
-                  label.toLowerCase().includes(toolSearch.toLowerCase()),
+                  toolMatch(id, label, toolSearch) !== null,
               );
               if (!visible.length) return null;
               return (
@@ -444,14 +445,19 @@ export default function AdvancedWorkspace({
                       onClick={() => setTab(id)}
                     >
                       {label}
+                      {toolMatch(id, label, toolSearch) && (
+                        <small className="iq-tool-hit">
+                          {toolMatch(id, label, toolSearch)}
+                        </small>
+                      )}
                     </button>
                   ))}
                 </div>
               );
             })}
             {toolSearch &&
-              !tabs.some(([, label]) =>
-                label.toLowerCase().includes(toolSearch.toLowerCase()),
+              !tabs.some(
+                ([id, label]) => toolMatch(id, label, toolSearch) !== null,
               ) && <p className="iq-no-tools">No matching tools.</p>}
           </nav>
           <button

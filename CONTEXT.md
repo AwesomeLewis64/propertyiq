@@ -24,3 +24,4 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **Story**: the start-page section that merges the sample card and the three steps; one **story card** is pinned on wide screens.
 - **Draw-in**: a chart's first appearance, uncovering the plot left to right (lines) or growing bars, triggered by the reveal observer.
 - **Chart zoom**: the visible window of periods on a long line chart; "Show all" returns to every period.
+- **Tool search**: the monthly planner's "Search tools or topics" box; it matches tool names and the topics each tool covers (`src/advanced/toolTopics.ts`), showing the matched topic under the tool.

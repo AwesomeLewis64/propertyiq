@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import LoadingFeedback, { BusyLabel } from "../ui/LoadingFeedback";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RawTable } from "../data/rentRoll";
@@ -181,16 +182,29 @@ export default function ImportPanel({
         >
           Download column template
         </button>
-        <p>
-          <a href="/samples/advanced-fictional-workbook.xlsx" download>
+        <p className="sample-downloads">
+          <a
+            className="button small"
+            href="/samples/advanced-fictional-workbook.xlsx"
+            download
+          >
+            <Download size={14} aria-hidden="true" />
             Download fictional multi-sheet workbook
-          </a>{" "}
-          ·{" "}
-          <a href="/samples/advanced-units.csv" download>
+          </a>
+          <a
+            className="button small"
+            href="/samples/advanced-units.csv"
+            download
+          >
+            <Download size={14} aria-hidden="true" />
             Unit schedule CSV
-          </a>{" "}
-          ·{" "}
-          <a href="/samples/advanced-monthly-actuals.csv" download>
+          </a>
+          <a
+            className="button small"
+            href="/samples/advanced-monthly-actuals.csv"
+            download
+          >
+            <Download size={14} aria-hidden="true" />
             Monthly actuals CSV
           </a>
         </p>
