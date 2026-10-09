@@ -4,6 +4,19 @@ import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 const screenshotDir = resolve("docs/screenshots");
 mkdirSync(screenshotDir, { recursive: true });
+// Let entrance motion finish before axe measures contrast; ambient loops are ignored.
+async function settleMotion(page: Page) {
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (a) =>
+          a.playState !== "running" ||
+          a.effect?.getTiming().iterations === Infinity ||
+          a.timeline !== document.timeline,
+      ),
+  );
+}
 async function shot(page: Page, name: string, project: string) {
   if (name === "quick")
     await expect(
@@ -140,6 +153,7 @@ test("composer extraction and editable assumption defaults", async ({
   await expect(
     page.getByLabel("Purchase price ($)", { exact: true }),
   ).toHaveValue("$2,800,000.00");
+  await settleMotion(page);
   const setupAxe = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
@@ -259,6 +273,7 @@ test("accessibility and 390px overflow on key screens", async ({
     await expect(
       page.getByRole("status").filter({ hasText: /Opening|Loading/ }),
     ).toHaveCount(0);
+    await settleMotion(page);
     const result = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();
@@ -351,6 +366,7 @@ test("all monthly tools render, remain accessible and fit the viewport", async (
     await expect(
       page.getByRole("status").filter({ hasText: /Opening|Loading/ }),
     ).toHaveCount(0);
+    await settleMotion(page);
     const result = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();
@@ -397,6 +413,7 @@ test("remaining quick and legal views are accessible and fit the viewport", asyn
     await expect(
       page.getByRole("status").filter({ hasText: /Opening|Loading/ }),
     ).toHaveCount(0);
+    await settleMotion(page);
     const a = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();

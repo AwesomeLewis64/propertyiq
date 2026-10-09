@@ -1,5 +1,13 @@
 import LoadingFeedback from "./ui/LoadingFeedback";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowUpRight,
   LayoutDashboard,
@@ -168,6 +176,35 @@ function WorkspaceApp() {
     downside: {},
   });
   const m = useMemo(() => calculate(a), [a]);
+  // One highlight slides between sidebar items: to the hovered one, else the active one.
+  const navRef = useRef<HTMLElement>(null);
+  const [hoverNav, setHoverNav] = useState<View | null>(null);
+  const [pill, setPill] = useState<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null>(null);
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return setPill(null);
+    const place = () => {
+      const b = nav.querySelector<HTMLElement>(
+        `[data-nav="${hoverNav ?? view}"]`,
+      );
+      if (b)
+        setPill({
+          x: b.offsetLeft,
+          y: b.offsetTop,
+          w: b.offsetWidth,
+          h: b.offsetHeight,
+        });
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [view, hoverNav, home, advanced]);
 
   useEffect(() => {
     const restore = () => {
@@ -326,13 +363,27 @@ function WorkspaceApp() {
       <div className="workspace">
         <aside className="nav-sidebar">
           <span className="nav-label">ANALYSIS WORKSPACE</span>
-          <nav>
+          <nav ref={navRef} onMouseLeave={() => setHoverNav(null)}>
+            {pill && (
+              <span
+                className="nav-indicator"
+                data-hover={hoverNav && hoverNav !== view ? "" : undefined}
+                aria-hidden="true"
+                style={{
+                  width: pill.w,
+                  height: pill.h,
+                  transform: `translate(${pill.x}px, ${pill.y}px)`,
+                }}
+              />
+            )}
             {nav.map((n) => (
               <button
                 key={n.id}
                 title={n.label}
                 aria-current={view === n.id ? "page" : undefined}
                 className={view === n.id ? "active" : ""}
+                data-nav={n.id}
+                onMouseEnter={() => setHoverNav(n.id)}
                 onClick={() => setView(n.id)}
               >
                 <n.icon size={17} />

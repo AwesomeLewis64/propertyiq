@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -372,9 +372,23 @@ export default function StartPage({
           <>
             <section className="iq-hero">
               <h1>
-                Analyze cash flow
+                {/* Words sharpen in one after another; the key phrase lands last. */}
+                {["Analyze", "cash", "flow"].map((word, i) => (
+                  <span
+                    className="iq-word"
+                    style={{ "--i": i } as CSSProperties}
+                    key={word}
+                  >
+                    {word}{" "}
+                  </span>
+                ))}
                 <br />
-                <span className="iq-key">and financing.</span>
+                <span
+                  className="iq-word iq-key"
+                  style={{ "--i": 3 } as CSSProperties}
+                >
+                  and financing.
+                </span>
               </h1>
               <p className="iq-hero-subtitle">
                 Enter your assumptions or import a spreadsheet. Review income,

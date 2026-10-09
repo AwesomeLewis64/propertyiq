@@ -5102,6 +5102,29 @@ h3 {
   background: var(--color-blue-soft);
 }
 
+/* Scrolling down condenses the full-width bar into a floating glass pill. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .iq-start-header {
+      margin-inline: auto;
+      max-width: 100%;
+      animation: nav-condense linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 180px;
+    }
+  }
+}
+@keyframes nav-condense {
+  to {
+    max-width: min(1040px, calc(100% - var(--space-24)));
+    translate: 0 var(--space-12);
+    border: var(--stroke-thin) solid var(--color-glass-border);
+    border-radius: var(--radius-round);
+    box-shadow: var(--shadow-overlay);
+    padding-inline: var(--space-24);
+  }
+}
+
 /* Hero: one large calm promise over a slow ambient glow. */
 .iq-start {
   overflow-x: clip;
@@ -5140,6 +5163,23 @@ h3 {
 }
 .iq-key {
   color: var(--color-accent);
+}
+.iq-word {
+  display: inline-block;
+  white-space: pre;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .iq-word {
+    animation: word-in 1s var(--ease-out-expo) both;
+    animation-delay: calc(120ms + var(--i) * 110ms);
+  }
+}
+@keyframes word-in {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+    transform: translateY(0.28em) scale(0.98);
+  }
 }
 @supports ((background-clip: text) or (-webkit-background-clip: text)) {
   .iq-key {
@@ -5340,6 +5380,116 @@ h3 {
     width: 28px;
     height: 28px;
   }
+}
+
+/* Workspace sidebar: one highlight slides to the hovered or active item. */
+.nav-sidebar nav {
+  position: relative;
+}
+.nav-sidebar nav button {
+  position: relative;
+  z-index: 1;
+}
+.nav-sidebar nav:has(.nav-indicator) button,
+.nav-sidebar nav:has(.nav-indicator) button.active,
+.nav-sidebar nav:has(.nav-indicator) button:hover {
+  background: transparent;
+}
+.nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-soft);
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
+  transition:
+    transform var(--duration-spring) var(--ease-spring),
+    width var(--duration-spring) var(--ease-spring),
+    height var(--duration-spring) var(--ease-spring),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+.nav-indicator[data-hover] {
+  background: color-mix(in srgb, var(--color-surface-soft) 60%, transparent);
+  box-shadow: none;
+}
+
+/* Theme switch: the new theme is revealed as a circle growing from the switch. */
+.theme-reveal::view-transition-old(root),
+.theme-reveal::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+.theme-reveal::view-transition-new(root) {
+  animation: theme-reveal 700ms var(--ease-out-expo);
+}
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
+  }
+  to {
+    clip-path: circle(var(--reveal-r) at var(--reveal-x) var(--reveal-y));
+  }
+}
+
+/* Chart inspection: a dot per series travels its own line to the inspected
+   period (offset-path), with the trail under the main series filled up to it. */
+.chart-canvas {
+  position: relative;
+}
+.chart-glide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+.chart-glide-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  border: 3px solid currentColor;
+  border-radius: var(--radius-round);
+  background: var(--color-surface);
+  box-shadow: 0 2px 6px var(--color-shadow-deep);
+  offset-rotate: 0deg;
+  offset-anchor: center;
+  transition: offset-distance var(--duration-spring) var(--ease-out-expo);
+}
+.chart-glide-tip {
+  position: absolute;
+  bottom: calc(100% + var(--space-8));
+  left: 50%;
+  translate: -50% 0;
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-round);
+  background: var(--color-ink);
+  color: var(--color-surface);
+  font-size: var(--text-12);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  box-shadow: var(--shadow-card);
+  transition: translate var(--duration-spring) var(--ease-out-expo);
+}
+.chart-glide-tip[data-below] {
+  bottom: auto;
+  top: calc(100% + var(--space-8));
+}
+.chart-glide-tip[data-edge="start"] {
+  translate: -6px 0;
+}
+.chart-glide-tip[data-edge="end"] {
+  translate: calc(-100% + 6px) 0;
+}
+.chart-trail-clip {
+  transform-box: fill-box;
+  transform-origin: left;
+  transition: transform var(--duration-spring) var(--ease-out-expo);
+}
+.chart-cursor {
+  transition: transform var(--duration-spring) var(--ease-out-expo);
 }
 
 /* Light/dark switch: sun and moon in the track, the knob slides to the active one. */

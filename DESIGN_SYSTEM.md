@@ -36,6 +36,12 @@ Radii: `--radius-control` 10px, `--radius-panel` 18px, `--radius-hero` 28px (her
 - Easing: `--ease-standard` for color, `--ease-out-expo` for entrances, `--ease-spring` (a CSS `linear()` spring with ~6% overshoot, 520ms) for lifts and the theme knob.
 - Ambient: the hero glow drifts over a 28s alternate loop and animates only transform.
 - Hover: on devices with real hover, cards lift 4px with a 1.5° tilt, and buttons lift 1px.
+- Signature moments (each built from platform features, no library):
+  - **Chart glide**: when you inspect a period, one dot per series travels its own line to that period (`offset-path`/`offset-distance`), a label rides on the main dot, and a gradient fills under the main series up to it. All of this lives in an overlay or under `.chart-cursor`, so downloads never include it.
+  - **Theme reveal**: the new theme grows as a circle from the switch (View Transitions plus `clip-path`).
+  - **Sidebar highlight**: one highlight springs between workspace sidebar items: to the hovered item, else the active one.
+  - **Headline reveal**: on load the hero words sharpen from a blur one after another, and the gradient phrase lands last.
+  - **Nav condense**: on the start page, scrolling down condenses the header into a floating glass pill (scroll-driven animation; browsers without support keep the full bar).
 - Reduced motion: one global rule at the end of `styles.css` disables every animation and transition, current and future. The progress spinner animates only while work is actually pending.
 
 ## Accessibility

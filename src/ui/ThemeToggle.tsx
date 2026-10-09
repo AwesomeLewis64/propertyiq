@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { flushSync } from "react-dom";
 import { Moon, Sun } from "lucide-react";
 
 // public/theme.js owns the initial value and system changes; this only flips it.
@@ -18,15 +19,37 @@ export default function ThemeToggle() {
       aria-label="Dark mode"
       title={dark ? "Switch to light mode" : "Switch to dark mode"}
       className="theme-toggle"
-      onClick={() => {
+      onClick={(e) => {
+        const root = document.documentElement;
         const next = dark ? "light" : "dark";
-        document.documentElement.dataset.theme = next;
-        try {
-          localStorage.setItem("propertyiq:theme", next);
-        } catch {
-          /* The choice still applies for this page view. */
-        }
-        window.dispatchEvent(new Event("propertyiq:theme"));
+        const apply = () => {
+          root.dataset.theme = next;
+          try {
+            localStorage.setItem("propertyiq:theme", next);
+          } catch {
+            /* The choice still applies for this page view. */
+          }
+          flushSync(() => window.dispatchEvent(new Event("propertyiq:theme")));
+        };
+        if (
+          !document.startViewTransition ||
+          matchMedia("(prefers-reduced-motion: reduce)").matches
+        )
+          return apply();
+        // The new theme grows as a circle from the switch to the farthest corner.
+        const box = e.currentTarget.getBoundingClientRect();
+        const x = box.left + box.width / 2,
+          y = box.top + box.height / 2;
+        root.style.setProperty("--reveal-x", `${x}px`);
+        root.style.setProperty("--reveal-y", `${y}px`);
+        root.style.setProperty(
+          "--reveal-r",
+          `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))}px`,
+        );
+        root.classList.add("theme-reveal");
+        document
+          .startViewTransition(apply)
+          .finished.finally(() => root.classList.remove("theme-reveal"));
       }}
     >
       <Sun className="theme-toggle-sun" aria-hidden="true" />

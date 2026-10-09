@@ -57,13 +57,17 @@ export default function FinancialChart({
     wrap = useRef<HTMLDivElement>(null),
     svg = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(640),
+    [scale, setScale] = useState(1),
     [selected, setSelected] = useState(0),
     [error, setError] = useState(""),
     [exporting, setExporting] = useState<"svg" | "png" | null>(null);
   useEffect(() => {
-    const observer = new ResizeObserver((entries) =>
-      setWidth(Math.max(280, entries[0].contentRect.width)),
-    );
+    const observer = new ResizeObserver((entries) => {
+      const actual = entries[0].contentRect.width;
+      setWidth(Math.max(280, actual));
+      // The SVG never draws narrower than 280; the glide overlay scales to match.
+      setScale(actual > 0 ? Math.min(1, actual / 280) : 1);
+    });
     if (wrap.current) observer.observe(wrap.current);
     return () => observer.disconnect();
   }, []);
@@ -115,6 +119,31 @@ export default function FinancialChart({
   const y = (v: number) => 205 - ((v - low) / range) * 175;
   const xp = (i: number) =>
     left + (i * (right - left)) / Math.max(1, rows.length - 1);
+  // Line series as drawn, plus each point's distance along its path, so the
+  // inspection dot can travel the line itself (CSS offset-path).
+  const lines = series.map((_, j) => {
+    let d = "",
+      run = 0,
+      prev: [number, number] | null = null;
+    const along = rows.map((r, i) => {
+      const v = r.values[j];
+      if (v === null) {
+        prev = null;
+        return null;
+      }
+      const pt: [number, number] = [xp(i), y(v)];
+      if (prev) run += Math.hypot(pt[0] - prev[0], pt[1] - prev[1]);
+      d += `${prev ? "L" : "M"} ${pt[0]} ${pt[1]} `;
+      prev = pt;
+      return run;
+    });
+    return { d: d.trim(), along };
+  });
+  const svgId = id.replace(/[^a-zA-Z0-9_-]/g, "");
+  const trail =
+    !horizontal && rows.length > 1 && rows.every((r) => r.values[0] !== null)
+      ? `${lines[0].d} L ${xp(rows.length - 1)} ${y(0)} L ${xp(0)} ${y(0)} Z`
+      : null;
   const stem = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -398,16 +427,51 @@ export default function FinancialChart({
                   </g>
                 );
               })}
+              {trail && (
+                <g className="chart-cursor">
+                  <defs>
+                    <linearGradient
+                      id={`${svgId}-trail`}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="0"
+                        stopColor="var(--color-accent)"
+                        stopOpacity="0.16"
+                      />
+                      <stop
+                        offset="1"
+                        stopColor="var(--color-accent)"
+                        stopOpacity="0"
+                      />
+                    </linearGradient>
+                    <clipPath id={`${svgId}-clip`}>
+                      <rect
+                        className="chart-trail-clip"
+                        x={left}
+                        y={0}
+                        width={right - left}
+                        height={height}
+                        style={{
+                          transform: `scaleX(${(xp(active) - left) / (right - left)})`,
+                        }}
+                      />
+                    </clipPath>
+                  </defs>
+                  <path
+                    d={trail}
+                    fill={`url(#${svgId}-trail)`}
+                    clipPath={`url(#${svgId}-clip)`}
+                  />
+                </g>
+              )}
               {series.map((s, j) => (
                 <path
                   key={s}
-                  d={rows
-                    .map((r, i) =>
-                      r.values[j] === null
-                        ? ""
-                        : `${i === 0 || rows[i - 1].values[j] === null ? "M" : "L"} ${xp(i)} ${y(r.values[j]!)}`,
-                    )
-                    .join(" ")}
+                  d={lines[j].d}
                   stroke={colors[j % 4]}
                   strokeWidth="2.5"
                   strokeDasharray={
@@ -424,10 +488,11 @@ export default function FinancialChart({
               ))}
               <line
                 className="chart-cursor"
-                x1={xp(active)}
-                x2={xp(active)}
+                x1={0}
+                x2={0}
                 y1={25}
                 y2={205}
+                style={{ transform: `translateX(${xp(active)}px)` }}
                 stroke="var(--color-muted)"
                 strokeDasharray="3 3"
               />
@@ -444,6 +509,46 @@ export default function FinancialChart({
             </>
           )}
         </svg>
+        {!horizontal && (
+          <div
+            className="chart-glide no-print"
+            aria-hidden="true"
+            style={{ width, height, transform: `scale(${scale})` }}
+          >
+            {series.map((s, j) =>
+              lines[j].along[active] === null ? null : (
+                <span
+                  key={s}
+                  className="chart-glide-dot"
+                  style={{
+                    color: colors[j % 4],
+                    offsetPath: `path("${lines[j].d}")`,
+                    offsetDistance: `${lines[j].along[active]}px`,
+                  }}
+                >
+                  {j === 0 && (
+                    <span
+                      className="chart-glide-tip"
+                      // Near the top of the plot the label would cover the legend; drop it below.
+                      data-below={
+                        y(rows[active].values[0] ?? 0) < 60 ? "" : undefined
+                      }
+                      data-edge={
+                        active === 0
+                          ? "start"
+                          : active === rows.length - 1
+                            ? "end"
+                            : undefined
+                      }
+                    >
+                      {rows[active].label} · {format(rows[active].values[0])}
+                    </span>
+                  )}
+                </span>
+              ),
+            )}
+          </div>
+        )}
       </div>
       <div className="chart-inspect no-print">
         <label>

@@ -17,3 +17,6 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **Hero glow**: the slow, low-contrast animated gradient behind the hero.
 - **Crossfade**: the View Transition between start page, input review and results.
 - **Theme toggle**: the sun/moon switch in each top bar. It sets `data-theme` on `<html>` and saves the choice; with no saved choice the system setting wins.
+- **Chart glide**: the inspection dot that travels along a chart line to the inspected period.
+- **Theme reveal**: the circular View Transition when the theme toggle is flipped.
+- **Nav condense**: the start-page header turning into a floating pill as the page scrolls.
