@@ -4,9 +4,11 @@ PropertyIQ is a free, browser-local tool for understanding multifamily property 
 
 **[Open PropertyIQ](https://propertyiq.pages.dev/)** — choose **Try with sample property** to explore a fictional deal. The public site runs on Cloudflare Pages and automatically deploys updates from `main`. [Deployment settings and verification](DEPLOYMENT.md).
 
+![Start page: paste or upload a deal, one primary action, trust signals and quieter alternatives](docs/screenshots/start-desktop.png)
+![Start page on a phone](docs/screenshots/start-mobile.png)
 ![Quick analysis with annual returns and operating charts](docs/screenshots/quick-desktop.png)
 ![Monthly planner with the shared sample and eight headline metrics](docs/screenshots/monthly-desktop.png)
-![Phone layout with labeled navigation and the sticky result summary](docs/screenshots/quick-mobile.png)
+![Phone layout: deal summary first, with sections and assumptions folded behind one-line summaries](docs/screenshots/quick-mobile.png)
 
 ## Features
 
