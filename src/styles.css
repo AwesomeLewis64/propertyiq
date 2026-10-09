@@ -5061,21 +5061,17 @@ h3 {
   border-radius: 9px;
   transform: none;
 }
-/* Center the logo on the wordmark's capitals: trim the line box to cap height
-   so flex centering lines up their middles. */
+/* Center the logo on the whole wordmark (cap tops to p/y descenders): trim the
+   line box to those edges so flex centering lines up their middles. */
 .brand,
 .iq-footer > span {
   align-items: center;
 }
 .iq-brand-name {
   line-height: 1;
-  text-box: trim-both cap alphabetic;
-}
-@supports not (text-box: trim-both cap alphabetic) {
-  .iq-brand-name {
-    /* shortcut: fixed nudge for older browsers without text-box; drop when they age out. */
-    transform: translateY(-0.06em);
-  }
+  text-box: trim-both cap text;
+  /* Optical correction measured on rendered pixels (.impeccable/brand-check.mjs). */
+  translate: 0 0.03em;
 }
 .metric strong,
 .iq-sample-metrics strong,
