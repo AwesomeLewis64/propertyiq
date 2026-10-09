@@ -3244,7 +3244,7 @@ h2 {
   .iq-start-header nav > a {
     display: none;
   }
-  .iq-start-header nav > button:not(.iq-header-pill) {
+  .iq-start-header nav > button:not(.iq-header-pill, .theme-toggle) {
     display: none;
   }
   .iq-start-header nav .iq-header-pill {
@@ -5025,5 +5025,358 @@ select:focus-visible,
   }
   .adv-card-body > p + p {
     margin-top: var(--space-12);
+  }
+}
+
+/* ---------------------------------------------------------------
+   2026 redesign layer (docs/adr/0001). Later in the cascade on purpose:
+   it restyles the start page and shared chrome from design tokens only.
+   --------------------------------------------------------------- */
+:root {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body,
+.iq-start {
+  background: var(--color-canvas);
+}
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-heading);
+  text-wrap: balance;
+}
+.iq-brand-name {
+  font-family: var(--font-display);
+  font-size: var(--text-24);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-heading);
+}
+.iq-brand-mark {
+  border-radius: 9px;
+  transform: none;
+}
+.metric strong,
+.iq-sample-metrics strong,
+.iq-sample-heading h3 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Frosted glass navigation. */
+.iq-start-header,
+.topbar {
+  background: var(--color-glass);
+  border-bottom: var(--stroke-thin) solid var(--color-glass-border);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+.iq-start-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 60px;
+}
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .iq-start-header,
+  .topbar {
+    background: var(--color-surface);
+  }
+}
+.iq-start-header nav .iq-header-pill {
+  white-space: nowrap;
+  border-radius: var(--radius-round);
+  padding: var(--space-8) var(--space-16);
+  background: var(--color-blue-soft);
+}
+
+/* Hero: one large calm promise over a slow ambient glow. */
+.iq-start {
+  overflow-x: clip;
+}
+.iq-hero {
+  position: relative;
+  isolation: isolate;
+  padding: var(--space-96) var(--space-24) var(--space-64);
+}
+.iq-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -12% -20% 30%;
+  background:
+    radial-gradient(40% 50% at 30% 40%, var(--color-glow-a), transparent 70%),
+    radial-gradient(38% 46% at 72% 32%, var(--color-glow-b), transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  animation: hero-drift var(--duration-ambient) ease-in-out infinite alternate;
+}
+@keyframes hero-drift {
+  from {
+    transform: translate3d(-4%, 0, 0) rotate(0deg) scale(1);
+  }
+  to {
+    transform: translate3d(4%, 3%, 0) rotate(8deg) scale(1.08);
+  }
+}
+.iq-hero h1 {
+  font-size: clamp(44px, 8vw, 96px);
+  font-weight: var(--weight-bold);
+  line-height: 1.02;
+  letter-spacing: var(--tracking-display);
+  margin: 0 0 var(--space-24);
+}
+.iq-key {
+  color: var(--color-accent);
+}
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  .iq-key {
+    background: linear-gradient(
+      100deg,
+      var(--color-key-from) 10%,
+      var(--color-key-to) 90%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* Keep descenders inside the painted box. */
+    padding-bottom: 0.08em;
+  }
+}
+@media (forced-colors: active) {
+  .iq-key {
+    background: none;
+    color: CanvasText;
+  }
+}
+.iq-hero-subtitle {
+  font-size: clamp(var(--text-16), 1.8vw, var(--text-24));
+  color: var(--color-muted);
+  max-width: 34ch;
+  margin: 0 auto;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+.iq-composer {
+  margin-top: var(--space-48);
+  border-radius: var(--radius-hero);
+  border-color: var(--color-card-border);
+  box-shadow: var(--shadow-overlay);
+  transition: box-shadow var(--duration-spring) var(--ease-out-expo);
+}
+.iq-composer:focus-within {
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent),
+    var(--shadow-overlay);
+}
+.iq-composer textarea:focus-visible {
+  outline: 0;
+}
+.iq-composer .iq-analyze,
+.iq-upload,
+.mode-cards .button {
+  border-radius: var(--radius-round);
+}
+
+/* Shared surfaces: soft layered depth, larger radii. */
+.panel,
+.assumptions,
+.metric,
+.iq-sample-card,
+.iq-question-actions button,
+.iq-return {
+  border-color: var(--color-card-border);
+  box-shadow: var(--shadow-card);
+}
+.iq-sample-card {
+  border-radius: var(--radius-hero);
+  padding: var(--space-32) var(--space-40) var(--space-24);
+}
+.iq-look-inside {
+  padding-top: var(--space-64);
+  padding-bottom: var(--space-96);
+  align-items: center;
+}
+.iq-look-inside h2,
+.iq-section-heading h2,
+.iq-return h2 {
+  font-size: clamp(var(--text-32), 4vw, var(--text-48));
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-display);
+  line-height: 1.08;
+}
+.iq-how {
+  border-top: 0;
+  padding-top: var(--space-96);
+  padding-bottom: var(--space-96);
+}
+.iq-how-grid article {
+  border-top: 0;
+  padding: var(--space-32);
+  background: var(--color-surface);
+  border: var(--stroke-thin) solid var(--color-card-border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-card);
+}
+.iq-return {
+  background: var(--color-surface);
+}
+.iq-income-bar {
+  border-radius: var(--radius-round);
+}
+.iq-footer {
+  background: var(--color-canvas);
+}
+
+/* Hover: a small spring lift and tilt, only where hover is real. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .iq-sample-card,
+  .iq-how-grid article,
+  .iq-question-actions button,
+  .metric {
+    transition:
+      transform var(--duration-spring) var(--ease-spring),
+      box-shadow var(--duration-spring) var(--ease-out-expo);
+  }
+  .iq-sample-card:hover,
+  .iq-how-grid article:hover,
+  .metric:hover {
+    transform: perspective(900px) rotateX(1.5deg) translateY(-4px);
+    box-shadow: var(--shadow-raised);
+  }
+  .iq-question-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raised);
+  }
+  .button.primary {
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-spring) var(--ease-spring);
+  }
+  .button.primary:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 760px) {
+  .iq-start-header {
+    height: 56px;
+  }
+  .iq-hero {
+    padding: var(--space-48) var(--space-16) var(--space-40);
+  }
+  .iq-hero h1 {
+    font-size: clamp(40px, 11vw, 56px);
+    line-height: 1.04;
+  }
+  .iq-composer {
+    margin-top: var(--space-32);
+    border-radius: var(--radius-panel);
+  }
+  .iq-sample-card {
+    border-radius: var(--radius-panel);
+    padding: var(--space-20);
+  }
+  .iq-how,
+  .iq-look-inside {
+    padding-top: var(--space-48);
+    padding-bottom: var(--space-48);
+  }
+  .iq-how-grid article {
+    padding: var(--space-24);
+  }
+}
+@media (max-width: 640px) {
+  /* Stack the two top-bar buttons and keep the theme switch beside them. */
+  .annual-topbar .topbar-links {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    column-gap: var(--space-12);
+  }
+  .annual-topbar .topbar-links .button {
+    grid-column: 1;
+  }
+  .annual-topbar .topbar-links .theme-toggle {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  .annual-topbar {
+    padding-block: var(--space-8);
+  }
+  .annual-topbar .iq-brand-name {
+    font-size: var(--text-20);
+  }
+  .annual-topbar .iq-brand-mark {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Light/dark switch: sun and moon in the track, the knob slides to the active one. */
+button.theme-toggle[role="switch"] {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 58px;
+  height: 32px;
+  padding: 0 var(--space-8);
+  border: var(--stroke-thin) solid var(--color-border-strong);
+  border-radius: var(--radius-round);
+  background: var(--color-surface-soft);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.theme-toggle > svg {
+  width: 14px;
+  height: 14px;
+}
+.theme-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-round);
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px var(--color-shadow-deep);
+  color: var(--color-warning);
+  transition:
+    transform var(--duration-spring) var(--ease-spring),
+    color var(--duration-fast) var(--ease-standard);
+}
+.theme-toggle-knob svg {
+  width: 15px;
+  height: 15px;
+}
+.theme-toggle[aria-checked="true"] .theme-toggle-knob {
+  transform: translateX(26px);
+  color: var(--color-key-to);
+}
+button.theme-toggle[role="switch"]:hover {
+  border-color: var(--color-muted);
+}
+
+/* One reduced-motion rule for everything, present and future (ADR-0002). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -13,6 +13,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import Brand from "./Brand";
+import ThemeToggle from "./ThemeToggle";
 import {
   extractBrief,
   sampleProject,
@@ -182,6 +183,7 @@ export default function StartPage({
           <button className="iq-header-pill" onClick={() => onOpen()}>
             Monthly planner <ArrowUpRight size={14} />
           </button>
+          <ThemeToggle />
         </nav>
       </header>
       <main id="start-content">
@@ -190,7 +192,6 @@ export default function StartPage({
             <button className="iq-text-link" onClick={() => setReview(false)}>
               <ArrowLeft size={16} /> Back to start
             </button>
-            <span className="iq-eyebrow">YOUR STARTING POINT</span>
             <h1>
               Review your
               <br />
@@ -367,11 +368,10 @@ export default function StartPage({
         ) : (
           <>
             <section className="iq-hero">
-              <span className="iq-eyebrow">PROPERTY ANALYSIS, SIMPLIFIED</span>
               <h1>
                 Analyze cash flow
                 <br />
-                and financing.
+                <span className="iq-key">and financing.</span>
               </h1>
               <p className="iq-hero-subtitle">
                 Enter your assumptions or import a spreadsheet. Review income,
@@ -507,7 +507,6 @@ export default function StartPage({
             </section>
             <section className="iq-look-inside" id="sample-report">
               <div>
-                <span className="iq-eyebrow">A LOOK INSIDE</span>
                 <h2>
                   Review income,
                   <br />
@@ -574,9 +573,6 @@ export default function StartPage({
             </section>
             <section className="iq-how" id="how-it-works">
               <div className="iq-section-heading">
-                <span className="iq-eyebrow">
-                  A CLEAR PATH THROUGH THE NUMBERS
-                </span>
                 <h2>Three steps to a property analysis.</h2>
               </div>
               <div className="iq-how-grid">

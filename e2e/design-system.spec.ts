@@ -48,14 +48,12 @@ test("chart download exposes progress, prevents duplicate exports and resolves d
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try with sample property" }).click();
-  const chart = page
-    .locator(".financial-chart")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "Capital recovery timeline",
-        exact: true,
-      }),
-    });
+  const chart = page.locator(".financial-chart").filter({
+    has: page.getByRole("heading", {
+      name: "Capital recovery timeline",
+      exact: true,
+    }),
+  });
   await expect(chart).toBeVisible();
   await page.evaluate(() => {
     const native = Image.prototype.decode;
@@ -98,7 +96,7 @@ test("chart download exposes progress, prevents duplicate exports and resolves d
   for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
   const text = Buffer.concat(chunks).toString();
   expect(text).not.toContain("var(--");
-  expect(text).toContain("#10264d");
+  expect(text).toContain("#0d1628");
   expect(text).toContain("fictional example");
 });
 
@@ -106,16 +104,33 @@ test("shared white surfaces, component shapes and readable headings remain consi
   page,
 }, info) => {
   await page.goto("/");
-  for (const selector of [".iq-start-header", ".iq-composer"]) {
-    const style = await page
-      .locator(selector)
-      .evaluate((node) => ({
-        background: getComputedStyle(node).backgroundColor,
-        radius: getComputedStyle(node).borderTopLeftRadius,
-      }));
-    expect(style.background).toBe("rgb(255, 255, 255)");
-    if (selector === ".iq-composer") expect(style.radius).toBe("12px");
-  }
+  // Shapes and surfaces come from design tokens, not literals.
+  const token = (name: string) =>
+    page.evaluate(
+      (n) =>
+        getComputedStyle(document.documentElement).getPropertyValue(n).trim(),
+      name,
+    );
+  const composer = await page.locator(".iq-composer").evaluate((node) => ({
+    background: getComputedStyle(node).backgroundColor,
+    radius: getComputedStyle(node).borderTopLeftRadius,
+  }));
+  expect(composer.background).toBe("rgb(255, 255, 255)");
+  // Hero radius on wide screens, panel radius on phones.
+  expect([
+    await token("--radius-hero"),
+    await token("--radius-panel"),
+  ]).toContain(composer.radius);
+  // The start header is frosted glass where supported.
+  expect(
+    await page
+      .locator(".iq-start-header")
+      .evaluate(
+        (node) =>
+          getComputedStyle(node).backdropFilter !== "none" ||
+          getComputedStyle(node).backgroundColor === "rgb(255, 255, 255)",
+      ),
+  ).toBe(true);
   await page.screenshot({ path: info.outputPath("home.png"), fullPage: true });
   await page.getByRole("button", { name: "Try with sample property" }).click();
   await expect(
@@ -135,19 +150,17 @@ test("shared white surfaces, component shapes and readable headings remain consi
     .getByRole("button", { name: "Monthly planner", exact: true })
     .click();
   await expect(page.locator(".adv-heading h1")).toBeVisible();
-  const monthly = await page
-    .locator(".adv-heading h1")
-    .evaluate((node) => ({
-      size: getComputedStyle(node).fontSize,
-      weight: getComputedStyle(node).fontWeight,
-    }));
+  const monthly = await page.locator(".adv-heading h1").evaluate((node) => ({
+    size: getComputedStyle(node).fontSize,
+    weight: getComputedStyle(node).fontWeight,
+  }));
   expect(monthly).toEqual(quick);
   expect(
     await page
       .locator(".adv-card")
       .first()
       .evaluate((node) => getComputedStyle(node).borderTopLeftRadius),
-  ).toBe("12px");
+  ).toBe(await token("--radius-panel"));
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1,

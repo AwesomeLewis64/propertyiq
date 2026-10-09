@@ -15,6 +15,7 @@ import {
   Home,
 } from "lucide-react";
 import Brand from "../ui/Brand";
+import ThemeToggle from "../ui/ThemeToggle";
 import { Select } from "./Controls";
 import { newProject, uid } from "./defaults";
 import { forecast } from "./engine";
@@ -395,6 +396,7 @@ export default function AdvancedWorkspace({
             <ArrowLeft size={15} />
             Quick analysis
           </button>
+          <ThemeToggle />
         </div>
       </header>
       <div className="adv-shell">

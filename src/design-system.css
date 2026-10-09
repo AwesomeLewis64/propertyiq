@@ -1,16 +1,17 @@
 /* PropertyIQ: one shared visual vocabulary. Breakpoints and chart geometry are structural. */
 :root {
-  --color-ink: #10264d;
-  --color-text: #263d58;
-  --color-muted: #45566c;
-  --color-accent: #235fbc;
-  --color-accent-hover: #1b4a92;
+  color-scheme: light;
+  --color-ink: #0d1628;
+  --color-text: #2a3547;
+  --color-muted: #4e596b;
+  --color-accent: #1f5ccc;
+  --color-accent-hover: #1849a6;
   --color-surface: #ffffff;
-  --color-canvas: #f7f9fc;
-  --color-surface-soft: #edf2f7;
-  --color-border: #dbe3ed;
-  --color-border-strong: #b7c4d3;
-  --color-blue-soft: #edf3fb;
+  --color-canvas: #f5f6f8;
+  --color-surface-soft: #eff2f6;
+  --color-border: #e2e6ec;
+  --color-border-strong: #c2c9d4;
+  --color-blue-soft: #edf3ff;
   --color-success: #27634d;
   --color-success-soft: #eaf3ed;
   --color-success-border: #bdd3c4;
@@ -21,10 +22,22 @@
   --color-danger-soft: #fbeeee;
   --color-danger-border: #e6c4c4;
   --color-transparent: transparent;
-  --color-shadow: rgb(16 38 77 / 8%);
-  --color-scrim: rgb(16 38 77 / 55%);
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: Georgia, "Times New Roman", serif;
+  --color-shadow: rgb(13 22 40 / 8%);
+  --color-scrim: rgb(13 22 40 / 55%);
+  --color-shadow-deep: rgb(13 22 40 / 14%);
+  --color-card-border: var(--color-transparent);
+  --color-glass: rgb(255 255 255 / 72%);
+  --color-glass-border: rgb(13 22 40 / 8%);
+  --color-key-from: #1f5ccc;
+  --color-key-to: #5b3fd9;
+  --color-glow-a: rgb(76 132 255 / 18%);
+  --color-glow-b: rgb(120 92 255 / 14%);
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text",
+    "Segoe UI", Inter, sans-serif;
+  --font-display:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "Segoe UI Variable Display", "Segoe UI", Inter, sans-serif;
   --text-12: 12px;
   --text-14: 14px;
   --text-16: 16px;
@@ -47,7 +60,8 @@
   --line-heading: 1.2;
   --line-body: 1.6;
   --line-print: 1.4;
-  --tracking-heading: -0.02em;
+  --tracking-heading: -0.022em;
+  --tracking-display: -0.035em;
   --tracking-label: 0.08em;
   --space-2: 2px;
   --space-4: 4px;
@@ -62,21 +76,78 @@
   --space-64: 64px;
   --space-80: 80px;
   --space-96: 96px;
-  --radius-control: 6px;
-  --radius-panel: 12px;
+  --radius-control: 10px;
+  --radius-panel: 18px;
+  --radius-hero: 28px;
   --radius-round: 999px;
   --stroke-thin: 1px;
   --stroke-focus: 2px;
   --stroke-emphasis: 4px;
-  --shadow-card: 0 1px 3px var(--color-shadow);
-  --shadow-overlay: 0 8px 24px var(--color-shadow);
+  --shadow-card:
+    0 1px 2px var(--color-shadow), 0 4px 16px -4px var(--color-shadow);
+  --shadow-raised:
+    0 2px 4px var(--color-shadow), 0 16px 40px -12px var(--color-shadow-deep);
+  --shadow-overlay:
+    0 4px 8px var(--color-shadow), 0 24px 64px -16px var(--color-shadow-deep);
   --duration-fast: 140ms;
   --duration-feedback: 800ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Gentle spring (~6% overshoot), sampled for CSS linear(). */
+  --ease-spring: linear(
+    0,
+    0.2 3.5%,
+    0.58 9.5%,
+    0.87 16.5%,
+    1.03 24.5%,
+    1.06 30%,
+    1.05 36%,
+    1.01 48%,
+    0.995 62%,
+    1
+  );
+  --duration-spring: 520ms;
+  --duration-ambient: 28s;
   --header-height: 72px;
   --print-page-margin: 12mm;
   --icon-size: 1em;
   --control-height: 40px;
   --control-height-small: 36px;
   --measure-text: 64ch;
+}
+
+/* Dark mode: the same roles, redefined. public/theme.js sets data-theme from
+   the saved choice or the system setting (ADR-0004). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: #f1f4f9;
+  --color-text: #d2d9e4;
+  --color-muted: #a1acbd;
+  --color-accent: #7aaaff;
+  --color-accent-hover: #9cc0ff;
+  --color-surface: #141922;
+  --color-canvas: #0a0d13;
+  --color-surface-soft: #1b212d;
+  --color-border: #2a3140;
+  --color-border-strong: #404a5d;
+  --color-blue-soft: #16223a;
+  --color-success: #74d3a3;
+  --color-success-soft: #11251c;
+  --color-success-border: #2a5a43;
+  --color-warning: #e6c27a;
+  --color-warning-soft: #261f10;
+  --color-warning-border: #5d4b24;
+  --color-danger: #f29393;
+  --color-danger-soft: #2a1515;
+  --color-danger-border: #6b2f2f;
+  --color-shadow: rgb(0 0 0 / 35%);
+  --color-shadow-deep: rgb(0 0 0 / 55%);
+  --color-scrim: rgb(0 0 0 / 65%);
+  --color-card-border: var(--color-border);
+  --color-glass: rgb(20 25 34 / 70%);
+  --color-glass-border: rgb(255 255 255 / 8%);
+  --color-key-from: #7aaaff;
+  --color-key-to: #a58bff;
+  --color-glow-a: rgb(76 132 255 / 16%);
+  --color-glow-b: rgb(140 100 255 / 12%);
 }

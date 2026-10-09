@@ -20,6 +20,7 @@ import { money, pct, multiple } from "./ui/format";
 import Inputs from "./ui/Inputs";
 import StartPage from "./ui/StartPage";
 import Brand from "./ui/Brand";
+import ThemeToggle from "./ui/ThemeToggle";
 import LegalShell from "./ui/LegalShell";
 import type { WorkspaceLaunch } from "./ui/startFlow";
 const Charts = lazy(() => import("./ui/Charts"));
@@ -319,6 +320,7 @@ function WorkspaceApp() {
             Quick analysis
             <ArrowUpRight size={15} />
           </button>
+          <ThemeToggle />
         </div>
       </header>
       <div className="workspace">
@@ -491,11 +493,11 @@ function WorkspaceApp() {
                         a.closingCosts === 0 &&
                         a.rentGrowth === 0 && (
                           <div className="alert" role="status">
-                            Assumptions incomplete: vacancy, credit loss, closing
-                            costs and rent growth are all zero, which makes
-                            returns look better than most real deals. Review
-                            them under Assumptions before relying on these
-                            results.
+                            Assumptions incomplete: vacancy, credit loss,
+                            closing costs and rent growth are all zero, which
+                            makes returns look better than most real deals.
+                            Review them under Assumptions before relying on
+                            these results.
                           </div>
                         )}
                       <Verdict

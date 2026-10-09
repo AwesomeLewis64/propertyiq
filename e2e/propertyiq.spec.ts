@@ -243,13 +243,17 @@ test("accessibility and 390px overflow on key screens", async ({
   page,
 }, info) => {
   const allViolations: unknown[] = [];
-  for (const route of [
-    "/",
-    "/#quick/overview",
-    "/#quick/sensitivity",
-    "/#monthly/maple-grove-shared/overview",
-  ]) {
+  for (const [scheme, route] of (["light", "dark"] as const).flatMap((scheme) =>
+    [
+      "/",
+      "/#quick/overview",
+      "/#quick/sensitivity",
+      "/#monthly/maple-grove-shared/overview",
+    ].map((route) => [scheme, route] as const),
+  )) {
+    await page.emulateMedia({ colorScheme: scheme });
     await page.goto(route);
+    await expect(page.locator("html")).toHaveAttribute("data-theme", scheme);
     await expect(page.locator("main:visible")).toBeVisible();
     await page.locator("h1").first().waitFor();
     await expect(
@@ -264,6 +268,7 @@ test("accessibility and 390px overflow on key screens", async ({
     allViolations.push(
       ...serious.map((v) => ({
         route,
+        scheme,
         id: v.id,
         nodes: v.nodes.map((n) => ({
           target: n.target,

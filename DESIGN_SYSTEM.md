@@ -1,42 +1,47 @@
 # PropertyIQ design system
 
-PropertyIQ keeps its existing navy-and-white identity and page structure. The shared source of visual values is `src/design-system.css`; existing styles reference those tokens. Shared component behavior is defined in `src/styles.css`.
+The single source of visual values is `src/design-system.css`; components reference its tokens, and `src/styles.css` holds component rules (the 2026 redesign layer sits at the end of that file). Decisions behind this system: `docs/adr/0001`–`0006`. Vocabulary: `CONTEXT.md`.
 
-## Colors
+## Direction
 
-| Role    | Color   | Use                               |
-| ------- | ------- | --------------------------------- |
-| Navy    | #10264d | Headings, primary actions, brand  |
-| Blue    | #235fbc | Links, selected navigation, focus |
-| Text    | #263d58 | Ordinary body text                |
-| Muted   | #45566c | Supporting text and captions      |
-| White   | #ffffff | Cards and controls                |
-| Canvas  | #f7f9fc | Page background                   |
-| Border  | #dbe3ed | Card and control separators       |
-| Success | #27634d | Favorable or completed states     |
-| Warning | #775e2e | Review and caution states         |
-| Error   | #9c3434 | Invalid inputs and failed actions |
+An Apple-product-page feel: very large calm type, generous space, soft layered depth, frosted-glass navigation and purposeful motion. One blue-to-indigo gradient is reserved for the hero's key phrase. Pastel pink, violet and cyan appear only in the Analyze button's shine and the success sparkle (ADR-0006).
 
-Each status has a separate pale surface and border token. Chart series use the same navy, blue, warning and muted colors. Standalone image exports resolve these values from the shared theme so exported charts match the interface. Sensitivity intensity encodes numeric position using the shared blue and white palette. Labels and numeric values remain available independently of color.
+## Color
+
+Every color is a role token. Light values live on `:root`; dark values redefine the same tokens under `:root[data-theme="dark"]`. `public/theme.js` sets `data-theme` before first paint from the saved choice or the system setting, and the sun/moon switch (`ThemeToggle`) saves a choice (ADR-0004).
+
+| Role | Light | Dark | Use |
+| --- | --- | --- | --- |
+| Ink | #0d1628 | #f1f4f9 | Headings, primary text, brand |
+| Text | #2a3547 | #d2d9e4 | Body text |
+| Muted | #4e596b | #a1acbd | Supporting text, captions |
+| Accent | #1f5ccc | #7aaaff | Links, primary actions, focus |
+| Surface | #ffffff | #141922 | Cards and controls |
+| Canvas | #f5f6f8 | #0a0d13 | Page background |
+| Border | #e2e6ec | #2a3140 | Separators |
+| Key gradient | #1f5ccc → #5b3fd9 | #7aaaff → #a58bff | Hero key phrase only |
+
+Success, warning and danger each have text, soft-surface and border tokens in both schemes. Glass (`--color-glass`, `--color-glass-border`) is used only by the sticky navigation. In light mode cards are separated by shadow alone (`--color-card-border` is transparent). In dark mode, where shadows don't read, they get a border. Labels and numbers never rely on color alone; dashed chart series stay dashed.
 
 ## Typography
 
-The sans-serif stack is Inter, system fonts and Segoe UI. Georgia remains the display face for the existing brand and financial headings. Screen sizes are 12, 14, 16, 20, 24, 32 and 48 pixels. Body text uses weight 400, controls 500, section headings 600 and emphasized labels 700. Heading line height is 1.2; paragraph line height is 1.6. Print has a compact, separately named scale and a 1.4 line height.
+The system sans stack (SF on Apple platforms, Segoe UI Variable on Windows) for both text and display. No web font is shipped. The hero headline is fluid, `clamp(44px, 8vw, 96px)` (40–56px on phones), weight 700, tracking −0.035em, line height 1.02. Section headings run 32–48px at weight 700. Body sizes stay on the 12/14/16/20/24 scale. Numbers use tabular figures.
 
-Page headings, card titles, field labels and buttons use shared rules. Large homepage headings reduce to 32 pixels on narrow screens. Standard workspace headings use 32 pixels on desktop and 24 on mobile.
+## Shape and depth
 
-## Spacing and shapes
+Radii: `--radius-control` 10px, `--radius-panel` 18px, `--radius-hero` 28px (hero composer and the sample card; 18px on phones), `--radius-round` for pills, switches and primary hero buttons. Shadows are layered and offset: `--shadow-card` (resting), `--shadow-raised` (hover) and `--shadow-overlay` (the composer and overlays). Print keeps square, shadowless tables.
 
-Spacing tokens: 2, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80 and 96 pixels. Cards use 24-pixel interior spacing; controls use smaller steps. Header height is 72 pixels. Normal and small controls have 40- and 36-pixel minimum heights.
+## Motion
 
-Only three corner shapes are used: 6-pixel controls, 12-pixel panels and fully round badges or circles. Square print tables retain zero-radius edges. Border widths and shadows have named tokens.
+- Easing: `--ease-standard` for color, `--ease-out-expo` for entrances, `--ease-spring` (a CSS `linear()` spring with ~6% overshoot, 520ms) for lifts and the theme knob.
+- Ambient: the hero glow drifts over a 28s alternate loop and animates only transform.
+- Hover: on devices with real hover, cards lift 4px with a 1.5° tilt, and buttons lift 1px.
+- Reduced motion: one global rule at the end of `styles.css` disables every animation and transition, current and future. The progress spinner animates only while work is actually pending.
 
-Responsive widths, breakpoints, table/chart geometry, SVG drawing coordinates and the supplied logo's color matrix are structural values. They remain explicit rather than being treated as interchangeable spacing or palette choices. Print page margins have their own token.
+## Accessibility
 
-## Interaction and loading
+WCAG 2.1 AA in both schemes, enforced by axe in the e2e suite. Focus uses a 2px accent outline offset 4px. The gradient phrase has a solid accent fallback and `CanvasText` under forced colors. Layouts hold at 390px with no horizontal overflow.
 
-Controls change color and border over 140ms with cubic-bezier(0.2, 0, 0, 1). Hover states stay in place without glow. The only repeated motion is an 800ms progress spinner while an operation is actually pending; steady rotation uses linear timing. Reduced-motion mode disables the spinner and transitions. There are no decorative entrance sequences or staggered animations.
+## Unchanged
 
-The shared loading component announces progress and can show static data placeholders. Imports, simulations and lazy-loaded data sections use it. Backups, attachment operations and chart image downloads expose progress and disable conflicting actions. Completion, cancellation and errors release busy states. Percent-complete indicators are not invented when the underlying operation cannot report progress.
-
-Buttons retain their working actions; icon dimensions follow the control's font size. No social icons, testimonials, people portraits or hero emojis were added. Homepage copy describes property inputs, cash flow, financing and reports. The financial model and local-data storage conventions remain the existing ones.
+The financial model, local-data storage, loading/progress semantics, honest copy (fictional samples labelled, no invented social proof) and print styles are unchanged.
