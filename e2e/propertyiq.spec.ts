@@ -22,6 +22,13 @@ async function shot(page: Page, name: string, project: string) {
     await expect(
       page.getByRole("heading", { name: "Sensitivity tornado", exact: true }),
     ).toBeVisible();
+  // Full-page captures include sections that never scrolled into view.
+  await page.evaluate(() =>
+    document
+      .querySelectorAll("[data-reveal]")
+      .forEach((el) => el.setAttribute("data-shown", "")),
+  );
+  await settleMotion(page);
   await page.evaluate(async () => {
     await document.fonts.ready;
     await new Promise<void>((r) =>
@@ -60,8 +67,12 @@ test("shared demo, changing inputs, money formatting and no console errors", asy
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
+  // The story renders one card per step on phones and one pinned card on wide screens.
   await expect(
-    page.getByText("$254,732", { exact: true }).first(),
+    page
+      .getByText("$254,732", { exact: true })
+      .filter({ visible: true })
+      .first(),
   ).toBeVisible();
   await shot(page, "start", info.project.name);
   await page.getByRole("button", { name: "Try with sample property" }).click();

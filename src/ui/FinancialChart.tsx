@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { BusyLabel } from "./LoadingFeedback";
 import { money } from "./format";
 import { csvText, download } from "../data/export";
@@ -158,8 +158,12 @@ export default function FinancialChart({
       const svgNode = svg.current;
       if (!svgNode) return;
       const clone = svgNode.cloneNode(true) as SVGSVGElement;
+      // Downloads are always light: resolve tokens with the chart briefly in a
+      // light subtree. Synchronous until removed below, so nothing repaints.
+      const host = svgNode.parentElement!;
+      host.dataset.theme = "light";
       // Resolve shared CSS tokens before serializing a standalone download.
-      const theme = getComputedStyle(document.documentElement);
+      const theme = getComputedStyle(svgNode);
       const token = (name: string) => theme.getPropertyValue(name).trim();
       const exportColors = colors.map((color) => token(color.slice(4, -1)));
       const originals = [svgNode, ...svgNode.querySelectorAll("*")];
@@ -204,6 +208,7 @@ export default function FinancialChart({
       const total = foot + lines.length * 18 + 20;
       const body = new XMLSerializer().serializeToString(clone);
       const text = `<svg xmlns="http://www.w3.org/2000/svg" font-family="${xml(token("--font-sans"))}" width="${width}" height="${total}" viewBox="0 0 ${width} ${total}"><rect width="100%" height="100%" fill="${token("--color-surface")}"/><text x="16" y="24" font-family="${xml(token("--font-sans"))}" font-size="${token("--text-16")}" font-weight="${token("--weight-semibold")}" fill="${token("--color-ink")}">${xml(title)}</text><g transform="translate(0 34)">${body}</g>${legend}${lines.map((s, i) => `<text x="16" y="${foot + i * 18}" font-family="${xml(token("--font-sans"))}" font-size="${token("--text-12")}" fill="${token("--color-text")}">${xml(s)}</text>`).join("")}</svg>`;
+      delete host.dataset.theme;
       if (kind === "svg") {
         download(`${stem}.svg`, text, "image/svg+xml");
         return;
@@ -234,6 +239,8 @@ export default function FinancialChart({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Chart export failed.");
     } finally {
+      // Never leave the chart stuck in the light export theme after an error.
+      delete svg.current?.parentElement?.dataset.theme;
       setExporting(null);
     }
   }
@@ -245,7 +252,11 @@ export default function FinancialChart({
       </section>
     );
   return (
-    <section className="panel financial-chart" aria-labelledby={id}>
+    <section
+      className="panel financial-chart"
+      aria-labelledby={id}
+      data-reveal=""
+    >
       <div className="panel-title">
         <h2 id={id}>{title}</h2>
         <details className="chart-download no-print">
@@ -383,6 +394,8 @@ export default function FinancialChart({
                     ) : (
                       <rect
                         key={j}
+                        className="chart-bar"
+                        style={{ "--i": i } as CSSProperties}
                         x={Math.min(x(start), x(end))}
                         y={12 + i * 48 + j * 14}
                         width={Math.max(1, Math.abs(x(end) - x(start)))}
@@ -427,65 +440,84 @@ export default function FinancialChart({
                   </g>
                 );
               })}
-              {trail && (
-                <g className="chart-cursor">
-                  <defs>
-                    <linearGradient
-                      id={`${svgId}-trail`}
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="0"
-                        stopColor="var(--color-accent)"
-                        stopOpacity="0.16"
-                      />
-                      <stop
-                        offset="1"
-                        stopColor="var(--color-accent)"
-                        stopOpacity="0"
-                      />
-                    </linearGradient>
-                    <clipPath id={`${svgId}-clip`}>
-                      <rect
-                        className="chart-trail-clip"
-                        x={left}
-                        y={0}
-                        width={right - left}
-                        height={height}
-                        style={{
-                          transform: `scaleX(${(xp(active) - left) / (right - left)})`,
-                        }}
-                      />
-                    </clipPath>
-                  </defs>
-                  <path
-                    d={trail}
-                    fill={`url(#${svgId}-trail)`}
-                    clipPath={`url(#${svgId}-clip)`}
+              {/* Draw-in: the plot is uncovered left to right when the chart
+                  first scrolls into view. The rect's own width is the final
+                  state, so downloads are always complete. */}
+              <defs>
+                <clipPath id={`${svgId}-reveal`}>
+                  <rect
+                    className="chart-reveal"
+                    x={0}
+                    y={0}
+                    width={width}
+                    height={height}
                   />
-                </g>
-              )}
-              {series.map((s, j) => (
-                <path
-                  key={s}
-                  d={lines[j].d}
-                  stroke={colors[j % 4]}
-                  strokeWidth="2.5"
-                  strokeDasharray={
-                    j % 4 === 1
-                      ? "7 4"
-                      : j % 4 === 2
-                        ? "2 4"
-                        : j % 4 === 3
-                          ? "10 3 2 3"
-                          : undefined
-                  }
-                  fill="none"
-                />
-              ))}
+                </clipPath>
+              </defs>
+              <g clipPath={`url(#${svgId}-reveal)`}>
+                {trail && (
+                  <g className="chart-cursor">
+                    <defs>
+                      <linearGradient
+                        id={`${svgId}-trail`}
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0"
+                          stopColor="var(--color-accent)"
+                          stopOpacity="0.16"
+                        />
+                        <stop
+                          offset="1"
+                          stopColor="var(--color-accent)"
+                          stopOpacity="0"
+                        />
+                      </linearGradient>
+                      <clipPath id={`${svgId}-clip`}>
+                        <rect
+                          className="chart-trail-clip"
+                          x={left}
+                          y={0}
+                          width={right - left}
+                          height={height}
+                          style={{
+                            transform: `scaleX(${(xp(active) - left) / (right - left)})`,
+                          }}
+                        />
+                      </clipPath>
+                    </defs>
+                    <path
+                      className="chart-line"
+                      d={trail}
+                      fill={`url(#${svgId}-trail)`}
+                      clipPath={`url(#${svgId}-clip)`}
+                    />
+                  </g>
+                )}
+                {series.map((s, j) => (
+                  <path
+                    // A new point count re-keys the path instead of morphing it.
+                    key={`${s}-${rows.length}`}
+                    className="chart-line"
+                    d={lines[j].d}
+                    stroke={colors[j % 4]}
+                    strokeWidth="2.5"
+                    strokeDasharray={
+                      j % 4 === 1
+                        ? "7 4"
+                        : j % 4 === 2
+                          ? "2 4"
+                          : j % 4 === 3
+                            ? "10 3 2 3"
+                            : undefined
+                    }
+                    fill="none"
+                  />
+                ))}
+              </g>
               <line
                 className="chart-cursor"
                 x1={0}

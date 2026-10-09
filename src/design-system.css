@@ -1,5 +1,8 @@
 /* PropertyIQ: one shared visual vocabulary. Breakpoints and chart geometry are structural. */
-:root {
+/* Light colors. Also selectable per subtree with data-theme="light", which
+   chart downloads use so exports are light whatever the page theme. */
+:root,
+[data-theme="light"] {
   color-scheme: light;
   --color-ink: #0d1628;
   --color-text: #2a3547;
@@ -32,6 +35,8 @@
   --color-key-to: #5b3fd9;
   --color-glow-a: rgb(76 132 255 / 18%);
   --color-glow-b: rgb(120 92 255 / 14%);
+}
+:root {
   --font-sans:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text",
     "Segoe UI", Inter, sans-serif;

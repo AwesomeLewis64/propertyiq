@@ -42,6 +42,12 @@ Radii: `--radius-control` 10px, `--radius-panel` 18px, `--radius-hero` 28px (her
   - **Sidebar highlight**: one highlight springs between workspace sidebar items: to the hovered item, else the active one.
   - **Headline reveal**: on load the hero words sharpen from a blur one after another, and the gradient phrase lands last.
   - **Nav condense**: on the start page, scrolling down condenses the header into a floating glass pill (scroll-driven animation; browsers without support keep the full bar).
+- Phase B/C:
+  - **Reveals**: `[data-reveal]` sections fade and rise once on entering view.
+  - **Story card**: on the start page, steps on the left and one pinned card that crossfades (opacity, blur, rise) to the current step; the NOI bar fills on step 2.
+  - **Count-up**: KPIs and exit-bridge figures count up from 0 the first time, then tween on edits. The DOM always holds the final value; `::after` paints the moving one.
+  - **Crossfades**: screen changes (start → review → results, workspace views) use View Transitions, about 320ms.
+  - **Draw-in**: charts uncover left to right, and bars grow with a stagger. When inputs change, lines morph (`d`) and bars resize. Downloads are always light and complete.
 - Reduced motion: one global rule at the end of `styles.css` disables every animation and transition, current and future. The progress spinner animates only while work is actually pending.
 
 ## Accessibility

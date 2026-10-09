@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import Brand from "./Brand";
 import ThemeToggle from "./ThemeToggle";
+import StoryCard from "./StoryCard";
+import { swap } from "./viewTransition";
 import {
   briefExamples,
   extractBrief,
@@ -23,8 +25,6 @@ import {
   type SetupValues,
   type WorkspaceLaunch,
 } from "./startFlow";
-import { money } from "./format";
-import { sampleSummary } from "../finance/sharedSample";
 import { calculate } from "../finance/model";
 import type { Assumptions } from "../finance/types";
 type Intent = "overview" | "monthly" | "price" | "financing";
@@ -67,6 +67,8 @@ export default function StartPage({
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [review, setReview] = useState(false);
+  // Start page ↔ input review crossfade.
+  const showReview = (next: boolean) => swap(() => setReview(next));
   const [values, setValues] = useState<SetupValues>(blank);
   const [recognized, setRecognized] = useState<string[]>([]);
   const [intent, setIntent] = useState<Intent>("overview");
@@ -74,7 +76,6 @@ export default function StartPage({
   const [moneyDrafts, setMoneyDrafts] = useState<Record<string, string>>({});
   const [hint, setHint] = useState(0);
   const nextHint = () => setHint((h) => (h + 1) % briefExamples.length);
-  const summary = sampleSummary();
   const live = extractBrief(description);
   const start = (next: Intent = "overview") => {
     const numbers = extractBrief(description);
@@ -87,7 +88,7 @@ export default function StartPage({
     setMoneyDrafts({});
     setRecognized(Object.keys(numbers));
     setIntent(next);
-    setReview(true);
+    showReview(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const update = (key: keyof SetupValues, value: string) =>
@@ -170,12 +171,12 @@ export default function StartPage({
         <button
           className="brand"
           aria-label="PropertyIQ home"
-          onClick={() => setReview(false)}
+          onClick={() => showReview(false)}
         >
           <Brand />
         </button>
         <nav aria-label="Start page">
-          <a href="#how-it-works" onClick={() => setReview(false)}>
+          <a href="#how-it-works" onClick={() => showReview(false)}>
             How it works
           </a>
           <button
@@ -192,7 +193,7 @@ export default function StartPage({
       <main id="start-content">
         {review ? (
           <section className="iq-review">
-            <button className="iq-text-link" onClick={() => setReview(false)}>
+            <button className="iq-text-link" onClick={() => showReview(false)}>
               <ArrowLeft size={16} /> Back to start
             </button>
             <h1>
@@ -496,7 +497,7 @@ export default function StartPage({
                     setValues(blank);
                     setRecognized([]);
                     setIntent("overview");
-                    setReview(true);
+                    showReview(true);
                   }}
                 >
                   Enter numbers manually
@@ -520,102 +521,11 @@ export default function StartPage({
                 </button>
               </div>
             </section>
-            <section className="iq-look-inside" id="sample-report">
-              <div>
-                <h2>
-                  Review income,
-                  <br />
-                  costs, and returns.
-                </h2>
-                <p>
-                  Income, expenses, and assumptions
-                  <br className="iq-desktop-break" /> in one readable report.
-                </p>
-              </div>
-              <article className="iq-sample-card">
-                <div className="iq-sample-heading">
-                  <div>
-                    <h3>{summary.name}</h3>
-                    <p>
-                      {summary.units}-unit multifamily · Fictional value-add
-                      case
-                    </p>
-                  </div>
-                  <button
-                    className="iq-text-link"
-                    onClick={() =>
-                      onOpen({ project: sampleProject(), tab: "report" })
-                    }
-                  >
-                    View sample report <ArrowUpRight size={15} />
-                  </button>
-                </div>
-                <div className="iq-sample-metrics">
-                  {[
-                    ["Annual potential rent", summary.rent],
-                    ["Operating expenses", summary.expenses],
-                    ["Net operating income", summary.noi],
-                  ].map(([label, n]) => (
-                    <div key={label}>
-                      <span>{label}</span>
-                      <strong>{money(n as number)}</strong>
-                    </div>
-                  ))}
-                </div>
-                <div
-                  className="iq-income-bar"
-                  role="img"
-                  aria-label={`Illustrative NOI ${money(summary.noi)}; operating expenses ${money(summary.expenses)}`}
-                >
-                  <span />
-                  <span />
-                </div>
-                <div className="iq-bar-legend">
-                  <span>
-                    <i />
-                    Net operating income &nbsp; {money(summary.noi)}
-                  </span>
-                  <span>
-                    <i />
-                    Operating expenses &nbsp; {money(summary.expenses)}
-                  </span>
-                </div>
-                <small>
-                  Before financing and capital expenditures. Based on
-                  illustrative inputs.
-                </small>
-              </article>
-            </section>
-            <section className="iq-how" id="how-it-works">
-              <div className="iq-section-heading">
-                <h2>Three steps to a property analysis.</h2>
-              </div>
-              <div className="iq-how-grid">
-                {[
-                  [
-                    "01",
-                    "Enter property inputs",
-                    "Enter a few figures, describe a property, or map a spreadsheet. Review every input before it enters your analysis.",
-                  ],
-                  [
-                    "02",
-                    "Review cash flow",
-                    "Follow monthly cash, loan payments and your forecast period. Compare scenarios and see when more cash is needed.",
-                  ],
-                  [
-                    "03",
-                    "Check the assumptions",
-                    "Trace calculations, connect source documents and compare against your workbook. Build a report you can explain.",
-                  ],
-                ].map(([number, title, body]) => (
-                  <article key={number}>
-                    <span>{number}</span>
-                    <h3>{title}</h3>
-                    <p>{body}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
+            <StoryCard
+              onReport={() =>
+                onOpen({ project: sampleProject(), tab: "report" })
+              }
+            />
             <section className="iq-return">
               <div>
                 <h2>Already have a project?</h2>

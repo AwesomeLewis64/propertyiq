@@ -2,6 +2,7 @@ import type { Model, Assumptions } from "../finance/types";
 import FinancialChart from "./FinancialChart";
 import VisualAdditions from "./VisualAdditions";
 import { money } from "./format";
+import CountUp from "./CountUp";
 import { provenance } from "../data/provenance";
 export default function Charts({ m, a }: { m: Model; a: Assumptions }) {
   const years = m.years.slice(0, a.hold),
@@ -48,27 +49,40 @@ export default function Charts({ m, a }: { m: Model; a: Assumptions }) {
           <div className="bridge">
             <div>
               <span>Gross property value</span>
-              <strong>{m.forwardNOI > 0 ? money(m.grossExit) : "N/A"}</strong>
+              <strong>
+                <CountUp
+                  value={m.forwardNOI > 0 ? m.grossExit : null}
+                  format={money}
+                />
+              </strong>
             </div>
             <div>
               <span>Less selling costs</span>
               <strong>
-                {m.forwardNOI > 0
-                  ? money(-m.grossExit * a.sellingCosts)
-                  : "N/A"}
+                <CountUp
+                  value={
+                    m.forwardNOI > 0 ? -m.grossExit * a.sellingCosts : null
+                  }
+                  format={money}
+                />
               </strong>
             </div>
             <div>
               <span>Less loan payoff</span>
               <strong>
-                {money(
-                  years.at(-1)?.debt ? -years.at(-1)!.debt!.balance : null,
-                )}
+                <CountUp
+                  value={
+                    years.at(-1)?.debt ? -years.at(-1)!.debt!.balance : null
+                  }
+                  format={money}
+                />
               </strong>
             </div>
             <div className="bridge-total">
               <span>Net sale proceeds to equity</span>
-              <strong>{money(m.netSale)}</strong>
+              <strong>
+                <CountUp value={m.netSale} format={money} />
+              </strong>
             </div>
           </div>
         </section>

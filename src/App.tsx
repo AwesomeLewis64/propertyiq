@@ -38,6 +38,9 @@ const ImportRentRoll = lazy(() => import("./ui/ImportRentRoll"));
 const AdvancedWorkspace = lazy(() => import("./advanced/AdvancedWorkspace"));
 import type { ScenarioSettings } from "./ui/Sensitivity";
 import Insights from "./ui/Insights";
+import CountUp from "./ui/CountUp";
+import DealSummary from "./ui/DealSummary";
+import { swap } from "./ui/viewTransition";
 import { originOf, provenance } from "./data/provenance";
 import { download, projectionCsv, debtCsv } from "./data/export";
 import LocalAnalyses from "./ui/LocalAnalyses";
@@ -58,51 +61,60 @@ type View =
   | "methodology";
 function Metrics({ m, a }: { m: Model; a: Assumptions }) {
   const y = m.years[0];
-  const data = [
+  const data: [string, number | null, (v: number | null) => string, string][] =
     [
-      "Acquisition price",
-      money(a.price),
-      "Purchase price, before transaction costs",
-    ],
-    [
-      "Initial equity",
-      money(m.initialEquity),
-      "Price + closing costs + initial CapEx + loan fees − loan proceeds",
-    ],
-    [
-      "Year 1 NOI",
-      money(y.noi),
-      "Effective gross income minus operating expenses; excludes reserves and debt",
-    ],
-    [
-      "Going-in cap rate",
-      pct(y.noi / a.price),
-      "Year 1 NOI divided by acquisition price",
-    ],
-    [
-      "Annual IRR",
-      pct(m.irr),
-      m.irrReason ?? "Annual equity cash-flow IRR, including sale",
-    ],
-    [
-      "Equity multiple",
-      multiple(m.multiple),
-      "Total positive distributions / total equity contributions",
-    ],
-    [
-      "Year 1 cash-on-cash",
-      pct(y.operatingCash !== null ? y.operatingCash / m.initialEquity : null),
-      "Operating equity cash flow / initial equity; excludes sale",
-    ],
-    [
-      "Year 1 DSCR",
-      multiple(y.dscr),
-      "NOI / annual regular debt service; no debt displays N/A",
-    ],
-  ];
+      [
+        "Acquisition price",
+        a.price,
+        money,
+        "Purchase price, before transaction costs",
+      ],
+      [
+        "Initial equity",
+        m.initialEquity,
+        money,
+        "Price + closing costs + initial CapEx + loan fees − loan proceeds",
+      ],
+      [
+        "Year 1 NOI",
+        y.noi,
+        money,
+        "Effective gross income minus operating expenses; excludes reserves and debt",
+      ],
+      [
+        "Going-in cap rate",
+        y.noi / a.price,
+        pct,
+        "Year 1 NOI divided by acquisition price",
+      ],
+      [
+        "Annual IRR",
+        m.irr,
+        pct,
+        m.irrReason ?? "Annual equity cash-flow IRR, including sale",
+      ],
+      [
+        "Equity multiple",
+        m.multiple,
+        multiple,
+        "Total positive distributions / total equity contributions",
+      ],
+      [
+        "Year 1 cash-on-cash",
+        y.operatingCash !== null ? y.operatingCash / m.initialEquity : null,
+        pct,
+        "Operating equity cash flow / initial equity; excludes sale",
+      ],
+      [
+        "Year 1 DSCR",
+        y.dscr,
+        multiple,
+        "NOI / annual regular debt service; no debt displays N/A",
+      ],
+    ];
   return (
     <div className="metrics">
-      {data.map(([label, value, help], i) => (
+      {data.map(([label, value, format, help], i) => (
         <div className={`metric ${i === 4 ? "accent-metric" : ""}`} key={label}>
           <span title={help}>
             {label}
@@ -115,7 +127,9 @@ function Metrics({ m, a }: { m: Model; a: Assumptions }) {
               i
             </span>
           </span>
-          <strong>{value}</strong>
+          <strong>
+            <CountUp value={value} format={format} />
+          </strong>
           <small>
             {i === 4
               ? "Annual equity return"
@@ -165,10 +179,12 @@ function WorkspaceApp() {
   const [view, setViewState] = useState<View>(
     () => (readRoute().section as View) ?? "overview",
   );
-  const setView = (v: View) => {
+  const showView = (v: View) => {
     setViewState(v);
     navigate(`#quick/${v}`);
   };
+  // Screen changes crossfade (View Transitions); back/forward stays instant.
+  const setView = (v: View) => swap(() => showView(v));
   const [home, setHome] = useState(() => readRoute().mode === "home");
   const [mobileEdited, setMobileEdited] = useState(false);
   const [scenarios, setScenarios] = useState<ScenarioSettings>({
@@ -272,11 +288,12 @@ function WorkspaceApp() {
     { id: "report" as const, label: "Investment report", icon: FileText },
     { id: "methodology" as const, label: "Methodology", icon: BookOpen },
   ];
-  const open = () => {
-    setHome(false);
-    setView("overview");
-    document.title = "PropertyIQ | Investment Workspace";
-  };
+  const open = () =>
+    swap(() => {
+      setHome(false);
+      showView("overview");
+      document.title = "PropertyIQ | Investment Workspace";
+    });
   const openMonthly = (next?: WorkspaceLaunch) => {
     setLaunch(next);
     setHome(false);
@@ -318,11 +335,13 @@ function WorkspaceApp() {
     return (
       <StartPage
         onOpen={openMonthly}
-        onAnnual={(next) => {
-          setA(next ?? structuredClone(demo));
-          setHome(false);
-          setView("overview");
-        }}
+        onAnnual={(next) =>
+          swap(() => {
+            setA(next ?? structuredClone(demo));
+            setHome(false);
+            showView("overview");
+          })
+        }
       />
     );
   return (
@@ -333,11 +352,13 @@ function WorkspaceApp() {
       <header className="topbar annual-topbar">
         <button
           className="brand"
-          onClick={() => {
-            setHome(true);
-            navigate("#home");
-            document.title = "PropertyIQ | Multifamily Investment Analytics";
-          }}
+          onClick={() =>
+            swap(() => {
+              setHome(true);
+              navigate("#home");
+              document.title = "PropertyIQ | Multifamily Investment Analytics";
+            })
+          }
         >
           <Brand />
         </button>
@@ -482,13 +503,22 @@ function WorkspaceApp() {
               setView("overview");
             }}
           />
+          {!m.errors.length && view !== "methodology" && view !== "import" && (
+            <DealSummary
+              a={a}
+              m={m}
+              onGo={(target) =>
+                setView(target).then(() =>
+                  document
+                    .querySelector(
+                      target === "overview" ? ".metrics" : ".analysis-content",
+                    )
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                )
+              }
+            />
+          )}
           <div className="analysis-layout">
-            {!m.errors.length && (
-              <div className="mobile-summary">
-                Annual IRR {pct(m.irr)} · Multiple {multiple(m.multiple)} · DSCR{" "}
-                {multiple(m.years[0]?.dscr ?? null)}
-              </div>
-            )}
             <details
               className="mobile-assumptions"
               open

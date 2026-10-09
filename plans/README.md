@@ -7,9 +7,9 @@ Gate (every phase): `pnpm typecheck && pnpm lint && pnpm test && pnpm build && p
 
 | # | Plan | Depends on | Effort | Risk | Status |
 |---|------|-----------|--------|------|--------|
-| 001 | [Tokens, hero, glass, dark mode](001-tokens-hero-glass-dark.md) | none | L | MED | TODO |
-| 002 | [Reveals, story card, count-up, crossfades](002-reveals-story-countup-crossfade.md) | 001 | L | HIGH | TODO |
-| 003 | [Chart draw-in and value transitions](003-chart-animation.md) | 001, 002 | M | MED | TODO |
+| 001 | [Tokens, hero, glass, dark mode](001-tokens-hero-glass-dark.md) | none | L | MED | DONE |
+| 002 | [Reveals, story card, count-up, crossfades](002-reveals-story-countup-crossfade.md) | 001 | L | HIGH | DONE |
+| 003 | [Chart draw-in and value transitions](003-chart-animation.md) | 001, 002 | M | MED | DONE |
 | 004 | [Anime accents: shine + sparkle](004-anime-accents.md) | 001, 002 | S | LOW | TODO |
 
 ## Audit findings that shape the plans
