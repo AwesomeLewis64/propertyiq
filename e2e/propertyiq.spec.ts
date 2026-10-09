@@ -341,6 +341,74 @@ test("accessibility and 390px overflow on key screens", async ({
   expect(allViolations).toEqual([]);
 });
 
+test.describe("top bars with motion on", () => {
+  // The start header condenses on scroll; reduced motion would hide overflow it causes.
+  test.use({ reducedMotion: "no-preference" });
+  test("keep every control inside the viewport from 320px to 768px", async ({
+    page,
+  }) => {
+    for (const route of ["/", "/#quick/overview", "/#monthly"]) {
+      await page.goto(route);
+      // A hash-only goto keeps the old h1, so wait on this route's own shell.
+      await page
+        .locator(
+          route === "/"
+            ? ".iq-start-header"
+            : route.includes("quick")
+              ? ".annual-topbar"
+              : ".planner-sidebar",
+        )
+        .first()
+        .waitFor();
+      for (const width of [320, 360, 375, 390, 430, 744, 768]) {
+        await page.setViewportSize({ width, height: 844 });
+        for (const y of [0, 400]) {
+          await page.evaluate((top) => window.scrollTo(0, top), y);
+          await page.evaluate(
+            () =>
+              new Promise<void>((r) =>
+                requestAnimationFrame(() => requestAnimationFrame(() => r())),
+              ),
+          );
+          const fit = await page.evaluate(() => {
+            const header = document.querySelector("header")!;
+            const box = header.getBoundingClientRect();
+            const visible = Array.from(
+              header.querySelectorAll("button, a"),
+            ).filter((e) => e.getBoundingClientRect().width > 0);
+            const tools = document.querySelector(
+              'nav[aria-label="Property analysis tools"]',
+            );
+            return {
+              toolsSpill: tools ? tools.scrollWidth - tools.clientWidth : 0,
+              pinned:
+                innerWidth <= 760 &&
+                !!document.querySelector(".planner-sidebar") &&
+                getComputedStyle(document.querySelector(".planner-sidebar")!)
+                  .position === "sticky",
+              spill: header.scrollWidth - header.clientWidth,
+              right: Math.max(
+                ...visible.map((e) => e.getBoundingClientRect().right),
+              ),
+              edge: Math.min(box.right, innerWidth),
+            };
+          });
+          const where = `${route} at ${width}px, scrollY ${y}`;
+          expect(fit.spill, where).toBeLessThanOrEqual(0);
+          expect(fit.pinned, `${where} planner bar pinned`).toBe(false);
+          expect(fit.toolsSpill, `${where} planner tools`).toBeLessThanOrEqual(
+            0,
+          );
+          expect(fit.right, where).toBeLessThanOrEqual(fit.edge);
+          await expect(
+            page.locator("header .brand").first(),
+            where,
+          ).toHaveAccessibleName(/PropertyIQ/);
+        }
+      }
+    }
+  });
+});
 test("all monthly tools render, remain accessible and fit the viewport", async ({
   page,
 }) => {

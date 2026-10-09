@@ -1,19 +1,19 @@
 # PropertyIQ verification
 
-Verification date: October 8, 2026. Release: 2.4.0.
+Verification date: October 9, 2026. Release: 2.4.0.
 
 ## Results
 
 | Check | Result |
 |---|---|
-| Regression tests | 212 pass across 11 files |
+| Regression tests | 227 pass across 15 files |
 | Application and browser-test TypeScript | Pass |
 | ESLint, including React hooks | Pass, zero warnings |
 | Production build | Pass |
-| Browser checks | 97 pass across six desktop/narrow-screen projects; five PDF-only cases deliberately skipped |
+| Browser checks | 121 pass across six desktop/narrow-screen projects; five PDF-only cases deliberately skipped |
 | Serious/critical axe violations on checked screens | Zero |
 | 390×844 page-level horizontal overflow | None on checked screens |
-| Finance coverage | 91.31% statements, 83.42% branches, 100% functions, 92.36% lines |
+| Finance coverage | 91.31% statements, 83.23% branches, 100% functions, 92.36% lines |
 | Actual PDF output | Chromium A4 landscape Quick brief and 120-month Monthly brief generated and visually inspected |
 
 Coverage gates apply to src/finance: 90% statements, lines and functions; 80% branches. This is aggregated finance coverage, not complete monthly-engine or interface coverage.

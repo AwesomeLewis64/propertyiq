@@ -4987,9 +4987,10 @@ h3 {
   background: var(--color-blue-soft);
 }
 
-/* Scrolling down condenses the full-width bar into a floating glass pill. */
+/* Scrolling down condenses the full-width bar into a floating glass pill.
+   Wide screens only: on phones the pill has less room than its controls need. */
 @supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 761px) {
     .iq-start-header {
       margin-inline: auto;
       max-width: 100%;
@@ -6009,6 +6010,49 @@ button.theme-toggle[role="switch"] {
 }
 button.theme-toggle[role="switch"]:hover {
   border-color: var(--color-muted);
+}
+
+/* Narrow phones: brand + planner link + theme switch need ~390px as drawn.
+   Drop decorative arrows and shrink the wordmark first, then hide it, so
+   nothing leaves the viewport down to 320px. */
+@media (max-width: 400px) {
+  .iq-start-header nav .iq-header-pill svg {
+    display: none;
+  }
+  .advanced .topbar .iq-brand-name {
+    font-size: var(--text-20);
+  }
+  /* Firefox sets these buttons ~20px wider than Chromium and WebKit. */
+  .annual-topbar .iq-brand-name {
+    font-size: var(--text-16);
+  }
+  .annual-topbar .topbar-links .button svg {
+    display: none;
+  }
+}
+@media (max-width: 370px) {
+  /* Visually hidden, not display:none: it is the brand button's accessible name. */
+  .iq-start-header .iq-brand-name,
+  .topbar .iq-brand-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+/* Planner tools: wrap instead of a hidden sideways-scrolling strip, where the
+   last label is cut off and iOS shows no scrollbar to hint at more. */
+@media (max-width: 760px) {
+  .advanced .planner-sidebar {
+    position: static; /* the shell is display:block here; a tall pinned bar covers content */
+  }
+  .advanced .planner-sidebar nav {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
 }
 
 /* One reduced-motion rule for everything, present and future (ADR-0002). */

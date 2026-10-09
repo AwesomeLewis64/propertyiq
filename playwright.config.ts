@@ -10,6 +10,9 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: "http://127.0.0.1:4197",
+    // Entrance and scroll-driven motion is off for functional specs, so they
+    // wait on state, not timing. Motion-dependent specs opt back in with test.use.
+    reducedMotion: "reduce",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
