@@ -48,6 +48,9 @@ Radii: `--radius-control` 10px, `--radius-panel` 18px, `--radius-hero` 28px (her
   - **Count-up**: KPIs and exit-bridge figures count up from 0 the first time, then tween on edits. The DOM always holds the final value; `::after` paints the moving one.
   - **Crossfades**: screen changes (start → review → results, workspace views) use View Transitions, about 320ms.
   - **Draw-in**: charts uncover left to right, and bars grow with a stagger. When inputs change, lines morph (`d`) and bars resize. Downloads are always light and complete.
+- Phase D, delight (pastels only here; tokens `--color-pastel-pink`, `--color-pastel-violet`, `--color-pastel-cyan`):
+  - **Shine**: a pastel band sweeps across "Analyze property" on hover or keyboard focus, painted under the label at about 40% opacity.
+  - **Sparkle**: eight four-point stars burst once from the Annual IRR figure when a new analysis opens to results without errors, timed to the end of its count-up. Never on edits or errors.
 - Reduced motion: one global rule at the end of `styles.css` disables every animation and transition, current and future. The progress spinner animates only while work is actually pending.
 
 ## Accessibility

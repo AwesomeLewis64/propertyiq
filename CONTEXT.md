@@ -11,7 +11,7 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **Reveal**: the one-off fade and slide-up when a section enters the viewport.
 - **KPI row**: the `Metrics` grid in quick analysis.
 - **Count-up**: the first-appearance animation of a KPI from 0. **Tween**: later old-to-new value animation.
-- **Sparkle**: the one-shot pastel burst when results first appear without errors.
+- **Sparkle**: the one-shot pastel burst on the Annual IRR figure when a new analysis first opens to results without errors.
 - **Shine sweep**: the pastel highlight that crosses the Analyze button on hover or focus.
 - **Glass**: a translucent, blurred surface (nav bar) built from tokens.
 - **Hero glow**: the slow, low-contrast animated gradient behind the hero.

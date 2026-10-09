@@ -10,7 +10,7 @@ Gate (every phase): `pnpm typecheck && pnpm lint && pnpm test && pnpm build && p
 | 001 | [Tokens, hero, glass, dark mode](001-tokens-hero-glass-dark.md) | none | L | MED | DONE |
 | 002 | [Reveals, story card, count-up, crossfades](002-reveals-story-countup-crossfade.md) | 001 | L | HIGH | DONE |
 | 003 | [Chart draw-in and value transitions](003-chart-animation.md) | 001, 002 | M | MED | DONE |
-| 004 | [Anime accents: shine + sparkle](004-anime-accents.md) | 001, 002 | S | LOW | TODO |
+| 004 | [Anime accents: shine + sparkle](004-anime-accents.md) | 001, 002 | S | LOW | DONE |
 
 ## Audit findings that shape the plans
 

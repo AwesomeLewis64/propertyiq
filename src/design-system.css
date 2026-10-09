@@ -35,6 +35,10 @@
   --color-key-to: #5b3fd9;
   --color-glow-a: rgb(76 132 255 / 18%);
   --color-glow-b: rgb(120 92 255 / 14%);
+  /* Pastel accents: only the Analyze shine and the success sparkle (ADR-0006). */
+  --color-pastel-pink: #ff9fcf;
+  --color-pastel-violet: #b69cff;
+  --color-pastel-cyan: #7fdcf0;
 }
 :root {
   --font-sans:
@@ -155,4 +159,7 @@
   --color-key-to: #a58bff;
   --color-glow-a: rgb(76 132 255 / 16%);
   --color-glow-b: rgb(140 100 255 / 12%);
+  --color-pastel-pink: #ffb3d9;
+  --color-pastel-violet: #c6b3ff;
+  --color-pastel-cyan: #99e6f5;
 }

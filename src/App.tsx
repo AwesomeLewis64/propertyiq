@@ -2,6 +2,7 @@ import LoadingFeedback from "./ui/LoadingFeedback";
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -40,6 +41,7 @@ import type { ScenarioSettings } from "./ui/Sensitivity";
 import Insights from "./ui/Insights";
 import CountUp from "./ui/CountUp";
 import DealSummary from "./ui/DealSummary";
+import Sparkle from "./ui/Sparkle";
 import { swap } from "./ui/viewTransition";
 import { originOf, provenance } from "./data/provenance";
 import { download, projectionCsv, debtCsv } from "./data/export";
@@ -59,7 +61,17 @@ type View =
   | "import"
   | "report"
   | "methodology";
-function Metrics({ m, a }: { m: Model; a: Assumptions }) {
+function Metrics({
+  m,
+  a,
+  celebrate,
+  onCelebrated,
+}: {
+  m: Model;
+  a: Assumptions;
+  celebrate: boolean;
+  onCelebrated: () => void;
+}) {
   const y = m.years[0];
   const data: [string, number | null, (v: number | null) => string, string][] =
     [
@@ -116,6 +128,7 @@ function Metrics({ m, a }: { m: Model; a: Assumptions }) {
     <div className="metrics">
       {data.map(([label, value, format, help], i) => (
         <div className={`metric ${i === 4 ? "accent-metric" : ""}`} key={label}>
+          {i === 4 && celebrate && <Sparkle onDone={onCelebrated} />}
           <span title={help}>
             {label}
             <span
@@ -187,6 +200,9 @@ function WorkspaceApp() {
   const setView = (v: View) => swap(() => showView(v));
   const [home, setHome] = useState(() => readRoute().mode === "home");
   const [mobileEdited, setMobileEdited] = useState(false);
+  // A new analysis opening to results gets one sparkle on its IRR (ADR-0006).
+  const [celebrate, setCelebrate] = useState(false);
+  const endCelebrate = useCallback(() => setCelebrate(false), []);
   const [scenarios, setScenarios] = useState<ScenarioSettings>({
     upside: {},
     downside: {},
@@ -340,6 +356,7 @@ function WorkspaceApp() {
             setA(next ?? structuredClone(demo));
             setHome(false);
             showView("overview");
+            setCelebrate(true);
           })
         }
       />
@@ -591,7 +608,12 @@ function WorkspaceApp() {
                           m.effectiveExitCap ?? a.exitCap,
                         )}
                       />
-                      <Metrics m={m} a={a} />
+                      <Metrics
+                        m={m}
+                        a={a}
+                        celebrate={celebrate}
+                        onCelebrated={endCelebrate}
+                      />
                       <div className="results-heading">
                         <h2>Investment performance</h2>
                         <span>
