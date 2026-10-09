@@ -51,6 +51,7 @@ Radii: `--radius-control` 10px, `--radius-panel` 18px, `--radius-hero` 28px (her
 - Phase D, delight (pastels only here; tokens `--color-pastel-pink`, `--color-pastel-violet`, `--color-pastel-cyan`):
   - **Shine**: a pastel band sweeps across "Analyze property" on hover or keyboard focus, painted under the label at about 40% opacity.
   - **Sparkle**: eight four-point stars burst once from the Annual IRR figure when a new analysis opens to results without errors, timed to the end of its count-up. Never on edits or errors.
+- **Chart zoom** (line charts with more than 8 periods): zoom in/out buttons centre on the inspected period, Ctrl/⌘ + scroll (and trackpad pinch) zooms around the pointer, and "Show all" resets. The inspect slider still spans every period and pans the window when it crosses an edge. The vertical scale fits the visible window and keeps the $0 baseline. Downloads export the visible window.
 - Reduced motion: one global rule at the end of `styles.css` disables every animation and transition, current and future. The progress spinner animates only while work is actually pending.
 
 ## Accessibility

@@ -5669,6 +5669,47 @@ h3 {
   }
 }
 
+/* Chart zoom: in/out around the inspected period, "Show all" to reset. */
+.chart-zoom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+}
+.chart-zoom .icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: var(--stroke-thin) solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.chart-zoom .icon-button:hover:not(:disabled) {
+  background: var(--color-surface-soft);
+}
+.chart-zoom .icon-button:disabled {
+  color: var(--color-border-strong);
+  cursor: default;
+}
+.chart-zoom-range {
+  color: var(--color-muted);
+  font-size: var(--text-12);
+  font-variant-numeric: tabular-nums;
+}
+.chart-zoom-hint {
+  margin-left: auto;
+  color: var(--color-muted);
+  font-size: var(--text-12);
+}
+@media (hover: none) {
+  .chart-zoom-hint {
+    display: none;
+  }
+}
+
 /* Deal summary: the key answers above the results; each jumps to its detail. */
 .deal-summary {
   display: flex;

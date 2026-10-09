@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { ZoomIn, ZoomOut } from "lucide-react";
 import { BusyLabel } from "./LoadingFeedback";
+import { zoomWindow } from "./chartZoom";
 import { money } from "./format";
 import { csvText, download } from "../data/export";
 import type { BridgeRow } from "../analytics/visuals";
@@ -59,6 +61,8 @@ export default function FinancialChart({
   const [width, setWidth] = useState(640),
     [scale, setScale] = useState(1),
     [selected, setSelected] = useState(0),
+    // Zoomed window of row indices on long line charts; null shows everything.
+    [win, setWin] = useState<[number, number] | null>(null),
     [error, setError] = useState(""),
     [exporting, setExporting] = useState<"svg" | "png" | null>(null);
   useEffect(() => {
@@ -96,16 +100,40 @@ export default function FinancialChart({
     };
   }, []);
   const active = Math.min(selected, Math.max(0, rows.length - 1));
+  const n = rows.length;
+  const horizontal = !!bridge || unit === "points";
+  const zoomable = !horizontal && n > 8;
+  const [from, to] =
+    zoomable && win
+      ? [Math.max(0, win[0]), Math.min(n - 1, win[1])]
+      : [0, Math.max(0, n - 1)];
+  // Line charts draw only the zoomed window; bar charts always draw every row.
+  const plot = horizontal ? rows : rows.slice(from, to + 1);
+  const pa = Math.min(Math.max(active - from, 0), Math.max(0, plot.length - 1));
+  const MIN_SPAN = 4;
+  const zoom = (factor: number, center = active) =>
+    setWin(zoomWindow(from, to, n, factor, center, MIN_SPAN));
+  const inspect = (i: number) => {
+    setSelected(i);
+    setWin((w) =>
+      !w
+        ? w
+        : i < w[0]
+          ? [i, i + w[1] - w[0]]
+          : i > w[1]
+            ? [i - (w[1] - w[0]), i]
+            : w,
+    );
+  };
   const format = (v: number | null) =>
     v === null || !Number.isFinite(v)
       ? "N/A"
       : unit === "points"
         ? `${v >= 0 ? "+" : ""}${v.toFixed(2)} pp`
         : money(v);
-  const finite = rows.flatMap((r) =>
+  const finite = plot.flatMap((r) =>
     r.values.filter((v): v is number => v !== null && Number.isFinite(v)),
   );
-  const horizontal = !!bridge || unit === "points";
   const rangeValues = bridge
     ? bridge.flatMap((r) => [r.start, ...(r.end === null ? [] : [r.end])])
     : finite;
@@ -118,14 +146,14 @@ export default function FinancialChart({
   const x = (v: number) => left + ((v - low) / range) * (right - left);
   const y = (v: number) => 205 - ((v - low) / range) * 175;
   const xp = (i: number) =>
-    left + (i * (right - left)) / Math.max(1, rows.length - 1);
+    left + (i * (right - left)) / Math.max(1, plot.length - 1);
   // Line series as drawn, plus each point's distance along its path, so the
   // inspection dot can travel the line itself (CSS offset-path).
   const lines = series.map((_, j) => {
     let d = "",
       run = 0,
       prev: [number, number] | null = null;
-    const along = rows.map((r, i) => {
+    const along = plot.map((r, i) => {
       const v = r.values[j];
       if (v === null) {
         prev = null;
@@ -140,9 +168,44 @@ export default function FinancialChart({
     return { d: d.trim(), along };
   });
   const svgId = id.replace(/[^a-zA-Z0-9_-]/g, "");
+  // Row index under a pointer position (absolute, so it survives zooming).
+  const pointAt = (clientX: number, clientY: number) => {
+    const rect = svg.current!.getBoundingClientRect();
+    const clamp = (v: number, max: number) =>
+      Math.max(0, Math.min(max, Math.round(v)));
+    return horizontal
+      ? clamp(
+          ((clientY - rect.top) * height) / rect.height / 48 - 20 / 48,
+          n - 1,
+        )
+      : from +
+          clamp(
+            ((((clientX - rect.left) * width) / rect.width - left) /
+              (right - left)) *
+              (plot.length - 1),
+            plot.length - 1,
+          );
+  };
+  // Ctrl/⌘ + wheel (and trackpad pinch, which sends ctrl+wheel) zooms around
+  // the pointer. A native non-passive listener is needed to stop page zoom.
+  const onWheel = useRef<(e: WheelEvent) => void>(() => {});
+  onWheel.current = (e) => {
+    if (!zoomable || !(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const at = pointAt(e.clientX, e.clientY);
+    setSelected(at);
+    zoom(e.deltaY < 0 ? 0.6 : 1 / 0.6, at);
+  };
+  useEffect(() => {
+    const node = svg.current;
+    if (!node) return;
+    const listener = (e: WheelEvent) => onWheel.current(e);
+    node.addEventListener("wheel", listener, { passive: false });
+    return () => node.removeEventListener("wheel", listener);
+  }, []);
   const trail =
-    !horizontal && rows.length > 1 && rows.every((r) => r.values[0] !== null)
-      ? `${lines[0].d} L ${xp(rows.length - 1)} ${y(0)} L ${xp(0)} ${y(0)} Z`
+    !horizontal && plot.length > 1 && plot.every((r) => r.values[0] !== null)
+      ? `${lines[0].d} L ${xp(plot.length - 1)} ${y(0)} L ${xp(0)} ${y(0)} Z`
       : null;
   const stem = title
     .toLowerCase()
@@ -325,48 +388,10 @@ export default function FinancialChart({
           fontSize="var(--text-12)"
           fill="var(--color-text)"
           onPointerMove={(e) => {
-            if (e.buttons || e.pointerType === "mouse") {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setSelected(
-                Math.max(
-                  0,
-                  Math.min(
-                    rows.length - 1,
-                    Math.round(
-                      horizontal
-                        ? (((e.clientY - rect.top) * height) / rect.height -
-                            20) /
-                            48
-                        : ((((e.clientX - rect.left) * width) / rect.width -
-                            left) /
-                            (right - left)) *
-                            (rows.length - 1),
-                    ),
-                  ),
-                ),
-              );
-            }
+            if (e.buttons || e.pointerType === "mouse")
+              setSelected(pointAt(e.clientX, e.clientY));
           }}
-          onPointerDown={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            setSelected(
-              Math.max(
-                0,
-                Math.min(
-                  rows.length - 1,
-                  Math.round(
-                    horizontal
-                      ? (((e.clientY - rect.top) * height) / rect.height - 20) /
-                          48
-                      : ((((e.clientX - rect.left) * width) / rect.width -
-                          left) /
-                          (right - left)) *
-                          (rows.length - 1),
-                  ),
-                ),
-              ),
-            );
-          }}
+          onPointerDown={(e) => setSelected(pointAt(e.clientX, e.clientY))}
         >
           <rect width={width} height={height} fill="var(--color-surface)" />
           {horizontal ? (
@@ -484,7 +509,7 @@ export default function FinancialChart({
                           width={right - left}
                           height={height}
                           style={{
-                            transform: `scaleX(${(xp(active) - left) / (right - left)})`,
+                            transform: `scaleX(${(xp(pa) - left) / (right - left)})`,
                           }}
                         />
                       </clipPath>
@@ -500,7 +525,7 @@ export default function FinancialChart({
                 {series.map((s, j) => (
                   <path
                     // A new point count re-keys the path instead of morphing it.
-                    key={`${s}-${rows.length}`}
+                    key={`${s}-${plot.length}`}
                     className="chart-line"
                     d={lines[j].d}
                     stroke={colors[j % 4]}
@@ -524,18 +549,18 @@ export default function FinancialChart({
                 x2={0}
                 y1={25}
                 y2={205}
-                style={{ transform: `translateX(${xp(active)}px)` }}
+                style={{ transform: `translateX(${xp(pa)}px)` }}
                 stroke="var(--color-muted)"
                 strokeDasharray="3 3"
               />
-              {[0, rows.length - 1].map((i, k) => (
+              {[0, plot.length - 1].map((i, k) => (
                 <text
                   key={k}
                   x={k ? right : left}
                   y={232}
                   textAnchor={k ? "end" : "start"}
                 >
-                  {rows[i].label}
+                  {plot[i].label}
                 </text>
               ))}
             </>
@@ -548,14 +573,14 @@ export default function FinancialChart({
             style={{ width, height, transform: `scale(${scale})` }}
           >
             {series.map((s, j) =>
-              lines[j].along[active] === null ? null : (
+              lines[j].along[pa] === null ? null : (
                 <span
                   key={s}
                   className="chart-glide-dot"
                   style={{
                     color: colors[j % 4],
                     offsetPath: `path("${lines[j].d}")`,
-                    offsetDistance: `${lines[j].along[active]}px`,
+                    offsetDistance: `${lines[j].along[pa]}px`,
                   }}
                 >
                   {j === 0 && (
@@ -566,9 +591,9 @@ export default function FinancialChart({
                         y(rows[active].values[0] ?? 0) < 60 ? "" : undefined
                       }
                       data-edge={
-                        active === 0
+                        pa === 0
                           ? "start"
-                          : active === rows.length - 1
+                          : pa === plot.length - 1
                             ? "end"
                             : undefined
                       }
@@ -583,6 +608,45 @@ export default function FinancialChart({
         )}
       </div>
       <div className="chart-inspect no-print">
+        {zoomable && (
+          <div className="chart-zoom" role="group" aria-label={`Zoom ${title}`}>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => zoom(0.5)}
+              disabled={to - from + 1 <= MIN_SPAN}
+              title="Zoom in around the inspected period (or Ctrl + scroll)"
+            >
+              <ZoomIn size={16} aria-hidden="true" />
+              <span className="sr-only">Zoom in</span>
+            </button>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => zoom(2)}
+              disabled={!win}
+              title="Zoom out"
+            >
+              <ZoomOut size={16} aria-hidden="true" />
+              <span className="sr-only">Zoom out</span>
+            </button>
+            {win && (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setWin(null)}
+              >
+                Show all
+              </button>
+            )}
+            <span className="chart-zoom-range" aria-live="polite">
+              {win
+                ? `Showing ${plot[0].label} – ${plot[plot.length - 1].label}`
+                : `All ${n} periods`}
+            </span>
+            <span className="chart-zoom-hint">Ctrl + scroll to zoom</span>
+          </div>
+        )}
         <label>
           Inspect {horizontal ? "assumption / item" : "period"}
           <input
@@ -591,7 +655,7 @@ export default function FinancialChart({
             min={0}
             max={rows.length - 1}
             value={active}
-            onChange={(e) => setSelected(Number(e.target.value))}
+            onChange={(e) => inspect(Number(e.target.value))}
           />
         </label>
         <output aria-live="polite">

@@ -23,3 +23,4 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **Deal summary**: the bar above quick-analysis results with the target verdict and five headline figures; each jumps to its detail (ADR-0007).
 - **Story**: the start-page section that merges the sample card and the three steps; one **story card** is pinned on wide screens.
 - **Draw-in**: a chart's first appearance, uncovering the plot left to right (lines) or growing bars, triggered by the reveal observer.
+- **Chart zoom**: the visible window of periods on a long line chart; "Show all" returns to every period.
