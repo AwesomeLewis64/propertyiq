@@ -36,6 +36,15 @@ function read(text: string, patterns: string[]): number | undefined {
     }
   }
 }
+// Rotating composer hints. Each must extract cleanly (see phrasing.test.ts).
+export const briefExamples = [
+  "$2.8M purchase; 20 units at $1,900/mo; 6.25% rate; 65% LTV",
+  "24 units for $3.1 million; rents are $1,100; annual expenses $120k",
+  "12-unit building, asking price $1.45M, monthly rent of $18,600, 7% interest",
+  "36 apartments priced at $5.2M; $612k annual rent; annual operating expenses of $210k",
+  "8 units at $1,450/mo; buy for $980k; $650k loan at a 6.5% rate",
+  "16 units for $2.2M; $19,200 monthly rent; 6% exit cap",
+];
 // Deliberately limited matching. Numbers are suggestions and always reviewed before creation.
 export function extractBrief(text: string): BriefNumbers {
   const unitMatch = text.match(/\b(\d+)\s*[- ]?\s*(?:units?\b|apartments?\b)/i);

@@ -4143,14 +4143,6 @@ small,
   color: var(--text-primary);
   font-weight: var(--weight-semibold);
 }
-.composer-formats {
-  font-size: var(--text-14);
-  color: var(--text-muted);
-  line-height: var(--line-body);
-  text-align: left;
-  max-width: 790px;
-  margin: var(--space-16) auto;
-}
 .brief-preview {
   display: flex;
   flex-wrap: wrap;
@@ -5198,6 +5190,19 @@ h3 {
   border-radius: var(--radius-round);
 }
 
+/* Rotating example hint: each new example fades up into place. */
+@media (prefers-reduced-motion: no-preference) {
+  .iq-composer-example {
+    animation: hint-in 420ms var(--ease-out-expo) both;
+  }
+}
+@keyframes hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
 /* Shared surfaces: soft layered depth, larger radii. */
 .panel,
 .assumptions,
@@ -5293,6 +5298,9 @@ h3 {
   .iq-composer {
     margin-top: var(--space-32);
     border-radius: var(--radius-panel);
+  }
+  .iq-composer-example {
+    top: 58px;
   }
   .iq-sample-card {
     border-radius: var(--radius-panel);

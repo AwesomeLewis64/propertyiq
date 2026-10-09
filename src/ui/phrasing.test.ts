@@ -1,5 +1,5 @@
 import { it, expect } from "vitest";
-import { extractBrief } from "./startFlow";
+import { briefExamples, extractBrief } from "./startFlow";
 import { readRoute } from "./routes";
 it.each([
   ["$2.8M purchase", { price: 2800000 }],
@@ -51,3 +51,27 @@ it.each([
 ])("parses route %s", (text, expected) =>
   expect(readRoute(text)).toEqual(expected),
 );
+
+it.each([
+  [
+    0,
+    {
+      price: 2800000,
+      units: 20,
+      rent: 38000,
+      rate: 6.25,
+      ltv: 65,
+      loan: 1820000,
+    },
+  ],
+  [1, { units: 24, price: 3100000, rent: 26400, expenses: 120000 }],
+  [2, { units: 12, price: 1450000, rent: 18600, rate: 7 }],
+  [3, { units: 36, price: 5200000, rent: 51000, expenses: 210000 }],
+  [4, { units: 8, rent: 11600, price: 980000, loan: 650000, rate: 6.5 }],
+  [5, { units: 16, price: 2200000, rent: 19200, exitCap: 6 }],
+])("composer hint %i extracts what it shows", (i, expected) => {
+  expect(extractBrief(briefExamples[i])).toEqual(expected);
+});
+it("every composer hint has an extraction test", () => {
+  expect(briefExamples).toHaveLength(6);
+});

@@ -15,6 +15,7 @@ import {
 import Brand from "./Brand";
 import ThemeToggle from "./ThemeToggle";
 import {
+  briefExamples,
   extractBrief,
   sampleProject,
   setupProject,
@@ -71,6 +72,8 @@ export default function StartPage({
   const [intent, setIntent] = useState<Intent>("overview");
   const [fileError, setFileError] = useState("");
   const [moneyDrafts, setMoneyDrafts] = useState<Record<string, string>>({});
+  const [hint, setHint] = useState(0);
+  const nextHint = () => setHint((h) => (h + 1) % briefExamples.length);
   const summary = sampleSummary();
   const live = extractBrief(description);
   const start = (next: Intent = "overview") => {
@@ -379,6 +382,7 @@ export default function StartPage({
               </p>
               <form
                 className="iq-composer"
+                onMouseEnter={nextHint}
                 onSubmit={(e) => {
                   e.preventDefault();
                   start();
@@ -393,10 +397,14 @@ export default function StartPage({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Paste deal details"
                   rows={3}
+                  onFocus={(e) => {
+                    // Keyboard arrival gets a fresh example too; hover already advanced it.
+                    if (!e.currentTarget.form?.matches(":hover")) nextHint();
+                  }}
                 />
                 {!description && (
-                  <span className="iq-composer-example">
-                    Simple text matching · review every extracted figure.
+                  <span className="iq-composer-example" key={hint}>
+                    Try “{briefExamples[hint]}”
                   </span>
                 )}
                 {file && (
@@ -447,13 +455,6 @@ export default function StartPage({
                   </p>
                 )}
               </form>
-              <p className="composer-formats">
-                Try: “$2.8M purchase; 20 units at $1,900/mo; 6.25% rate; 65%
-                LTV.”
-                <br />
-                Or: “24 units for $3.1 million; rents are $1,100; annual
-                expenses $120k.”
-              </p>
               <div className="brief-preview" aria-live="polite">
                 {Object.entries(live).map(([key, n]) => (
                   <span key={key}>
