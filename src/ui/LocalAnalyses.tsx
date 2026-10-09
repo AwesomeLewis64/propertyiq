@@ -1,5 +1,24 @@
 import LoadingFeedback, { BusyLabel } from "./LoadingFeedback";
 import { useState } from "react";
+
+// Kept apart from the saved analyses so restoring or clearing them never hides it.
+const BACKUP_KEY = "propertyiq:quick:last-backup";
+function readBackup(): string {
+  try {
+    return localStorage.getItem(BACKUP_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+function readSaved(): SavedAnalysis[] {
+  try {
+    return decodeSaved(localStorage.getItem(STORAGE_KEY));
+  } catch {
+    return [];
+  }
+}
+const clock = (iso: string) =>
+  new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 import { Save, FolderOpen, Plus, Trash2 } from "lucide-react";
 import { download } from "../data/export";
 import type { Assumptions } from "../finance/types";
@@ -22,7 +41,8 @@ export default function LocalAnalyses({
   onLoad: (saved: SavedAnalysis) => void;
   onNew: () => void;
 }) {
-  const [items, setItems] = useState<SavedAnalysis[]>([]),
+  const [items, setItems] = useState<SavedAnalysis[]>(readSaved),
+    [backupAt, setBackupAt] = useState(readBackup),
     [open, setOpen] = useState(false),
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
@@ -63,6 +83,20 @@ export default function LocalAnalyses({
       setError((e as Error).message);
     }
   }
+  // Current inputs match a saved snapshot, not necessarily the newest one.
+  const current = JSON.stringify(a);
+  const match = items.find((i) => JSON.stringify(i.assumptions) === current);
+  const newest = items[0];
+  const unsaved = !!newest && !match;
+  const backedUp = !!newest && !!backupAt && backupAt >= newest.savedAt;
+  const status = !newest
+    ? "Not saved yet. Your inputs live only in this tab until you choose Save locally."
+    : unsaved
+      ? `Unsaved changes since ${clock(newest.savedAt)}. Choose Save locally to keep them.`
+      : backedUp
+        ? `Saved ${clock(match!.savedAt)} · Backup downloaded ${clock(backupAt)}.`
+        : `Saved ${clock(match!.savedAt)} · No backup of this save yet. Open Backup and download one so clearing browser data cannot erase it.`;
+  const needsAttention = !newest || unsaved || !backedUp;
   return (
     <section className="local-analyses no-print">
       <div className="local-tools">
@@ -87,66 +121,75 @@ export default function LocalAnalyses({
           </button>
           <details className="local-backup">
             <summary className="text-button">Backup</summary>
-          <button
-            className="text-button"
-            onClick={() => {
-              try {
-                download(
-                  "propertyiq-quick-backup.json",
-                  encodeSaved(decodeSaved(localStorage.getItem(STORAGE_KEY))),
-                  "application/json",
-                );
-              } catch (e) {
-                setError((e as Error).message);
-              }
-            }}
-          >
-            Download Quick backup
-          </button>
-          <label className="text-button">
-            {restoring ? (
-              <BusyLabel>Restoring backup…</BusyLabel>
-            ) : (
-              "Restore Quick backup"
-            )}
-            <input
-              aria-label="Restore Quick backup"
-              disabled={restoring}
-              aria-busy={restoring}
-              type="file"
-              accept=".json"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setRestoring(true);
-                setError("");
-                setMessage("");
+            <button
+              className="text-button"
+              onClick={() => {
                 try {
-                  if (file.size > 5 * 1024 * 1024)
-                    throw new Error("Quick backup limit is 5 MB.");
-                  const restored = decodeSaved(await file.text());
-                  const next = [
-                    ...decodeSaved(localStorage.getItem(STORAGE_KEY)),
-                    ...restored.map((x) => ({ ...x, id: crypto.randomUUID() })),
-                  ];
-                  localStorage.setItem(STORAGE_KEY, encodeSaved(next));
-                  setItems(next);
-                  setMessage(
-                    `Restored ${restored.length} snapshots; existing analyses were preserved.`,
+                  download(
+                    "propertyiq-quick-backup.json",
+                    encodeSaved(decodeSaved(localStorage.getItem(STORAGE_KEY))),
+                    "application/json",
                   );
-                } catch (error) {
-                  setError((error as Error).message);
-                } finally {
-                  e.target.value = "";
-                  setRestoring(false);
+                  const now = new Date().toISOString();
+                  localStorage.setItem(BACKUP_KEY, now);
+                  setBackupAt(now);
+                } catch (e) {
+                  setError((e as Error).message);
                 }
               }}
-            />
-          </label>
+            >
+              Download Quick backup
+            </button>
+            <label className="text-button">
+              {restoring ? (
+                <BusyLabel>Restoring backup…</BusyLabel>
+              ) : (
+                "Restore Quick backup"
+              )}
+              <input
+                aria-label="Restore Quick backup"
+                disabled={restoring}
+                aria-busy={restoring}
+                type="file"
+                accept=".json"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setRestoring(true);
+                  setError("");
+                  setMessage("");
+                  try {
+                    if (file.size > 5 * 1024 * 1024)
+                      throw new Error("Quick backup limit is 5 MB.");
+                    const restored = decodeSaved(await file.text());
+                    const next = [
+                      ...decodeSaved(localStorage.getItem(STORAGE_KEY)),
+                      ...restored.map((x) => ({
+                        ...x,
+                        id: crypto.randomUUID(),
+                      })),
+                    ];
+                    localStorage.setItem(STORAGE_KEY, encodeSaved(next));
+                    setItems(next);
+                    setMessage(
+                      `Restored ${restored.length} snapshots; existing analyses were preserved.`,
+                    );
+                  } catch (error) {
+                    setError((error as Error).message);
+                  } finally {
+                    e.target.value = "";
+                    setRestoring(false);
+                  }
+                }}
+              />
+            </label>
           </details>
         </div>
         <span>Saved on this device and browser only</span>
       </div>
+      <p className="local-status" data-warn={needsAttention ? "" : undefined}>
+        {status}
+      </p>
       {restoring && <LoadingFeedback label="Restoring Quick analyses…" />}
       {message && (
         <div className="local-message" role="status">

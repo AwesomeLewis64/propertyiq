@@ -5333,7 +5333,19 @@ h3 {
   mix-blend-mode: normal;
 }
 .theme-reveal::view-transition-new(root) {
-  animation: theme-reveal 700ms var(--ease-out-expo);
+  /* Even in-out speed: an expo ease covered the page in ~100ms and left a
+     sliver at the far edge that looked like a glitch. */
+  animation: theme-reveal 650ms cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+/* The reveal owns the motion: no colour fades racing the circle, and the hero
+   glow is paused (not reset) so it does not jump when the class is removed. */
+.theme-reveal *,
+.theme-reveal *::before,
+.theme-reveal *::after {
+  transition: none !important;
+}
+.theme-reveal .iq-hero::before {
+  animation-play-state: paused;
 }
 @keyframes theme-reveal {
   from {
@@ -5877,34 +5889,54 @@ a.button {
   font-size: var(--text-24);
 }
 
-/* Analyze button: a pastel shine sweeps across on hover or keyboard focus.
-   It paints under the label (negative z-index inside an isolated button). */
+/* Primary action: a light beam circles the button's border, always visible, so
+   it reads on the dark pill (the old hover-only shine did not). The ring is the
+   border box minus the padding box, cut with a mask; reduced motion keeps it
+   still. */
+@property --iq-beam-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
 .iq-composer .iq-analyze {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  box-shadow: 0 10px 24px -12px
+    color-mix(in srgb, var(--color-key-to) 70%, transparent);
 }
 .iq-composer .iq-analyze::before {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 25%,
-    var(--color-pastel-pink) 42%,
-    var(--color-pastel-violet) 50%,
-    var(--color-pastel-cyan) 58%,
-    transparent 75%
+  inset: -3px;
+  padding: 3px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--iq-beam-angle),
+    transparent 0 52%,
+    var(--color-pastel-cyan) 68%,
+    var(--color-key-to) 82%,
+    var(--color-pastel-pink) 94%,
+    transparent 100%
   );
-  opacity: 0.42;
-  translate: -110% 0;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
   pointer-events: none;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .iq-composer .iq-analyze:is(:hover, :focus-visible)::before {
-    translate: 110% 0;
-    transition: translate 950ms cubic-bezier(0.45, 0, 0.25, 1);
+  .iq-composer .iq-analyze::before {
+    animation: iq-beam 3.4s linear infinite;
+  }
+}
+@keyframes iq-beam {
+  to {
+    --iq-beam-angle: 360deg;
   }
 }
 
@@ -6252,6 +6284,43 @@ button.theme-toggle[role="switch"]:hover {
   .iq-calc-link {
     text-decoration: none;
   }
+}
+
+/* Phase 4: save/backup status, import change list, and touch targets. */
+.local-status {
+  margin: var(--space-8) 0 0;
+  font-size: var(--text-14);
+  color: var(--color-muted);
+}
+.local-status[data-warn] {
+  color: var(--color-ink);
+}
+.import-changes {
+  margin: var(--space-8) 0 0;
+  padding-left: var(--space-20);
+  font-size: var(--text-14);
+}
+@media (pointer: coarse) {
+  .iq-other-more button,
+  .iq-calc-link {
+    min-height: 44px;
+  }
+  .iq-calc-link {
+    display: inline-flex;
+    align-items: center;
+  }
+}
+.iq-composer-example:focus-visible,
+.iq-calc-link:focus-visible,
+.iq-other button:focus-visible,
+.iq-trust a:focus-visible,
+.iq-footer-links a:focus-visible,
+.iq-footer-links button:focus-visible,
+.iq-disclosure > summary:focus-visible,
+.iq-defaults-panel > summary:focus-visible {
+  outline: var(--stroke-focus, 2px) solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
 }
 
 /* One reduced-motion rule for everything, present and future (ADR-0002). */

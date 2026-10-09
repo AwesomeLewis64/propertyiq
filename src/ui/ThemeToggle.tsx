@@ -8,6 +8,8 @@ const subscribe = (notify: () => void) => {
   return () => window.removeEventListener("propertyiq:theme", notify);
 };
 const isDark = () => document.documentElement.dataset.theme === "dark";
+// Rapid toggles skip earlier transitions; keep the class until the last one ends.
+let revealing = 0;
 
 export default function ThemeToggle() {
   const dark = useSyncExternalStore(subscribe, isDark, () => false);
@@ -44,12 +46,13 @@ export default function ThemeToggle() {
         root.style.setProperty("--reveal-y", `${y}px`);
         root.style.setProperty(
           "--reveal-r",
-          `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))}px`,
+          `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 2}px`,
         );
         root.classList.add("theme-reveal");
-        document
-          .startViewTransition(apply)
-          .finished.finally(() => root.classList.remove("theme-reveal"));
+        revealing++;
+        document.startViewTransition(apply).finished.finally(() => {
+          if (--revealing === 0) root.classList.remove("theme-reveal");
+        });
       }}
     >
       <Sun className="theme-toggle-sun" aria-hidden="true" />

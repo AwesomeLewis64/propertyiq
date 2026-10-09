@@ -12,7 +12,7 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **KPI row**: the `Metrics` grid in quick analysis.
 - **Count-up**: the first-appearance animation of a KPI from 0. **Tween**: later old-to-new value animation.
 - **Sparkle**: the one-shot pastel burst on the Annual IRR figure when a new analysis first opens to results without errors.
-- **Shine sweep**: the pastel highlight that crosses the Analyze button on hover or focus.
+- **Border beam**: the light that circles the border of the start page's primary button ("Start an analysis"). It replaced the hover-only shine sweep, which was hard to see on the dark button.
 - **Glass**: a translucent, blurred surface (nav bar) built from tokens.
 - **Hero glow**: the slow, low-contrast animated gradient behind the hero.
 - **Crossfade**: the View Transition between start page, input review and results.

@@ -150,6 +150,119 @@ for (const file of ["rent-roll.csv", "rent-roll.xlsx"]) {
     await expect(page.getByRole("alert")).toHaveCount(0);
   });
 }
+test("import shows what will change, can be undone, and a bad file offers a way forward", async ({
+  page,
+}) => {
+  await quick(page);
+  await openMenus(page);
+  await page
+    .getByRole("button", { name: "Rent roll import", exact: true })
+    .click();
+  const upload = page.getByLabel("Upload rent roll");
+  await upload.setInputFiles({
+    name: "notes.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("not a spreadsheet"),
+  });
+  await expect(page.getByRole("alert")).toContainText(
+    "Choose a CSV or XLSX file",
+  );
+  await expect(
+    page.getByRole("button", { name: "Choose another file" }),
+  ).toBeVisible();
+  await upload.setInputFiles(resolve("public/samples", "rent-roll.csv"));
+  const changes = page.getByLabel("What will change");
+  await expect(changes).toContainText(/Units: 20 → \d+/);
+  await expect(changes).toContainText("manual stabilized");
+  await page.getByRole("button", { name: /Apply Rent Roll/ }).click();
+  await expect(page.getByText("Rent roll applied.")).toBeVisible();
+  await page.getByRole("button", { name: "Undo import" }).click();
+  await expect(page.getByText("Rent roll applied.")).toBeHidden();
+  await expect(changes).toContainText("manual stabilized");
+});
+test("local save status shows last saved, unsaved edits and the backup reminder", async ({
+  page,
+}) => {
+  await quick(page);
+  const status = page.locator(".local-status");
+  await expect(status).toContainText("Not saved yet");
+  await page.getByRole("button", { name: "Save locally", exact: true }).click();
+  await expect(status).toContainText(/Saved .*No backup of this save yet/);
+  await income(page);
+  await page.getByLabel("Other monthly income", { exact: true }).fill("900");
+  await page.getByLabel("Other monthly income", { exact: true }).press("Tab");
+  await expect(status).toContainText("Unsaved changes");
+  await page.getByRole("button", { name: "Save locally", exact: true }).click();
+  await page.locator("summary", { hasText: "Backup" }).click();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download Quick backup" }).click();
+  await download;
+  await expect(status).toContainText("Backup downloaded");
+});
+test("new start, review, import and report states have no serious axe violations", async ({
+  page,
+}) => {
+  const serious: unknown[] = [];
+  const check = async (where: string) => {
+    await settleMotion(page);
+    const result = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+    for (const v of result.violations)
+      if (v.impact === "serious" || v.impact === "critical")
+        serious.push({
+          where,
+          id: v.id,
+          nodes: v.nodes.map((n) => n.target),
+        });
+  };
+  for (const scheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("/");
+    await check(`${scheme} start`);
+    await page.getByRole("button", { name: "Enter numbers manually" }).click();
+    await expect(
+      page.getByRole("heading", { name: /start at 0 and change/ }),
+    ).toBeVisible();
+    await page.locator(".iq-defaults-panel > summary").click();
+    await check(`${scheme} review`);
+    await page.goto("/#quick/report");
+    await expect(page.locator(".report-metrics small").first()).toBeVisible();
+    await check(`${scheme} report`);
+    await page.goto("/#quick/import");
+    await expect(page.getByLabel("Upload rent roll")).toBeVisible();
+    await page.getByLabel("Upload rent roll").setInputFiles({
+      name: "notes.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("x"),
+    });
+    await expect(page.getByRole("alert")).toBeVisible();
+    await check(`${scheme} import error`);
+  }
+  expect(serious).toEqual([]);
+});
+test("new start-page controls show a keyboard focus ring", async ({ page }) => {
+  await page.goto("/");
+  for (let i = 0; i < 30; i++) {
+    await page.keyboard.press("Tab");
+    const onExample = await page.evaluate(() =>
+      document.activeElement?.classList.contains("iq-composer-example"),
+    );
+    if (onExample) break;
+  }
+  const ring = await page.evaluate(() => {
+    const el = document.activeElement as HTMLElement;
+    const s = getComputedStyle(el);
+    return {
+      on: el.classList.contains("iq-composer-example"),
+      style: s.outlineStyle,
+      width: parseFloat(s.outlineWidth),
+    };
+  });
+  expect(ring.on).toBe(true);
+  expect(ring.style).not.toBe("none");
+  expect(ring.width).toBeGreaterThan(0);
+});
 test("composer extraction and editable assumption defaults", async ({
   page,
 }, info) => {
@@ -288,6 +401,24 @@ test("report metrics explain themselves and link to their calculation", async ({
     page.getByRole("heading", { name: "Income and operating performance" }),
   ).toBeInViewport();
 });
+test.describe("motion polish with motion on", () => {
+  test.use({ reducedMotion: "no-preference" });
+  test("the primary action has a border beam and a theme switch cleans up after itself", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const beam = await page
+      .locator(".iq-analyze")
+      .evaluate((el) => getComputedStyle(el, "::before").animationName);
+    expect(beam).toBe("iq-beam");
+    const html = page.locator("html");
+    const before = await html.getAttribute("data-theme");
+    await page.getByRole("switch", { name: "Dark mode" }).click();
+    await expect(html).not.toHaveAttribute("data-theme", before ?? "");
+    // The reveal class is removed once the transition ends, restoring transitions.
+    await expect(html).not.toHaveClass(/theme-reveal/);
+  });
+});
 test("monthly wayfinding, exact project history, deep links and legal routing", async ({
   page,
 }, info) => {
@@ -367,7 +498,7 @@ test("live hash changes switch modes and retain legal pages", async ({
       .getByRole("heading", { name: "Sensitivity analysis", exact: true })
       .first(),
   ).toBeVisible();
-  await expect(page.getByText(/Green: above/)).toBeVisible();
+  await expect(page.getByText(/Green with an up chevron: above/)).toBeVisible();
 });
 test("accessibility and 390px overflow on key screens", async ({
   page,

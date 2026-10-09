@@ -408,71 +408,71 @@ export default function AdvancedWorkspace({
             closeOnPick
             title={`Tool: ${tabs.find((t) => t[0] === tab)?.[1] ?? "Overview"}`}
           >
-          <label className="iq-tool-search">
-            <Search size={15} />
-            <input
-              value={toolSearch}
-              onChange={(e) => setToolSearch(e.target.value)}
-              placeholder="Search tools or topics"
-              aria-label="Find a workspace tool"
-            />
-          </label>
-          <nav aria-label="Property analysis tools">
-            {navGroups.map((group) => {
-              const visible = tabs.filter(
-                ([id, label]) =>
-                  group.ids.includes(id) &&
-                  (showMore ||
-                    !!toolSearch ||
-                    [
-                      "overview",
-                      "report",
-                      "units",
-                      "monthly",
-                      "finance",
-                      "expenses",
-                      "imports",
-                      "decisionlab",
-                    ].includes(id)) &&
-                  toolMatch(id, label, toolSearch) !== null,
-              );
-              if (!visible.length) return null;
-              return (
-                <div className="iq-nav-group" key={group.label}>
-                  <span className="iq-nav-group-label">
-                    <group.icon size={13} />
-                    {group.label}
-                  </span>
-                  {visible.map(([id, label]) => (
-                    <button
-                      key={id}
-                      className={tab === id ? "active" : ""}
-                      aria-current={tab === id ? "page" : undefined}
-                      onClick={() => setTab(id)}
-                    >
-                      {label}
-                      {toolMatch(id, label, toolSearch) && (
-                        <small className="iq-tool-hit">
-                          {toolMatch(id, label, toolSearch)}
-                        </small>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              );
-            })}
-            {toolSearch &&
-              !tabs.some(
-                ([id, label]) => toolMatch(id, label, toolSearch) !== null,
-              ) && <p className="iq-no-tools">No matching tools.</p>}
-          </nav>
-          <button
-            className="button small more-tools"
-            aria-expanded={showMore}
-            onClick={() => setShowMore(!showMore)}
-          >
-            {showMore ? "Fewer tools" : "More tools"}
-          </button>
+            <label className="iq-tool-search">
+              <Search size={15} />
+              <input
+                value={toolSearch}
+                onChange={(e) => setToolSearch(e.target.value)}
+                placeholder="Search tools or topics"
+                aria-label="Find a workspace tool"
+              />
+            </label>
+            <nav aria-label="Property analysis tools">
+              {navGroups.map((group) => {
+                const visible = tabs.filter(
+                  ([id, label]) =>
+                    group.ids.includes(id) &&
+                    (showMore ||
+                      !!toolSearch ||
+                      [
+                        "overview",
+                        "report",
+                        "units",
+                        "monthly",
+                        "finance",
+                        "expenses",
+                        "imports",
+                        "decisionlab",
+                      ].includes(id)) &&
+                    toolMatch(id, label, toolSearch) !== null,
+                );
+                if (!visible.length) return null;
+                return (
+                  <div className="iq-nav-group" key={group.label}>
+                    <span className="iq-nav-group-label">
+                      <group.icon size={13} />
+                      {group.label}
+                    </span>
+                    {visible.map(([id, label]) => (
+                      <button
+                        key={id}
+                        className={tab === id ? "active" : ""}
+                        aria-current={tab === id ? "page" : undefined}
+                        onClick={() => setTab(id)}
+                      >
+                        {label}
+                        {toolMatch(id, label, toolSearch) && (
+                          <small className="iq-tool-hit">
+                            {toolMatch(id, label, toolSearch)}
+                          </small>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
+              {toolSearch &&
+                !tabs.some(
+                  ([id, label]) => toolMatch(id, label, toolSearch) !== null,
+                ) && <p className="iq-no-tools">No matching tools.</p>}
+            </nav>
+            <button
+              className="button small more-tools"
+              aria-expanded={showMore}
+              onClick={() => setShowMore(!showMore)}
+            >
+              {showMore ? "Fewer tools" : "More tools"}
+            </button>
           </MobileDisclosure>
           <p>
             Your work stays here.
@@ -549,86 +549,86 @@ export default function AdvancedWorkspace({
                   : "saving…"
             }`}
           >
-          <div className="compact-project-header">
-            <p className="project-origin">{provenance(p)}</p>
-            <details className="iq-model-status">
-              <summary>
-                <ShieldCheck size={15} />
-                Model status: source reconciliation required
-              </summary>
-              <p>
-                Review source documents and lender terms before relying on
-                results.
-              </p>
-            </details>
-            <div className="adv-project-bar">
-              <Select
-                label="Active local project"
-                value={p.id}
-                onChange={setSelected}
-                options={workspace.projects.map((p) => [p.id, p.name])}
-              />
-              <details className="project-management no-print">
-                <summary className="button small">Project actions</summary>
-                <div>
-                  <Select
-                    label="Example strategy"
-                    value={newStrategy}
-                    onChange={(v) => setNewStrategy(v as Project["strategy"])}
-                    options={[
-                      ["acquisition", "Rental acquisition"],
-                      ["existing", "Existing rental property"],
-                      ["development-sale", "Development → unit sales"],
-                      ["development-hold", "Development → rental hold"],
-                    ]}
-                  />
-                  <button
-                    className="button small"
-                    disabled={workspace.projects.length >= 100}
-                    onClick={create}
-                  >
-                    <Plus size={14} />
-                    Create example
-                  </button>
-                  <button
-                    className="button small"
-                    onClick={() => leaveWorkspace(onHome)}
-                  >
-                    <Plus size={14} />
-                    Add your property
-                  </button>
-                  <button
-                    className="button small"
-                    disabled={
-                      workspace.projects.length >= 100 || !!m.errors.length
-                    }
-                    onClick={() => {
-                      const n = {
-                        ...structuredClone(p),
-                        id: uid(),
-                        name: `${p.name} (copy)`,
-                      };
-                      setWorkspace((w) => ({
-                        ...w,
-                        projects: [...w.projects, n],
-                      }));
-                      setSelected(n.id);
-                    }}
-                  >
-                    <Copy size={14} />
-                    Duplicate
-                  </button>
-                </div>
+            <div className="compact-project-header">
+              <p className="project-origin">{provenance(p)}</p>
+              <details className="iq-model-status">
+                <summary>
+                  <ShieldCheck size={15} />
+                  Model status: source reconciliation required
+                </summary>
+                <p>
+                  Review source documents and lender terms before relying on
+                  results.
+                </p>
               </details>
-              <small>
-                {m.errors.length
-                  ? "Autosave paused: invalid draft"
-                  : saveTime
-                    ? `Browser saved ${saveTime}`
-                    : "Saving locally…"}
-              </small>
+              <div className="adv-project-bar">
+                <Select
+                  label="Active local project"
+                  value={p.id}
+                  onChange={setSelected}
+                  options={workspace.projects.map((p) => [p.id, p.name])}
+                />
+                <details className="project-management no-print">
+                  <summary className="button small">Project actions</summary>
+                  <div>
+                    <Select
+                      label="Example strategy"
+                      value={newStrategy}
+                      onChange={(v) => setNewStrategy(v as Project["strategy"])}
+                      options={[
+                        ["acquisition", "Rental acquisition"],
+                        ["existing", "Existing rental property"],
+                        ["development-sale", "Development → unit sales"],
+                        ["development-hold", "Development → rental hold"],
+                      ]}
+                    />
+                    <button
+                      className="button small"
+                      disabled={workspace.projects.length >= 100}
+                      onClick={create}
+                    >
+                      <Plus size={14} />
+                      Create example
+                    </button>
+                    <button
+                      className="button small"
+                      onClick={() => leaveWorkspace(onHome)}
+                    >
+                      <Plus size={14} />
+                      Add your property
+                    </button>
+                    <button
+                      className="button small"
+                      disabled={
+                        workspace.projects.length >= 100 || !!m.errors.length
+                      }
+                      onClick={() => {
+                        const n = {
+                          ...structuredClone(p),
+                          id: uid(),
+                          name: `${p.name} (copy)`,
+                        };
+                        setWorkspace((w) => ({
+                          ...w,
+                          projects: [...w.projects, n],
+                        }));
+                        setSelected(n.id);
+                      }}
+                    >
+                      <Copy size={14} />
+                      Duplicate
+                    </button>
+                  </div>
+                </details>
+                <small>
+                  {m.errors.length
+                    ? "Autosave paused: invalid draft"
+                    : saveTime
+                      ? `Browser saved ${saveTime}`
+                      : "Saving locally…"}
+                </small>
+              </div>
             </div>
-          </div>
           </MobileDisclosure>
           {saveError && (
             <div className="alert error">

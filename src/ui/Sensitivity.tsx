@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   buildGrid,
   defaultScenarios,
@@ -300,13 +301,29 @@ export default function Sensitivity({
                                       : "var(--color-success-soft)"
                                   : `color-mix(in srgb, var(--color-accent) ${8 + ratio * 24}%, var(--color-surface))`,
                           }}
-                          aria-label={`${grid.rowLabel} ${rowFormat(cell.row)}, ${grid.colLabel} ${colFormat(cell.col)}: ${format(cell.value, grid.metric)}`}
+                          aria-label={`${grid.rowLabel} ${rowFormat(cell.row)}, ${grid.colLabel} ${colFormat(cell.col)}: ${format(cell.value, grid.metric)}${
+                            grid.metric === "irr" &&
+                            cell.value !== null &&
+                            Math.abs(cell.value - target) >= 0.0005
+                              ? cell.value < target
+                                ? ", below target"
+                                : ", above target"
+                              : ""
+                          }`}
                           aria-pressed={
                             selection?.row === ri && selection.col === ci
                           }
                           onClick={() => setSelection({ row: ri, col: ci })}
                         >
                           {format(cell.value, grid.metric)}
+                          {grid.metric === "irr" &&
+                            cell.value !== null &&
+                            Math.abs(cell.value - target) >= 0.0005 &&
+                            (cell.value < target ? (
+                              <ChevronDown size={12} aria-hidden="true" />
+                            ) : (
+                              <ChevronUp size={12} aria-hidden="true" />
+                            ))}
                           {ri === 2 && ci === 2 && <small>BASE</small>}
                         </button>
                       </td>
@@ -320,9 +337,9 @@ export default function Sensitivity({
         <div className="heatmap-footnote">
           {grid.metric === "irr" && (
             <p>
-              Green: above {pct(target)} · Neutral: within 0.05 percentage
-              points of target · Red: below target. Values remain visible
-              without color.
+              Green with an up chevron: above {pct(target)} · Neutral: within
+              0.05 percentage points of target · Red with a down chevron: below
+              target. Values stay visible without color.
             </p>
           )}
           {kind === "rent" && (

@@ -41,8 +41,13 @@ export default function ImportRentRoll({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [page, setPage] = useState(0),
-    [applied, setApplied] = useState(false);
+    [applied, setApplied] = useState(false),
+    [before, setBefore] = useState<Pick<
+      Assumptions,
+      "units" | "mode" | "occupiedMonthlyRent"
+    > | null>(null);
   const active = useRef<Worker | null>(null);
+  const chooser = useRef<HTMLInputElement>(null);
   useEffect(() => () => active.current?.terminate(), []);
   function load(next: File, sheetNumber = 1) {
     active.current?.terminate();
@@ -139,6 +144,7 @@ export default function ImportRentRoll({
               <Upload size={16} />
               Choose CSV or XLSX
               <input
+                ref={chooser}
                 type="file"
                 aria-label="Upload rent roll"
                 disabled={busy}
@@ -175,6 +181,16 @@ export default function ImportRentRoll({
           {error && (
             <div className="alert error" role="alert">
               {error}
+              <p>
+                Nothing was changed in your analysis.{" "}
+                <button
+                  className="text-button"
+                  onClick={() => chooser.current?.click()}
+                >
+                  Choose another file
+                </button>{" "}
+                or start from the sample CSV above.
+              </p>
             </div>
           )}
           {file && sheets.length > 0 && (
@@ -317,10 +333,34 @@ export default function ImportRentRoll({
                         Growth, credit loss, concessions, financing and expenses
                         remain editable.
                       </p>
+                      <ul
+                        className="import-changes"
+                        aria-label="What will change"
+                      >
+                        <li>
+                          Units: {a.units} → {summary.units}
+                        </li>
+                        <li>
+                          Income mode:{" "}
+                          {a.mode === "rentRoll"
+                            ? "current rent roll"
+                            : "manual stabilized"}{" "}
+                          → current rent roll
+                        </li>
+                        <li>
+                          Occupied monthly rent: {money(a.occupiedMonthlyRent)}{" "}
+                          → {money(summary.monthlyContract)}
+                        </li>
+                      </ul>
                     </div>
                     <button
                       className="button primary"
                       onClick={() => {
+                        setBefore({
+                          units: a.units,
+                          mode: a.mode,
+                          occupiedMonthlyRent: a.occupiedMonthlyRent,
+                        });
                         onApply(applyRentRoll(a, summary));
                         setApplied(true);
                       }}
@@ -333,7 +373,19 @@ export default function ImportRentRoll({
               {applied && (
                 <div className="notice" role="status">
                   Rent roll applied. The analysis now uses current occupied
-                  contractual rents; physical vacancy is not deducted again.
+                  contractual rents; physical vacancy is not deducted again.{" "}
+                  {before && (
+                    <button
+                      className="text-button"
+                      onClick={() => {
+                        onApply({ ...a, ...before });
+                        setBefore(null);
+                        setApplied(false);
+                      }}
+                    >
+                      Undo import
+                    </button>
+                  )}
                 </div>
               )}
               {review.rows.length > 0 && (
