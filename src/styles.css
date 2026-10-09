@@ -5146,14 +5146,69 @@ h3 {
   padding: var(--space-32) var(--space-40) var(--space-24);
 }
 
+/* Closing card: inset from the screen edges, calm heading, one clear action. */
+.iq-return {
+  width: min(1240px, calc(100% - 2 * var(--space-32)));
+  max-width: none;
+  margin: var(--space-32) auto var(--space-96);
+  padding: var(--space-40) var(--space-48);
+  gap: var(--space-32);
+  border-radius: var(--radius-hero);
+  background: var(--color-surface);
+}
 .iq-return h2 {
-  font-size: clamp(var(--text-32), 4vw, var(--text-48));
+  font-size: clamp(var(--text-24), 2.6vw, var(--text-32));
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-display);
-  line-height: 1.08;
+  line-height: 1.15;
 }
-.iq-return {
-  background: var(--color-surface);
+.iq-return p {
+  margin-top: var(--space-8);
+  font-size: var(--text-16);
+}
+.iq-return .button {
+  flex-shrink: 0;
+  min-height: 48px;
+  padding: var(--space-12) var(--space-24);
+  border-radius: var(--radius-round);
+  font-size: var(--text-16);
+}
+@media (max-width: 760px) {
+  /* Brand, planner pill and theme switch must all fit at 390px. */
+  .iq-start-header {
+    padding-inline: var(--space-16);
+    gap: var(--space-12);
+  }
+  .iq-start-header .iq-brand-name {
+    font-size: var(--text-20);
+  }
+  .iq-start-header .iq-brand-mark {
+    width: 30px;
+    height: 30px;
+  }
+  .iq-start-header nav {
+    gap: var(--space-8);
+  }
+  .iq-return {
+    width: calc(100% - 2 * var(--space-16));
+    margin: var(--space-16) auto var(--space-48);
+    padding: var(--space-24);
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-20);
+  }
+}
+/* Chart panels: inner padding so content clears the rounded corners. */
+@media (min-width: 701px) {
+  .financial-chart {
+    padding: 0 var(--space-24) var(--space-20);
+  }
+  .financial-chart > .panel-title {
+    margin-inline: calc(-1 * var(--space-24));
+  }
+  .chart-grid > .exit-panel {
+    padding: var(--space-20) var(--space-24);
+  }
 }
 .iq-income-bar {
   border-radius: var(--radius-round);
@@ -5614,22 +5669,17 @@ h3 {
   }
 }
 
-/* Deal summary: the key answers pinned above the results; each jumps to its detail. */
+/* Deal summary: the key answers above the results; each jumps to its detail. */
 .deal-summary {
-  position: sticky;
-  top: 0;
-  z-index: 6;
   display: flex;
   align-items: center;
   gap: var(--space-8) var(--space-16);
   flex-wrap: wrap;
   margin: 0 0 var(--space-16);
   padding: var(--space-8) var(--space-12);
-  border: var(--stroke-thin) solid var(--color-glass-border);
+  border: var(--stroke-thin) solid var(--color-card-border);
   border-radius: var(--radius-panel);
-  background: var(--color-glass);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
+  background: var(--color-surface);
   box-shadow: var(--shadow-card);
 }
 .deal-summary-verdict {
@@ -5721,12 +5771,6 @@ h3 {
 
 .iq-story .iq-sample-heading h3 {
   font-size: var(--text-24);
-}
-@media (max-width: 680px) {
-  /* The deal summary is the one pinned bar on phones; the page menu scrolls away. */
-  .nav-sidebar {
-    position: static;
-  }
 }
 
 /* Light/dark switch: sun and moon in the track, the knob slides to the active one. */

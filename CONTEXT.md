@@ -20,6 +20,6 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **Chart glide**: the inspection dot that travels along a chart line to the inspected period.
 - **Theme reveal**: the circular View Transition when the theme toggle is flipped.
 - **Nav condense**: the start-page header turning into a floating pill as the page scrolls.
-- **Deal summary**: the pinned bar above quick-analysis results with the target verdict and five headline figures; each jumps to its detail (ADR-0007).
+- **Deal summary**: the bar above quick-analysis results with the target verdict and five headline figures; each jumps to its detail (ADR-0007).
 - **Story**: the start-page section that merges the sample card and the three steps; one **story card** is pinned on wide screens.
 - **Draw-in**: a chart's first appearance, uncovering the plot left to right (lines) or growing bars, triggered by the reveal observer.

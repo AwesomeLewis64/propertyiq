@@ -531,7 +531,7 @@ export default function StartPage({
                 <h2>Already have a project?</h2>
                 <p>Pick up where you left off in your local workspace.</p>
               </div>
-              <button className="button" onClick={() => onOpen()}>
+              <button className="button primary" onClick={() => onOpen()}>
                 Open saved workspace
                 <ArrowRight size={17} />
               </button>
