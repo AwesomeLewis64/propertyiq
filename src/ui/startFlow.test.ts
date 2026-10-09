@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   extractBrief,
+  setupAnnual,
   setupProject,
   sampleProject,
   type SetupValues,
@@ -56,6 +57,21 @@ describe("focused start-flow checks", () => {
     expect(p.loans[0].amount).toBe(780000);
     expect(p.loans[0].rate).toBe(0.06);
     expect(p.evidence[0].note).toBe("User description");
+  });
+  it("keeps vacancy, management and CapEx at zero unless the reviewer enters them", () => {
+    const blank = setupAnnual(input);
+    expect([blank.vacancy, blank.management, blank.annualCapex]).toEqual([
+      0, 0, 0,
+    ]);
+    const entered = setupAnnual({
+      ...input,
+      vacancy: "5",
+      management: "4",
+      annualCapex: "8000",
+    });
+    expect([entered.vacancy, entered.management, entered.annualCapex]).toEqual([
+      0.05, 0.04, 8000,
+    ]);
   });
   it("keeps the sample report consistent with its landing-page income figures", () => {
     const f = forecast(sampleProject()),

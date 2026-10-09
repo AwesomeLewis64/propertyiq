@@ -143,6 +143,10 @@ export type SetupValues = {
   amortization?: string;
   maturity?: string;
   hold?: string;
+  // Blank means 0. These move returns most (annual path only).
+  vacancy?: string;
+  management?: string;
+  annualCapex?: string;
 };
 export type WorkspaceLaunch = {
   project?: Project;
@@ -162,10 +166,11 @@ export function setupAnnual(v: SetupValues): Assumptions {
     loanAmount: Number(v.loan || 0),
     rate: Number(v.rate || 0) / 100,
     loanFee: 0,
-    vacancy: 0,
+    vacancy: Number(v.vacancy || 0) / 100,
     concessions: 0,
     creditLoss: 0,
-    management: 0,
+    management: Number(v.management || 0) / 100,
+    annualCapex: Number(v.annualCapex || 0),
     rentGrowth: 0,
     otherGrowth: 0,
     expenseGrowth: 0,

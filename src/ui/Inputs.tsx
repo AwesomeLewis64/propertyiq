@@ -260,7 +260,13 @@ export default function Inputs({
           {field("rate", "Nominal annual interest", true)}
           {a.loanMode === "constraints" && (
             <>
-              {field("minDscr", "Minimum DSCR", false, "x")}
+              {field(
+                "minDscr",
+                "Minimum DSCR",
+                false,
+                "x",
+                "Debt service coverage: NOI divided by yearly loan payments. Lenders often want about 1.25x.",
+              )}
               {field("minDebtYield", "Minimum debt yield", true)}
               <p>
                 Binding constraint: {calculate(a).bindingConstraint ?? "N/A"}.
@@ -303,14 +309,20 @@ export default function Inputs({
               onChange={(e) => update("startDate", e.target.value + "-01")}
             />
           </label>
-          {field("amortization", "Amortization term", false, "years")}
+          {field(
+            "amortization",
+            "Amortization term",
+            false,
+            "years",
+            "Years over which payments would pay the loan to zero. Longer means lower payments.",
+          )}
           {field("maturity", "Loan maturity", false, "years")}
           {field(
             "interestOnlyMonths",
             "Interest-only period",
             false,
             "months",
-            "Uses the selected amortization convention after IO.",
+            "Months paying interest only, with no principal. Uses the selected amortization convention after IO.",
           )}
           {field("loanFee", "Origination fee (% of loan)", true)}
         </div>
@@ -352,7 +364,13 @@ export default function Inputs({
           </label>
           {a.exitCapMode === "spread" ? (
             <>
-              {field("exitSpread", "Exit cap spread", true)}
+              {field(
+                "exitSpread",
+                "Exit cap spread",
+                true,
+                "",
+                "Added to the going-in cap (first-year NOI divided by price) to set the exit cap.",
+              )}
               <p>
                 Calculated exit cap:{" "}
                 {calculate(a).effectiveExitCap === undefined
@@ -361,10 +379,22 @@ export default function Inputs({
               </p>
             </>
           ) : (
-            field("exitCap", "Exit capitalization rate", true)
+            field(
+              "exitCap",
+              "Exit capitalization rate",
+              true,
+              "",
+              "The rate a buyer applies to NOI when you sell. A higher exit cap means a lower sale price.",
+            )
           )}
           {field("sellingCosts", "Exit selling costs", true)}
-          {field("requiredReturn", "Target annual return", true)}
+          {field(
+            "requiredReturn",
+            "Target annual return",
+            true,
+            "",
+            "The yearly return you need for this deal to be worth doing. Results are compared against it.",
+          )}
           <label className="field">
             <span>
               <input

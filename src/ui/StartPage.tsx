@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Check,
   FileSpreadsheet,
+  TriangleAlert,
 } from "lucide-react";
 import Brand from "./Brand";
 import ThemeToggle from "./ThemeToggle";
@@ -102,6 +103,7 @@ export default function StartPage({
       max?: number;
       required?: boolean;
       placeholder?: string;
+      help?: string;
     } = {},
   ) => (
     <label className="iq-setup-field" key={key}>
@@ -115,6 +117,7 @@ export default function StartPage({
       </span>
       <input
         aria-label={label}
+        aria-describedby={opts.help ? `iq-help-${key}` : undefined}
         type={
           ["price", "rent", "expenses", "loan", "equity"].includes(key)
             ? "text"
@@ -160,8 +163,16 @@ export default function StartPage({
         required={opts.required}
         placeholder={opts.placeholder}
       />
+      {opts.help && (
+        <em className="iq-setup-help" id={`iq-help-${key}`}>
+          {opts.help}
+        </em>
+      )}
     </label>
   );
+  // Same condition the form uses to choose the annual (Quick) path.
+  const annualPath =
+    !file && intent === "overview" && values.strategy === "acquisition";
   return (
     <div className="iq-start">
       <a className="skip-link" href="#start-content">
@@ -179,11 +190,6 @@ export default function StartPage({
           <a href="#how-it-works" onClick={() => showReview(false)}>
             How it works
           </a>
-          <button
-            onClick={() => onOpen({ project: sampleProject(), tab: "report" })}
-          >
-            Sample report
-          </button>
           <button className="iq-header-pill" onClick={() => onOpen()}>
             Monthly planner <ArrowUpRight size={14} />
           </button>
@@ -197,11 +203,14 @@ export default function StartPage({
               <ArrowLeft size={16} /> Back to start
             </button>
             <h1>
-              Review your
+              Check these before
               <br />
-              property inputs.
+              you trust the returns.
             </h1>
-            <p>Review the numbers we found, and fill in what you know.</p>
+            <p>
+              Fix anything we misread and fill in what is missing. Every result
+              is built from these numbers.
+            </p>
             <div className="iq-review-note">
               {recognized.length
                 ? `${recognized.length} figures found using simple text matching.`
@@ -213,11 +222,7 @@ export default function StartPage({
               className="iq-setup"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (
-                  !file &&
-                  intent === "overview" &&
-                  values.strategy === "acquisition"
-                ) {
+                if (annualPath) {
                   const a = setupAnnual(values);
                   const errors = calculate(a).errors;
                   if (errors.length) {
@@ -321,19 +326,60 @@ export default function StartPage({
                   <span>{file.name} · ready for column mapping</span>
                 </div>
               )}
+              {annualPath ? (
+                <section
+                  className="iq-flagged"
+                  aria-labelledby="iq-flagged-title"
+                >
+                  <h2 id="iq-flagged-title">
+                    <TriangleAlert size={18} aria-hidden="true" />
+                    These start at 0 and change your returns the most
+                  </h2>
+                  <p>
+                    Leaving them at 0 assumes no vacancy, no management cost and
+                    no capital spending. Enter your own estimates.
+                  </p>
+                  <div className="iq-setup-grid">
+                    {field("vacancy", "Vacancy (% of rent)", {
+                      min: 0,
+                      max: 100,
+                      placeholder: "0",
+                    })}
+                    {field("management", "Management fee (% of income)", {
+                      min: 0,
+                      max: 100,
+                      placeholder: "0",
+                    })}
+                    {field("annualCapex", "Annual CapEx ($ per year)", {
+                      min: 0,
+                      placeholder: "0",
+                    })}
+                  </div>
+                </section>
+              ) : (
+                <p className="iq-flagged-note">
+                  <TriangleAlert size={16} aria-hidden="true" />
+                  Vacancy, management and CapEx also start at 0 here. Set them
+                  in the planner before relying on the returns.
+                </p>
+              )}
               <section className="iq-defaults-panel">
                 <h2>Assumptions we filled in</h2>
                 <p>
                   Editable defaults · not verified against your deal. Unentered
-                  dollar amounts start at $0. Vacancy, collection loss,
-                  management, closing costs and CapEx start at zero; review them
-                  before relying on returns.
+                  dollar amounts start at $0. Collection loss, closing costs and
+                  growth rates also start at zero; review them before relying on
+                  returns.
                 </p>
                 <div className="iq-setup-grid">
                   {field(
                     "exitCap",
                     "Exit cap (%) · blank = going-in cap + 0.625%",
-                    { min: 0.001, max: 100 },
+                    {
+                      min: 0.001,
+                      max: 100,
+                      help: "The rate a buyer applies to NOI when you sell, so a higher exit cap means a lower sale price. Going-in cap is first-year NOI divided by price.",
+                    },
                   )}
                   {field("sellingCosts", "Selling costs (%) · default 2.5%", {
                     min: 0,
@@ -342,10 +388,12 @@ export default function StartPage({
                   {field("requiredReturn", "Target return (%) · default 10%", {
                     min: 0,
                     max: 100,
+                    help: "The yearly return you need for this deal to be worth doing. Results are compared against it.",
                   })}
                   {field("amortization", "Amortization years · default 30", {
                     min: 1,
                     max: 50,
+                    help: "Years over which loan payments would pay the balance down to zero. Longer means lower payments.",
                   })}
                   {field("maturity", "Maturity years · default 10", {
                     min: 1,
@@ -354,9 +402,10 @@ export default function StartPage({
                   {field("hold", "Hold years · default 5", { min: 3, max: 10 })}
                 </div>
                 <p>
-                  Full amortization starts after IO; interest accrues at 30/360.
-                  No real-time market or tax data is used. Development delivery
-                  dates need entry in the monthly planner.
+                  Interest-only (IO) means paying interest without principal;
+                  full amortization starts after IO, and interest accrues at
+                  30/360. No real-time market or tax data is used. Development
+                  delivery dates need entry in the monthly planner.
                 </p>
               </section>
               {fileError && <p role="alert">{fileError}</p>}
@@ -374,7 +423,7 @@ export default function StartPage({
             <section className="iq-hero">
               <h1>
                 {/* Words sharpen in one after another; the key phrase lands last. */}
-                {["Analyze", "cash", "flow"].map((word, i) => (
+                {["Check", "if", "a", "multifamily"].map((word, i) => (
                   <span
                     className="iq-word"
                     style={{ "--i": i } as CSSProperties}
@@ -386,14 +435,15 @@ export default function StartPage({
                 <br />
                 <span
                   className="iq-word iq-key"
-                  style={{ "--i": 3 } as CSSProperties}
+                  style={{ "--i": 4 } as CSSProperties}
                 >
-                  and financing.
+                  deal works.
                 </span>
               </h1>
               <p className="iq-hero-subtitle">
-                Enter your assumptions or import a spreadsheet. Review income,
-                expenses, debt, and projected returns.
+                Built for investors sizing up rental buildings. Paste the
+                listing details or upload a rent roll to see cash flow, loan
+                coverage and returns, with every assumption in view.
               </p>
               <form
                 className="iq-composer"
@@ -418,9 +468,13 @@ export default function StartPage({
                   }}
                 />
                 {!description && (
-                  <span className="iq-composer-example" key={hint}>
+                  <button
+                    type="button"
+                    className="iq-composer-example"
+                    onClick={() => setDescription(briefExamples[hint])}
+                  >
                     Try “{briefExamples[hint]}”
-                  </span>
+                  </button>
                 )}
                 {file && (
                   <div className="iq-selected-file">
@@ -438,7 +492,7 @@ export default function StartPage({
                 <div className="iq-composer-actions">
                   <label className="button iq-upload">
                     <Paperclip size={21} />
-                    Upload files
+                    Upload a file
                     <input
                       type="file"
                       accept=".csv,.xlsx"
@@ -461,7 +515,7 @@ export default function StartPage({
                   </label>
                   <span>Rent rolls · Operating statements · CSV / XLSX</span>
                   <button className="button primary iq-analyze" type="submit">
-                    Analyze property <ArrowRight size={20} />
+                    Start an analysis <ArrowRight size={20} />
                   </button>
                 </div>
                 {fileError && (
@@ -477,65 +531,76 @@ export default function StartPage({
                   </span>
                 ))}
               </div>
-              <div className="mode-cards">
-                <button className="button primary" onClick={() => onAnnual()}>
-                  Quick analysis · annual underwriting, debt and sensitivity
-                </button>
-                <button className="button" onClick={() => onOpen()}>
-                  Monthly planner · leasing, development and cash timing
-                </button>
-              </div>
-              <div className="iq-secondary-actions">
-                <button onClick={() => onAnnual()}>
+              <div className="iq-start-secondary">
+                <button className="button" onClick={() => onAnnual()}>
                   <Play size={17} className="iq-play" />
-                  Try with sample property
-                </button>
-                <i />
-                <button
-                  onClick={() => {
-                    setDescription("");
-                    setValues(blank);
-                    setRecognized([]);
-                    setIntent("overview");
-                    showReview(true);
-                  }}
-                >
-                  Enter numbers manually
+                  Try a sample
                 </button>
               </div>
-              <p className="iq-no-account">
-                No sign-up to explore. Your files stay in this browser.
-              </p>
-              <div className="iq-question-actions">
-                <button onClick={() => start("monthly")}>
-                  <ChartNoAxesColumnIncreasing size={22} />
-                  Review cash flow
-                </button>
-                <button onClick={() => start("price")}>
-                  <House size={22} />
-                  Check an asking price
-                </button>
-                <button onClick={() => start("financing")}>
-                  <Calculator size={22} />
-                  Compare financing
-                </button>
-              </div>
+              <ul className="iq-trust" aria-label="Privacy and cost">
+                <li>
+                  <Check size={14} aria-hidden="true" />
+                  Free, no account
+                </li>
+                <li>
+                  <Check size={14} aria-hidden="true" />
+                  Your files stay in this browser
+                </li>
+                <li>
+                  <a href="#quick/methodology">How the math is validated</a>
+                </li>
+              </ul>
+              <section className="iq-other" aria-labelledby="iq-other-title">
+                <h2 id="iq-other-title">Other ways to start</h2>
+                <div className="iq-other-modes">
+                  <button onClick={() => onAnnual()}>
+                    <strong>Quick analysis</strong>
+                    <span>
+                      Use this when you want annual returns, debt and
+                      sensitivity for one deal.
+                    </span>
+                  </button>
+                  <button onClick={() => onOpen()}>
+                    <strong>Monthly planner</strong>
+                    <span>
+                      Use this when timing matters: lease-up, renovations,
+                      construction or refinancing.
+                    </span>
+                  </button>
+                </div>
+                <div className="iq-other-more">
+                  <button
+                    onClick={() => {
+                      setDescription("");
+                      setValues(blank);
+                      setRecognized([]);
+                      setIntent("overview");
+                      showReview(true);
+                    }}
+                  >
+                    Enter numbers manually
+                  </button>
+                  <button onClick={() => start("monthly")}>
+                    <ChartNoAxesColumnIncreasing size={18} />
+                    Review cash flow
+                  </button>
+                  <button onClick={() => start("price")}>
+                    <House size={18} />
+                    Check an asking price
+                  </button>
+                  <button onClick={() => start("financing")}>
+                    <Calculator size={18} />
+                    Compare financing
+                  </button>
+                  <button onClick={() => onOpen()}>Open saved workspace</button>
+                </div>
+              </section>
             </section>
             <StoryCard
               onReport={() =>
                 onOpen({ project: sampleProject(), tab: "report" })
               }
             />
-            <section className="iq-return">
-              <div>
-                <h2>Already have a project?</h2>
-                <p>Pick up where you left off in your local workspace.</p>
-              </div>
-              <button className="button primary" onClick={() => onOpen()}>
-                Open saved workspace
-                <ArrowRight size={17} />
-              </button>
-            </section>
           </>
         )}
       </main>
@@ -543,10 +608,18 @@ export default function StartPage({
         <span>
           <Brand />
         </span>
-        <p>Local analysis. Transparent assumptions.</p>
-        <button onClick={() => onAnnual()}>
-          Quick analysis <ArrowUpRight size={14} />
-        </button>
+        <p>Free, private, no account. Files stay in your browser.</p>
+        <nav aria-label="Product" className="iq-footer-links">
+          <button onClick={() => onAnnual()}>Quick analysis</button>
+          <button onClick={() => onOpen()}>Monthly planner</button>
+          <a href="#quick/methodology">Methodology</a>
+          <button
+            onClick={() => onOpen({ project: sampleProject(), tab: "report" })}
+          >
+            Sample monthly report
+          </button>
+          <a href="#privacy">Privacy</a>
+        </nav>
       </div>
     </div>
   );

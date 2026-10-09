@@ -42,7 +42,7 @@ async function shot(page: Page, name: string, project: string) {
 }
 async function quick(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: "Try with sample property" }).click();
+  await page.getByRole("button", { name: "Try a sample" }).click();
   await expect(
     page.getByRole("heading", { name: "Investment overview", exact: true }),
   ).toBeVisible();
@@ -75,7 +75,7 @@ test("shared demo, changing inputs, money formatting and no console errors", asy
       .first(),
   ).toBeVisible();
   await shot(page, "start", info.project.name);
-  await page.getByRole("button", { name: "Try with sample property" }).click();
+  await page.getByRole("button", { name: "Try a sample" }).click();
   await expect(
     page.locator(".metric").filter({ hasText: "Annual IRR" }).locator("strong"),
   ).toHaveText("14.17%");
@@ -155,7 +155,7 @@ test("composer extraction and editable assumption defaults", async ({
     .fill("$2.8M purchase; 20 units at $1,900/mo; 6.25% rate; 65% LTV");
   await expect(page.locator(".brief-preview")).toContainText("rent: 38,000");
   await page
-    .getByRole("button", { name: "Analyze property", exact: true })
+    .getByRole("button", { name: "Start an analysis", exact: true })
     .click();
   await page.getByLabel("Property name", { exact: true }).fill("Reviewed case");
   await expect(
@@ -187,6 +187,52 @@ test("composer extraction and editable assumption defaults", async ({
   await expect(
     page.getByRole("heading", { name: "Investment overview", exact: true }),
   ).toBeVisible();
+});
+test("start page leads with one action, states trust and flags zero defaults", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const start = page.getByRole("button", {
+    name: "Start an analysis",
+    exact: true,
+  });
+  await expect(start).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Try a sample", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Free, no account")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "How the math is validated" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Other ways to start" }),
+  ).toBeVisible();
+  // The example text is clickable and fills the composer.
+  const composer = page.getByLabel("Paste deal details", { exact: true });
+  await expect(composer).toHaveValue("");
+  await page.getByRole("button", { name: /^Try “/ }).click();
+  await expect(composer).not.toHaveValue("");
+  await start.click();
+  await expect(
+    page.getByRole("heading", { name: /you trust the returns/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /start at 0 and change your returns/ }),
+  ).toBeVisible();
+  await page.getByLabel("Vacancy (% of rent)", { exact: true }).fill("5");
+  await page
+    .getByLabel("Management fee (% of income)", { exact: true })
+    .fill("4");
+  await page
+    .getByRole("button", { name: "Create analysis", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Investment overview", exact: true }),
+  ).toBeVisible();
+  await income(page);
+  await expect(page.getByLabel("Economic vacancy").first()).toHaveValue(
+    /^5(\.0+)?%?$/,
+  );
 });
 test("monthly wayfinding, exact project history, deep links and legal routing", async ({
   page,

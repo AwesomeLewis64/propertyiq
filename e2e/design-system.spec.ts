@@ -5,7 +5,7 @@ test("rent-roll loading feedback remains visible until parsing finishes and reco
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Try with sample property" }).click();
+  await page.getByRole("button", { name: "Try a sample" }).click();
   await page
     .getByRole("button", { name: "Rent roll import", exact: true })
     .click();
@@ -47,7 +47,7 @@ test("chart download exposes progress, prevents duplicate exports and resolves d
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Try with sample property" }).click();
+  await page.getByRole("button", { name: "Try a sample" }).click();
   const chart = page.locator(".financial-chart").filter({
     has: page.getByRole("heading", {
       name: "Capital recovery timeline",
@@ -132,7 +132,7 @@ test("shared white surfaces, component shapes and readable headings remain consi
       ),
   ).toBe(true);
   await page.screenshot({ path: info.outputPath("home.png"), fullPage: true });
-  await page.getByRole("button", { name: "Try with sample property" }).click();
+  await page.getByRole("button", { name: "Try a sample" }).click();
   await expect(
     page.getByRole("heading", {
       name: "Capital recovery timeline",

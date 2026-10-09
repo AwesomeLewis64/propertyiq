@@ -3,7 +3,7 @@ import { readFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 async function quick(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: "Try with sample property" }).click();
+  await page.getByRole("button", { name: "Try a sample" }).click();
   await expect(
     page.getByRole("heading", {
       name: "Income-to-cash-flow bridge",

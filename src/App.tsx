@@ -97,7 +97,7 @@ function Metrics({
         "Going-in cap rate",
         y.noi / a.price,
         pct,
-        "Year 1 NOI divided by acquisition price",
+        "Year 1 NOI divided by acquisition price: your first-year yield before debt",
       ],
       [
         "Annual IRR",
@@ -121,7 +121,7 @@ function Metrics({
         "Year 1 DSCR",
         y.dscr,
         multiple,
-        "NOI / annual regular debt service; no debt displays N/A",
+        "NOI / yearly loan payments; above 1.0x means income covers the loan. No debt displays N/A",
       ],
     ];
   return (

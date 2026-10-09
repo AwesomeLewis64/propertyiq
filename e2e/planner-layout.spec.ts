@@ -11,6 +11,7 @@ test("monthly planner remains readable with the EasyList sidebar filter", async 
       content: ".adv-sidebar { display: none !important; }",
     });
     await page
+      .getByRole("navigation", { name: "Start page" })
       .getByRole("button", { name: "Monthly planner", exact: true })
       .click();
     await expect(

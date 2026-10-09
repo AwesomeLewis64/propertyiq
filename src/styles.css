@@ -6055,6 +6055,148 @@ button.theme-toggle[role="switch"]:hover {
   }
 }
 
+/* Start page: one primary action, one secondary, trust under them, the rest quiet. */
+.iq-composer-example {
+  pointer-events: auto;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  font-size: var(--text-16);
+  cursor: pointer;
+  max-width: calc(100% - var(--space-48));
+}
+.iq-composer-example:hover {
+  color: var(--color-accent);
+}
+.iq-start-secondary {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-20);
+}
+.iq-trust {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-8) var(--space-20);
+  list-style: none;
+  margin: var(--space-20) 0 0;
+  padding: 0;
+  font-size: var(--text-14);
+  color: var(--color-muted);
+}
+.iq-trust li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.iq-trust a {
+  color: var(--color-accent);
+}
+.iq-other {
+  margin: var(--space-48) auto 0;
+  max-width: 760px;
+  text-align: left;
+}
+.iq-other h2 {
+  font-size: var(--text-14);
+  font-weight: var(--weight-body);
+  color: var(--color-muted);
+  margin: 0 0 var(--space-12);
+}
+.iq-other-modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-12);
+}
+.iq-other-modes button {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: left;
+  padding: var(--space-16);
+  border: var(--stroke-thin) solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-14);
+}
+.iq-other-modes span {
+  color: var(--color-muted);
+}
+.iq-other-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-20);
+  margin-top: var(--space-16);
+}
+.iq-other-more button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  border: 0;
+  background: none;
+  padding: var(--space-8) 0;
+  color: var(--color-accent);
+  font-size: var(--text-14);
+}
+.iq-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-20);
+  margin-left: auto;
+}
+.iq-footer .iq-footer-links button,
+.iq-footer-links a {
+  margin-left: 0;
+  color: var(--color-accent);
+  font-size: var(--text-12);
+  text-decoration: none;
+}
+.iq-legal-footer nav {
+  gap: var(--space-12) var(--space-24);
+}
+.iq-legal-footer a,
+.iq-legal-footer a:first-child {
+  padding: 0;
+  border-left: 0;
+}
+
+/* Review screen: the zero defaults that move returns most, flagged in words and an icon. */
+.iq-flagged {
+  margin-top: var(--space-24);
+  padding: var(--space-20);
+  border: var(--stroke-thin) solid var(--color-accent);
+  border-radius: var(--radius-panel);
+}
+.iq-flagged h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  font-size: var(--text-16);
+}
+.iq-flagged p {
+  margin: var(--space-8) 0 var(--space-16);
+  color: var(--color-muted);
+  font-size: var(--text-14);
+}
+.iq-flagged-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-24);
+  font-size: var(--text-14);
+}
+.iq-setup-help {
+  display: block;
+  margin-top: var(--space-4);
+  font-style: normal;
+  font-size: var(--text-12);
+  color: var(--color-muted);
+}
+
 /* One reduced-motion rule for everything, present and future (ADR-0002). */
 @media (prefers-reduced-motion: reduce) {
   *,
