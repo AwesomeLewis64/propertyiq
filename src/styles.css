@@ -1307,6 +1307,18 @@ tbody td {
   color: var(--color-text);
   font-size: var(--font-min);
 }
+.local-backup > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.local-backup > summary::-webkit-details-marker {
+  display: none;
+}
+.local-backup[open] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-24);
+}
 .local-tools > span {
   font-size: var(--font-min);
   color: var(--color-text);

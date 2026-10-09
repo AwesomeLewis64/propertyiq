@@ -26,6 +26,15 @@ import { sampleSummary } from "../finance/sharedSample";
 import { calculate } from "../finance/model";
 import type { Assumptions } from "../finance/types";
 type Intent = "overview" | "monthly" | "price" | "financing";
+const liveLabels: Record<string, string> = {
+  units: "units",
+  rent: "total monthly rent",
+  price: "purchase price",
+  rate: "interest rate %",
+  ltv: "LTV %",
+  loan: "loan amount",
+  expenses: "annual expenses",
+};
 const now = new Date();
 const blank: SetupValues = {
   name: "",
@@ -240,8 +249,7 @@ export default function StartPage({
               <div className="iq-setup-grid">
                 {field("name", "Property name", {
                   type: "text",
-                  required: true,
-                  placeholder: "e.g. Riverside rental property",
+                  placeholder: "Optional · e.g. Riverside rental property",
                 })}
                 {field("location", "Location", {
                   type: "text",
@@ -449,7 +457,7 @@ export default function StartPage({
               <div className="brief-preview" aria-live="polite">
                 {Object.entries(live).map(([key, n]) => (
                   <span key={key}>
-                    {key}: {n?.toLocaleString("en-US")}
+                    {liveLabels[key] ?? key}: {n?.toLocaleString("en-US")}
                   </span>
                 ))}
               </div>

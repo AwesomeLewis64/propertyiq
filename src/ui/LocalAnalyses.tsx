@@ -38,7 +38,9 @@ export default function LocalAnalyses({
   function save() {
     try {
       setItems(saveAnalysis(localStorage, a, scenarios));
-      setMessage("Analysis saved in this browser.");
+      setMessage(
+        "Analysis saved in this browser. Clearing browser data erases it, so download a backup from the Backup menu for anything important.",
+      );
       setError("");
     } catch (e) {
       setError(`Unable to save: ${(e as Error).message}`);
@@ -83,6 +85,8 @@ export default function LocalAnalyses({
             <FolderOpen size={12} />
             Load saved
           </button>
+          <details className="local-backup">
+            <summary className="text-button">Backup</summary>
           <button
             className="text-button"
             onClick={() => {
@@ -139,6 +143,7 @@ export default function LocalAnalyses({
               }}
             />
           </label>
+          </details>
         </div>
         <span>Saved on this device and browser only</span>
       </div>

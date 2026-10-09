@@ -144,6 +144,7 @@ test("quick provenance survives money editing, reload, portable restore and canc
     "Renamed example",
   );
   await page.getByRole("button", { name: "Save locally", exact: true }).click();
+  await page.locator(".local-backup > summary").click();
   const event = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Download Quick backup", exact: true })

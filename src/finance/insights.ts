@@ -32,7 +32,11 @@ export function insights(
       tone: "neutral",
       target: "cash",
     });
-  const stressed = calculate({ ...a, exitCap: Math.min(1, a.exitCap + 0.005) });
+  const stressed = calculate({
+    ...a,
+    exitCapMode: "manual",
+    exitCap: Math.min(1, (m.effectiveExitCap ?? a.exitCap) + 0.005),
+  });
   if (m.irr !== null && stressed.irr !== null)
     out.push({
       title: `A 50-basis-point higher exit cap changes IRR by ${((stressed.irr - m.irr) * 100).toFixed(2)} percentage points.`,

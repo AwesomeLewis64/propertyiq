@@ -486,6 +486,18 @@ function WorkspaceApp() {
                   ))}
                   {view === "overview" ? (
                     <>
+                      {a.vacancy === 0 &&
+                        a.creditLoss === 0 &&
+                        a.closingCosts === 0 &&
+                        a.rentGrowth === 0 && (
+                          <div className="alert" role="status">
+                            Assumptions incomplete: vacancy, credit loss, closing
+                            costs and rent growth are all zero, which makes
+                            returns look better than most real deals. Review
+                            them under Assumptions before relying on these
+                            results.
+                          </div>
+                        )}
                       <Verdict
                         engine="Quick analysis · annual cash flows"
                         lines={verdictLines(
