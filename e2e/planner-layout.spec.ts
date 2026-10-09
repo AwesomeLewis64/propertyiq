@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { openMenus } from "./menu";
 
 test("monthly planner remains readable with the EasyList sidebar filter", async ({
   page,
@@ -18,6 +19,7 @@ test("monthly planner remains readable with the EasyList sidebar filter", async 
       page.getByRole("heading", { name: "Property overview", exact: true }),
     ).toBeVisible();
 
+    await openMenus(page);
     const tools = page.getByRole("navigation", {
       name: "Property analysis tools",
     });

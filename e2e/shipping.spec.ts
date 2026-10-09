@@ -1,3 +1,4 @@
+import { openMenus } from "./menu";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
@@ -169,6 +170,7 @@ test("monthly money editing, stale stress, duplicate provenance and backup resto
   page,
 }) => {
   await page.goto("/#monthly/maple-grove-shared/overview");
+  await openMenus(page);
   await page.getByText("Project actions", { exact: true }).click();
   await page.getByRole("button", { name: "Duplicate", exact: true }).click();
   const id = await page.getByLabel("Active local project").inputValue();
@@ -249,6 +251,7 @@ test("actual PDF output for brief and ten-year tables", async ({
     "PDF generation uses Chromium desktop; other engines are exercised in browser flows.",
   );
   await quick(page);
+  await openMenus(page);
   await page
     .getByRole("button", { name: "Investment report", exact: true })
     .click();

@@ -1,3 +1,4 @@
+import { openMenus } from "./menu";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { mkdirSync } from "node:fs";
@@ -102,6 +103,7 @@ test("shared demo, changing inputs, money formatting and no console errors", asy
   await expect(
     page.locator(".metric").filter({ hasText: "Annual IRR" }).locator("strong"),
   ).not.toHaveText("14.17%");
+  await openMenus(page);
   await page
     .getByRole("button", { name: "Investment report", exact: true })
     .click();
@@ -128,6 +130,7 @@ test("shared demo, changing inputs, money formatting and no console errors", asy
 for (const file of ["rent-roll.csv", "rent-roll.xlsx"]) {
   test(`import and apply ${file}`, async ({ page }) => {
     await quick(page);
+    await openMenus(page);
     await page
       .getByRole("button", { name: "Rent roll import", exact: true })
       .click();
@@ -137,6 +140,7 @@ for (const file of ["rent-roll.csv", "rent-roll.xlsx"]) {
     await page
       .getByRole("button", { name: /Apply.*rent.roll|Apply to analysis/i })
       .click();
+    await openMenus(page);
     await page
       .getByRole("button", { name: "Investment overview", exact: true })
       .click();
@@ -234,6 +238,56 @@ test("start page leads with one action, states trust and flags zero defaults", a
     /^5(\.0+)?%?$/,
   );
 });
+test("quick results sit above exports and backups", async ({ page }) => {
+  await page.goto("/#quick/overview");
+  await expect(
+    page.getByRole("heading", { name: "Investment overview", exact: true }),
+  ).toBeVisible();
+  const summary = await page.locator(".deal-summary").boundingBox();
+  const actions = await page
+    .locator(".workspace-main > .workspace-actions")
+    .boundingBox();
+  const saved = await page.locator(".local-analyses").boundingBox();
+  expect(summary && actions && saved).toBeTruthy();
+  expect(summary!.y).toBeLessThan(actions!.y);
+  expect(summary!.y).toBeLessThan(saved!.y);
+});
+test("phones fold sections and assumptions away so results come first", async ({
+  page,
+}) => {
+  test.skip((page.viewportSize()?.width ?? 1440) > 700, "phone layout only");
+  await page.goto("/#quick/overview");
+  const section = page.locator("summary", {
+    hasText: "Section: Investment overview",
+  });
+  await expect(section).toBeVisible();
+  const cash = page.locator(".nav-sidebar nav button", {
+    hasText: "Cash flows",
+  });
+  await expect(cash).toBeHidden();
+  await expect(page.locator(".mobile-assumptions")).not.toHaveAttribute(
+    "open",
+    "",
+  );
+  await section.click();
+  await cash.click();
+  await expect(
+    page.getByRole("heading", { name: "Cash flows", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator("summary", { hasText: "Section: Cash flows" }),
+  ).toBeVisible();
+});
+test("report metrics explain themselves and link to their calculation", async ({
+  page,
+}) => {
+  await page.goto("/#quick/report");
+  await expect(page.locator(".report-metrics small").first()).not.toBeEmpty();
+  await page.getByRole("button", { name: "Year 1 NOI", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Income and operating performance" }),
+  ).toBeInViewport();
+});
 test("monthly wayfinding, exact project history, deep links and legal routing", async ({
   page,
 }, info) => {
@@ -247,16 +301,20 @@ test("monthly wayfinding, exact project history, deep links and legal routing", 
   ).toBeVisible();
   await expect(page.locator(".planner-sidebar nav button")).toHaveCount(8);
   await shot(page, "monthly", info.project.name);
+  await openMenus(page);
   await page.getByRole("button", { name: "More tools", exact: true }).click();
   await expect(page.locator(".planner-sidebar nav button")).toHaveCount(19);
+  await openMenus(page);
   await page.getByText("Project actions", { exact: true }).click();
   await page.getByRole("button", { name: "Duplicate", exact: true }).click();
   const id = await page.getByLabel("Active local project").inputValue();
+  await openMenus(page);
   await page
     .getByRole("button", { name: "Debt & borrowing capacity", exact: true })
     .click();
   const targetUrl = page.url();
   await expect(page).toHaveURL(new RegExp(`#monthly/${id}/finance$`));
+  await openMenus(page);
   await page
     .getByRole("button", { name: "Property report", exact: true })
     .click();
@@ -273,6 +331,7 @@ test("monthly wayfinding, exact project history, deep links and legal routing", 
   await expect(
     page.getByRole("heading", { name: "Property report", exact: true }),
   ).toBeVisible();
+  await openMenus(page);
   await page.getByRole("button", { name: "Decision Lab", exact: true }).click();
   await expect(
     page.getByRole("tab", { name: "Lender quote comparison" }),

@@ -5,6 +5,28 @@ import { ScenarioComparison, type ScenarioSettings } from "./Sensitivity";
 import VisualAdditions from "./VisualAdditions";
 import { provenance } from "../data/provenance";
 import Methodology from "./Methodology";
+import { metricHelp } from "./metricHelp";
+
+// Jump to the matching section of the methodology printed lower on this page.
+const explain = (id: string) =>
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+const group: Record<string, string> = {
+  "Year 1 NOI": "method-income",
+  "Year 1 DSCR": "method-debt",
+  "Initial equity": "method-returns",
+  "Year 1 cash-on-cash": "method-returns",
+  "Annual IRR": "method-returns",
+  "Equity multiple": "method-returns",
+  "Net sale proceeds": "method-returns",
+  "Forward NOI": "method-returns",
+  "Gross exit value": "method-returns",
+  "Total contributions": "method-returns",
+  "Total distributions": "method-returns",
+  "Average annual cash-on-cash": "method-returns",
+  "Appreciation after selling costs": "method-returns",
+};
 export default function Report({
   a,
   m,
@@ -64,8 +86,22 @@ export default function Report({
             ],
           ].map(([label, value]) => (
             <div key={label}>
-              <span>{label}</span>
+              <span>
+                {group[label] ? (
+                  <button
+                    type="button"
+                    className="iq-calc-link"
+                    title="See how this is calculated"
+                    onClick={() => explain(group[label])}
+                  >
+                    {label}
+                  </button>
+                ) : (
+                  label
+                )}
+              </span>
               <strong>{value}</strong>
+              <small>{metricHelp[label]}</small>
             </div>
           ))}
         </div>

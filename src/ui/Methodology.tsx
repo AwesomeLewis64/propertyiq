@@ -7,7 +7,7 @@ export default function Methodology() {
         PropertyIQ uses deterministic calculations. There is no AI API,
         financial data feed, account requirement or server-side calculation.
       </p>
-      <h3>Income and operating performance</h3>
+      <h3 id="method-income">Income and operating performance</h3>
       <p>
         Year 1 uses your initial assumptions. Growth starts in Year 2. Manual
         rent potential is units × monthly rent × 12. Vacancy, credit loss and
@@ -24,7 +24,7 @@ export default function Methodology() {
         inflation rate. Taxes and insurance have separate growth rates. There is
         no double deduction of loan principal.
       </p>
-      <h3>Debt and coverage</h3>
+      <h3 id="method-debt">Debt and coverage</h3>
       <p>
         Monthly interest uses nominal annual rate ÷ 12. Payments amortize
         monthly; no lender penny-rounding is applied internally. Zero-interest
@@ -41,7 +41,7 @@ export default function Methodology() {
         Debt yield = NOI ÷ opening annual loan balance. Loan payoff is deducted
         once from exit proceeds after the final regular payment.
       </p>
-      <h3>Sale and investment returns</h3>
+      <h3 id="method-returns">Sale and investment returns</h3>
       <p>
         Exit value = next year's NOI ÷ exit cap rate. An optional tax scenario
         solves sale value after replacing forward taxes with an entered

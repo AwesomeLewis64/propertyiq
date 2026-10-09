@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Brand from "../ui/Brand";
 import ThemeToggle from "../ui/ThemeToggle";
+import MobileDisclosure from "../ui/MobileDisclosure";
 import { toolMatch } from "./toolTopics";
 import { Select } from "./Controls";
 import { newProject, uid } from "./defaults";
@@ -402,6 +403,11 @@ export default function AdvancedWorkspace({
       </header>
       <div className="adv-shell">
         <aside className="planner-sidebar">
+          <MobileDisclosure
+            max={760}
+            closeOnPick
+            title={`Tool: ${tabs.find((t) => t[0] === tab)?.[1] ?? "Overview"}`}
+          >
           <label className="iq-tool-search">
             <Search size={15} />
             <input
@@ -467,6 +473,7 @@ export default function AdvancedWorkspace({
           >
             {showMore ? "Fewer tools" : "More tools"}
           </button>
+          </MobileDisclosure>
           <p>
             Your work stays here.
             <br />
@@ -531,6 +538,17 @@ export default function AdvancedWorkspace({
               </details>
             </div>
           </div>
+          <MobileDisclosure
+            max={760}
+            className="iq-project-panel"
+            title={`Project: ${p.name} · ${
+              m.errors.length
+                ? "autosave paused"
+                : saveTime
+                  ? `saved ${saveTime}`
+                  : "saving…"
+            }`}
+          >
           <div className="compact-project-header">
             <p className="project-origin">{provenance(p)}</p>
             <details className="iq-model-status">
@@ -611,6 +629,7 @@ export default function AdvancedWorkspace({
               </small>
             </div>
           </div>
+          </MobileDisclosure>
           {saveError && (
             <div className="alert error">
               <p>

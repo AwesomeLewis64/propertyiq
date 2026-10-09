@@ -28,3 +28,5 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **Other ways to start**: the quiet group under the start page's primary and secondary actions. It holds Monthly planner, manual entry, the question buttons and "Open saved workspace" (ADR-0008).
 - **Try a sample**: the start page's secondary action; opens Quick analysis results for the fictional Maple Grove deal.
 - **Zero default**: an input that starts at 0 on a pasted or new analysis (vacancy, management, CapEx and others). The input review screen flags the ones that most change returns; the value is unchanged.
+- **Section menu**: on phones, the one-line "Section: …" (Quick analysis) or "Tool: …" (Monthly planner) summary that opens the full list of sections; wide screens show the list directly.
+- **Project panel**: on phones, the planner's "Project: name · saved time" summary that holds the project picker, origin note and project actions.

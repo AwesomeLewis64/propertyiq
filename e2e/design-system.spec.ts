@@ -1,3 +1,4 @@
+import { openMenus } from "./menu";
 import { test, expect } from "@playwright/test";
 import { resolve } from "node:path";
 
@@ -6,6 +7,7 @@ test("rent-roll loading feedback remains visible until parsing finishes and reco
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try a sample" }).click();
+  await openMenus(page);
   await page
     .getByRole("button", { name: "Rent roll import", exact: true })
     .click();

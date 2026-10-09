@@ -363,8 +363,10 @@ export default function StartPage({
                   in the planner before relying on the returns.
                 </p>
               )}
-              <section className="iq-defaults-panel">
-                <h2>Assumptions we filled in</h2>
+              <details className="iq-defaults-panel">
+                <summary>
+                  <h2>Assumptions we filled in</h2>
+                </summary>
                 <p>
                   Editable defaults · not verified against your deal. Unentered
                   dollar amounts start at $0. Collection loss, closing costs and
@@ -407,7 +409,7 @@ export default function StartPage({
                   30/360. No real-time market or tax data is used. Development
                   delivery dates need entry in the monthly planner.
                 </p>
-              </section>
+              </details>
               {fileError && <p role="alert">{fileError}</p>}
               <div className="iq-setup-footer">
                 <span>Saved on this browser. No account needed.</span>

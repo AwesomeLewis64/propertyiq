@@ -28,6 +28,8 @@ import type { Assumptions, Model } from "./finance/types";
 import { money, pct, multiple } from "./ui/format";
 import Inputs from "./ui/Inputs";
 import StartPage from "./ui/StartPage";
+import MobileDisclosure, { useNarrow } from "./ui/MobileDisclosure";
+import { metricHelp } from "./ui/metricHelp";
 import Brand from "./ui/Brand";
 import ThemeToggle from "./ui/ThemeToggle";
 import LegalShell from "./ui/LegalShell";
@@ -75,54 +77,24 @@ function Metrics({
   const y = m.years[0];
   const data: [string, number | null, (v: number | null) => string, string][] =
     [
-      [
-        "Acquisition price",
-        a.price,
-        money,
-        "Purchase price, before transaction costs",
-      ],
-      [
-        "Initial equity",
-        m.initialEquity,
-        money,
-        "Price + closing costs + initial CapEx + loan fees − loan proceeds",
-      ],
-      [
-        "Year 1 NOI",
-        y.noi,
-        money,
-        "Effective gross income minus operating expenses; excludes reserves and debt",
-      ],
+      ["Acquisition price", a.price, money, metricHelp["Acquisition price"]],
+      ["Initial equity", m.initialEquity, money, metricHelp["Initial equity"]],
+      ["Year 1 NOI", y.noi, money, metricHelp["Year 1 NOI"]],
       [
         "Going-in cap rate",
         y.noi / a.price,
         pct,
-        "Year 1 NOI divided by acquisition price: your first-year yield before debt",
+        metricHelp["Going-in cap rate"],
       ],
-      [
-        "Annual IRR",
-        m.irr,
-        pct,
-        m.irrReason ?? "Annual equity cash-flow IRR, including sale",
-      ],
-      [
-        "Equity multiple",
-        m.multiple,
-        multiple,
-        "Total positive distributions / total equity contributions",
-      ],
+      ["Annual IRR", m.irr, pct, m.irrReason ?? metricHelp["Annual IRR"]],
+      ["Equity multiple", m.multiple, multiple, metricHelp["Equity multiple"]],
       [
         "Year 1 cash-on-cash",
         y.operatingCash !== null ? y.operatingCash / m.initialEquity : null,
         pct,
-        "Operating equity cash flow / initial equity; excludes sale",
+        metricHelp["Year 1 cash-on-cash"],
       ],
-      [
-        "Year 1 DSCR",
-        y.dscr,
-        multiple,
-        "NOI / yearly loan payments; above 1.0x means income covers the loan. No debt displays N/A",
-      ],
+      ["Year 1 DSCR", y.dscr, multiple, metricHelp["Year 1 DSCR"]],
     ];
   return (
     <div className="metrics">
@@ -200,6 +172,8 @@ function WorkspaceApp() {
   const setView = (v: View) => swap(() => showView(v));
   const [home, setHome] = useState(() => readRoute().mode === "home");
   const [mobileEdited, setMobileEdited] = useState(false);
+  const narrow = useNarrow(700);
+  const [assumptionsOpen, setAssumptionsOpen] = useState(false);
   // A new analysis opening to results gets one sparkle on its IRR (ADR-0006).
   const [celebrate, setCelebrate] = useState(false);
   const endCelebrate = useCallback(() => setCelebrate(false), []);
@@ -401,34 +375,40 @@ function WorkspaceApp() {
       <div className="workspace">
         <aside className="nav-sidebar">
           <span className="nav-label">ANALYSIS WORKSPACE</span>
-          <nav ref={navRef} onMouseLeave={() => setHoverNav(null)}>
-            {pill && (
-              <span
-                className="nav-indicator"
-                data-hover={hoverNav && hoverNav !== view ? "" : undefined}
-                aria-hidden="true"
-                style={{
-                  width: pill.w,
-                  height: pill.h,
-                  transform: `translate(${pill.x}px, ${pill.y}px)`,
-                }}
-              />
-            )}
-            {nav.map((n) => (
-              <button
-                key={n.id}
-                title={n.label}
-                aria-current={view === n.id ? "page" : undefined}
-                className={view === n.id ? "active" : ""}
-                data-nav={n.id}
-                onMouseEnter={() => setHoverNav(n.id)}
-                onClick={() => setView(n.id)}
-              >
-                <n.icon size={17} />
-                {n.label}
-              </button>
-            ))}
-          </nav>
+          <MobileDisclosure
+            max={700}
+            closeOnPick
+            title={`Section: ${nav.find((n) => n.id === view)?.label ?? "Investment overview"}`}
+          >
+            <nav ref={navRef} onMouseLeave={() => setHoverNav(null)}>
+              {pill && (
+                <span
+                  className="nav-indicator"
+                  data-hover={hoverNav && hoverNav !== view ? "" : undefined}
+                  aria-hidden="true"
+                  style={{
+                    width: pill.w,
+                    height: pill.h,
+                    transform: `translate(${pill.x}px, ${pill.y}px)`,
+                  }}
+                />
+              )}
+              {nav.map((n) => (
+                <button
+                  key={n.id}
+                  title={n.label}
+                  aria-current={view === n.id ? "page" : undefined}
+                  className={view === n.id ? "active" : ""}
+                  data-nav={n.id}
+                  onMouseEnter={() => setHoverNav(n.id)}
+                  onClick={() => setView(n.id)}
+                >
+                  <n.icon size={17} />
+                  {n.label}
+                </button>
+              ))}
+            </nav>
+          </MobileDisclosure>
           <div className="sidebar-note">
             <ShieldCheck size={20} />
             <strong>Your data stays here.</strong>
@@ -459,48 +439,63 @@ function WorkspaceApp() {
                 {a.hold}-year hold
               </p>
             </div>
-            <div className="workspace-actions">
-              <button
-                className="button small"
-                onClick={() => {
-                  if (
-                    !window.confirm(
-                      "Replace the current analysis with fictional example assumptions? Saved snapshots will remain available.",
+          </div>
+          {!m.errors.length && view !== "methodology" && view !== "import" && (
+            <DealSummary
+              a={a}
+              m={m}
+              onGo={(target) =>
+                setView(target).then(() =>
+                  document
+                    .querySelector(
+                      target === "overview" ? ".metrics" : ".analysis-content",
                     )
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                )
+              }
+            />
+          )}
+          <div className="workspace-actions">
+            <button
+              className="button small"
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    "Replace the current analysis with fictional example assumptions? Saved snapshots will remain available.",
                   )
-                    return;
-                  setA(structuredClone(demo));
-                  setScenarios({ upside: {}, downside: {} });
-                }}
-              >
-                <RotateCcw size={14} />
-                Reset to example
-              </button>
-              <button
-                className="button small"
-                disabled={m.errors.length > 0}
-                onClick={() =>
-                  download("propertyiq-projections.csv", projectionCsv(a, m))
-                }
-              >
-                <Download size={14} />
-                Cash flow CSV
-              </button>
-              <button
-                className="button small"
-                disabled={m.errors.length > 0}
-                onClick={() => download("propertyiq-debt.csv", debtCsv(m))}
-              >
-                Debt CSV
-              </button>
-              <button
-                className="button small primary"
-                onClick={() => setView("report")}
-              >
-                <FileText size={14} />
-                Report
-              </button>
-            </div>
+                )
+                  return;
+                setA(structuredClone(demo));
+                setScenarios({ upside: {}, downside: {} });
+              }}
+            >
+              <RotateCcw size={14} />
+              Reset to example
+            </button>
+            <button
+              className="button small"
+              disabled={m.errors.length > 0}
+              onClick={() =>
+                download("propertyiq-projections.csv", projectionCsv(a, m))
+              }
+            >
+              <Download size={14} />
+              Cash flow CSV
+            </button>
+            <button
+              className="button small"
+              disabled={m.errors.length > 0}
+              onClick={() => download("propertyiq-debt.csv", debtCsv(m))}
+            >
+              Debt CSV
+            </button>
+            <button
+              className="button small primary"
+              onClick={() => setView("report")}
+            >
+              <FileText size={14} />
+              Report
+            </button>
           </div>
           <div className="model-notice">
             <span className="dot" />
@@ -520,32 +515,20 @@ function WorkspaceApp() {
               setView("overview");
             }}
           />
-          {!m.errors.length && view !== "methodology" && view !== "import" && (
-            <DealSummary
-              a={a}
-              m={m}
-              onGo={(target) =>
-                setView(target).then(() =>
-                  document
-                    .querySelector(
-                      target === "overview" ? ".metrics" : ".analysis-content",
-                    )
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" }),
-                )
-              }
-            />
-          )}
           <div className="analysis-layout">
             <details
               className="mobile-assumptions"
-              open
+              open={!narrow || assumptionsOpen}
+              onToggle={(e) =>
+                narrow && setAssumptionsOpen(e.currentTarget.open)
+              }
               onBlur={(e) => {
                 if (
                   mobileEdited &&
-                  window.innerWidth <= 700 &&
+                  narrow &&
                   !e.currentTarget.contains(e.relatedTarget as Node | null)
                 )
-                  e.currentTarget.open = false;
+                  setAssumptionsOpen(false);
               }}
             >
               <summary>Edit assumptions</summary>
@@ -579,11 +562,12 @@ function WorkspaceApp() {
                 </section>
               ) : (
                 <>
-                  {m.warnings.map((w) => (
-                    <div className="alert" key={w} role="status">
-                      {w}
-                    </div>
-                  ))}
+                  {view !== "report" &&
+                    m.warnings.map((w) => (
+                      <div className="alert" key={w} role="status">
+                        {w}
+                      </div>
+                    ))}
                   {view === "overview" ? (
                     <>
                       {a.vacancy === 0 &&
