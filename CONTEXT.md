@@ -25,7 +25,9 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **Draw-in**: a chart's first appearance, uncovering the plot left to right (lines) or growing bars, triggered by the reveal observer.
 - **Chart zoom**: the visible window of periods on a long line chart; "Show all" returns to every period.
 - **Tool search**: the monthly planner's "Search tools or topics" box; it matches tool names and the topics each tool covers (`src/advanced/toolTopics.ts`), showing the matched topic under the tool.
-- **Other ways to start**: the quiet group under the start page's primary and secondary actions. It holds Monthly planner, manual entry, the question buttons and "Open saved workspace" (ADR-0008).
+- **Guided start**: the two-step flow under "Or start with a tool" (what are you deciding, then what kind of property) that leads into the input review (ADR-0009).
+- **Refinance check** and **Sell vs hold**: the two Quick analysis sections added by ADR-0009; pure calculators in `src/finance/transactions.ts`.
+- **Tool row**: the quiet group under the start page's primary and secondary actions, labelled "Or start with a tool". Two centered cards (Quick analysis, Monthly planner) and an icon row of guided start, manual entry, the question buttons and "Open saved workspace" (ADR-0008).
 - **Try a sample**: the start page's secondary action; opens Quick analysis results for the fictional Maple Grove deal.
 - **Zero default**: an input that starts at 0 on a pasted or new analysis (vacancy, management, CapEx and others). The input review screen flags the ones that most change returns; the value is unchanged.
 - **Section menu**: on phones, the one-line "Section: …" (Quick analysis) or "Tool: …" (Monthly planner) summary that opens the full list of sections; wide screens show the list directly.

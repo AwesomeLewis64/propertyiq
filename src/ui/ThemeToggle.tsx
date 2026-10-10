@@ -39,6 +39,8 @@ export default function ThemeToggle() {
         )
           return apply();
         // The new theme grows as a circle from the switch to the farthest corner.
+        // 50% past the corner: the circle edge is still fast when it reaches the
+        // far corners, so no sliver of the old theme lingers there.
         const box = e.currentTarget.getBoundingClientRect();
         const x = box.left + box.width / 2,
           y = box.top + box.height / 2;
@@ -46,7 +48,7 @@ export default function ThemeToggle() {
         root.style.setProperty("--reveal-y", `${y}px`);
         root.style.setProperty(
           "--reveal-r",
-          `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 2}px`,
+          `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) * 1.5}px`,
         );
         root.classList.add("theme-reveal");
         revealing++;

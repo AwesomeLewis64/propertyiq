@@ -1,16 +1,16 @@
 # PropertyIQ verification
 
-Verification date: October 9, 2026. Release: 2.4.0.
+Verification date: October 9, 2026. Release: 2.5.0.
 
 ## Results
 
 | Check | Result |
 |---|---|
-| Regression tests | 228 pass across 15 files |
+| Regression tests | 236 pass across 16 files |
 | Application and browser-test TypeScript | Pass |
 | ESLint, including React hooks | Pass, zero warnings |
 | Production build | Pass |
-| Browser checks | 172 pass across six desktop/narrow-screen projects; eight skipped by design (five PDF-only cases, three phone-layout cases on wide projects) |
+| Browser checks | 184 pass across six desktop/narrow-screen projects; eight skipped by design (five PDF-only cases, three phone-layout cases on wide projects) |
 | Serious/critical axe violations on checked screens | Zero |
 | 390×844 page-level horizontal overflow | None on checked screens |
 | Finance coverage | 91.31% statements, 83.23% branches, 100% functions, 92.36% lines |

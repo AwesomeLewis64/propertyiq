@@ -17,6 +17,8 @@ import {
   BookOpen,
   ShieldCheck,
   RotateCcw,
+  RefreshCw,
+  Scale,
   SlidersHorizontal,
   FileText,
   Download,
@@ -28,6 +30,7 @@ import type { Assumptions, Model } from "./finance/types";
 import { money, pct, multiple } from "./ui/format";
 import Inputs from "./ui/Inputs";
 import StartPage from "./ui/StartPage";
+import { RefinanceCheck, SellVsHold } from "./ui/Transactions";
 import MobileDisclosure, { useNarrow } from "./ui/MobileDisclosure";
 import { metricHelp } from "./ui/metricHelp";
 import Brand from "./ui/Brand";
@@ -60,6 +63,8 @@ type View =
   | "cash"
   | "debt"
   | "sensitivity"
+  | "refinance"
+  | "sellhold"
   | "import"
   | "report"
   | "methodology";
@@ -227,6 +232,8 @@ function WorkspaceApp() {
             "cash",
             "debt",
             "sensitivity",
+            "refinance",
+            "sellhold",
             "import",
             "report",
             "methodology",
@@ -274,6 +281,8 @@ function WorkspaceApp() {
       label: "Sensitivity",
       icon: SlidersHorizontal,
     },
+    { id: "refinance" as const, label: "Refinance check", icon: RefreshCw },
+    { id: "sellhold" as const, label: "Sell vs hold", icon: Scale },
     { id: "import" as const, label: "Rent roll import", icon: FileSpreadsheet },
     { id: "report" as const, label: "Investment report", icon: FileText },
     { id: "methodology" as const, label: "Methodology", icon: BookOpen },
@@ -325,12 +334,12 @@ function WorkspaceApp() {
     return (
       <StartPage
         onOpen={openMonthly}
-        onAnnual={(next) =>
+        onAnnual={(next, target) =>
           swap(() => {
             setA(next ?? structuredClone(demo));
             setHome(false);
-            showView("overview");
-            setCelebrate(true);
+            showView(target ?? "overview");
+            setCelebrate(!target);
           })
         }
       />
@@ -647,6 +656,10 @@ function WorkspaceApp() {
                     >
                       <Report a={a} m={m} scenarios={scenarios} />
                     </Suspense>
+                  ) : view === "refinance" ? (
+                    <RefinanceCheck a={a} m={m} />
+                  ) : view === "sellhold" ? (
+                    <SellVsHold a={a} m={m} />
                   ) : (
                     <Methodology />
                   )}

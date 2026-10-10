@@ -5335,7 +5335,7 @@ h3 {
 .theme-reveal::view-transition-new(root) {
   /* Even in-out speed: an expo ease covered the page in ~100ms and left a
      sliver at the far edge that looked like a glitch. */
-  animation: theme-reveal 650ms cubic-bezier(0.45, 0, 0.2, 1) both;
+  animation: theme-reveal 600ms cubic-bezier(0.45, 0, 0.2, 1) both;
 }
 /* The reveal owns the motion: no colour fades racing the circle, and the hero
    glow is paused (not reset) so it does not jump when the class is removed. */
@@ -6129,39 +6129,66 @@ button.theme-toggle[role="switch"]:hover {
 .iq-other {
   margin: var(--space-48) auto 0;
   max-width: 760px;
-  text-align: left;
+  text-align: center;
 }
+/* The label is a quiet divider, not a heading above a list. */
 .iq-other h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  margin: 0 0 var(--space-16);
   font-size: var(--text-14);
   font-weight: var(--weight-body);
   color: var(--color-muted);
-  margin: 0 0 var(--space-12);
+}
+.iq-other h2::before,
+.iq-other h2::after {
+  content: "";
+  flex: 1;
+  height: var(--stroke-thin);
+  background: var(--color-border);
 }
 .iq-other-modes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: var(--space-12);
 }
 .iq-other-modes button {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-4);
-  text-align: left;
-  padding: var(--space-16);
+  text-align: center;
+  padding: var(--space-20) var(--space-16);
   border: var(--stroke-thin) solid var(--color-border);
   border-radius: var(--radius-panel);
   background: var(--color-surface);
   color: var(--color-ink);
   font-size: var(--text-14);
 }
+.iq-other-modes button:hover {
+  border-color: var(--color-accent);
+}
+.iq-other-modes svg {
+  color: var(--color-accent);
+  margin-bottom: var(--space-4);
+}
 .iq-other-modes span {
   color: var(--color-muted);
+  text-wrap: balance;
 }
 .iq-other-more {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8) var(--space-20);
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  justify-content: center;
+  gap: var(--space-4) var(--space-32);
   margin-top: var(--space-16);
+}
+@media (max-width: 600px) {
+  .iq-other-more {
+    grid-template-columns: repeat(2, max-content);
+    gap: var(--space-4) var(--space-24);
+  }
 }
 .iq-other-more button {
   display: inline-flex;
@@ -6321,6 +6348,67 @@ button.theme-toggle[role="switch"]:hover {
   outline: var(--stroke-focus, 2px) solid var(--color-accent);
   outline-offset: 2px;
   border-radius: var(--radius-control);
+}
+
+/* Phase 5: guided start. Same quiet card language as "Other ways to start". */
+.iq-guided {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-48) var(--space-20) var(--space-64);
+  text-align: left;
+}
+.iq-guided h1 {
+  margin: var(--space-8) 0 var(--space-24);
+  font-size: var(--text-32);
+  line-height: 1.15;
+}
+.iq-guided-step {
+  margin: var(--space-24) 0 0;
+  font-size: var(--text-14);
+  color: var(--color-muted);
+}
+.iq-guided-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-12);
+}
+.iq-guided-options button {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: left;
+  padding: var(--space-20);
+  border: var(--stroke-thin) solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-14);
+  min-height: 44px;
+}
+.iq-guided-options button span {
+  color: var(--color-muted);
+}
+.iq-guided-options button:hover {
+  border-color: var(--color-accent);
+}
+.iq-guided-options button:focus-visible {
+  outline: var(--stroke-focus) solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Story: steps are spaced so one is always beside the pinned card, instead of
+   62vh gaps that left the left column empty while the card stayed in view. */
+@media (min-width: 761px) {
+  .iq-story {
+    padding-top: var(--space-64);
+    padding-bottom: var(--space-64);
+  }
+  .iq-story-step {
+    min-height: 42vh;
+  }
+  .iq-story-step:first-child {
+    padding-top: 0;
+  }
 }
 
 /* One reduced-motion rule for everything, present and future (ADR-0002). */

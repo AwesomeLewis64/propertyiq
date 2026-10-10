@@ -322,7 +322,7 @@ test("start page leads with one action, states trust and flags zero defaults", a
     page.getByRole("link", { name: "How the math is validated" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Other ways to start" }),
+    page.getByRole("heading", { name: "Or start with a tool" }),
   ).toBeVisible();
   // The example text is clickable and fills the composer.
   const composer = page.getByLabel("Paste deal details", { exact: true });
@@ -418,6 +418,61 @@ test.describe("motion polish with motion on", () => {
     // The reveal class is removed once the transition ends, restoring transitions.
     await expect(html).not.toHaveClass(/theme-reveal/);
   });
+});
+test("guided start leads a refinance question to the refinance check", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Guided start" }).click();
+  await expect(
+    page.getByRole("heading", { name: "What are you deciding?" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Refinance a loan/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "What kind of property?" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Rental apartments/ }).click();
+  await expect(
+    page.getByRole("heading", { name: /you trust the returns/ }),
+  ).toBeVisible();
+  await page.getByLabel("Number of units", { exact: true }).fill("20");
+  await page.getByLabel("Value today ($)", { exact: true }).fill("3,000,000");
+  await page
+    .getByLabel("Total monthly rent ($)", { exact: true })
+    .fill("38000");
+  await page
+    .getByLabel("Annual operating expenses ($)", { exact: true })
+    .fill("150000");
+  await page
+    .getByLabel("Opening loan balance / amount ($)", { exact: true })
+    .fill("1,800,000");
+  await page.getByLabel("Annual interest rate (%)", { exact: true }).fill("7");
+  await page
+    .getByRole("button", { name: "Create analysis", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Refinance check", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Months to repay closing costs")).toBeVisible();
+});
+test("refinance and sell-vs-hold answer with the sample deal", async ({
+  page,
+}) => {
+  await page.goto("/#quick/refinance");
+  await expect(
+    page.getByRole("heading", { name: "Refinance check", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("New interest rate (%)", { exact: true }).fill("5");
+  await expect(page.getByText(/^Saves \$/)).toBeVisible();
+  await expect(page.getByText(/\d+\.\d months/)).toBeVisible();
+  await page.goto("/#quick/sellhold");
+  await expect(
+    page.getByRole("heading", { name: "Sell vs hold", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Break-even exit cap")).toBeVisible();
+  await expect(
+    page.getByRole("status").filter({ hasText: /more than/ }),
+  ).toBeVisible();
 });
 test("monthly wayfinding, exact project history, deep links and legal routing", async ({
   page,
@@ -715,6 +770,8 @@ test("remaining quick and legal views are accessible and fit the viewport", asyn
   for (const route of [
     "#quick/cash",
     "#quick/debt",
+    "#quick/refinance",
+    "#quick/sellhold",
     "#quick/import",
     "#quick/report",
     "#quick/methodology",

@@ -12,6 +12,11 @@ import {
   Check,
   FileSpreadsheet,
   TriangleAlert,
+  Compass,
+  LayoutDashboard,
+  CalendarRange,
+  PenLine,
+  FolderOpen,
 } from "lucide-react";
 import Brand from "./Brand";
 import ThemeToggle from "./ThemeToggle";
@@ -28,7 +33,15 @@ import {
 } from "./startFlow";
 import { calculate } from "../finance/model";
 import type { Assumptions } from "../finance/types";
-type Intent = "overview" | "monthly" | "price" | "financing";
+type Intent =
+  | "overview"
+  | "monthly"
+  | "price"
+  | "financing"
+  | "refinance"
+  | "sellhold";
+// Guided start: what is being decided, then what kind of property.
+type Guide = { step: 1 | 2; transaction?: "buy" | "refinance" | "sellhold" };
 const liveLabels: Record<string, string> = {
   units: "units",
   rent: "total monthly rent",
@@ -63,13 +76,15 @@ export default function StartPage({
   onAnnual,
 }: {
   onOpen: (launch?: WorkspaceLaunch) => void;
-  onAnnual: (a?: Assumptions) => void;
+  onAnnual: (a?: Assumptions, view?: "refinance" | "sellhold") => void;
 }) {
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [review, setReview] = useState(false);
   // Start page ↔ input review crossfade.
   const showReview = (next: boolean) => swap(() => setReview(next));
+  const [guide, setGuide] = useState<Guide | null>(null);
+  const showGuide = (next: Guide | null) => swap(() => setGuide(next));
   const [values, setValues] = useState<SetupValues>(blank);
   const [recognized, setRecognized] = useState<string[]>([]);
   const [intent, setIntent] = useState<Intent>("overview");
@@ -78,10 +93,14 @@ export default function StartPage({
   const [hint, setHint] = useState(0);
   const nextHint = () => setHint((h) => (h + 1) % briefExamples.length);
   const live = extractBrief(description);
-  const start = (next: Intent = "overview") => {
+  const start = (
+    next: Intent = "overview",
+    strategy?: SetupValues["strategy"],
+  ) => {
     const numbers = extractBrief(description);
     setValues({
       ...blank,
+      ...(strategy ? { strategy } : {}),
       ...Object.fromEntries(
         Object.entries(numbers).map(([key, n]) => [key, String(n)]),
       ),
@@ -172,7 +191,12 @@ export default function StartPage({
   );
   // Same condition the form uses to choose the annual (Quick) path.
   const annualPath =
-    !file && intent === "overview" && values.strategy === "acquisition";
+    !file &&
+    (intent === "overview" ||
+      intent === "refinance" ||
+      intent === "sellhold") &&
+    values.strategy === "acquisition";
+  const existingOwner = intent === "refinance" || intent === "sellhold";
   return (
     <div className="iq-start">
       <a className="skip-link" href="#start-content">
@@ -182,12 +206,21 @@ export default function StartPage({
         <button
           className="brand"
           aria-label="PropertyIQ home"
-          onClick={() => showReview(false)}
+          onClick={() => {
+            showReview(false);
+            showGuide(null);
+          }}
         >
           <Brand />
         </button>
         <nav aria-label="Start page">
-          <a href="#how-it-works" onClick={() => showReview(false)}>
+          <a
+            href="#how-it-works"
+            onClick={() => {
+              showReview(false);
+              showGuide(null);
+            }}
+          >
             How it works
           </a>
           <button className="iq-header-pill" onClick={() => onOpen()}>
@@ -210,6 +243,10 @@ export default function StartPage({
             <p>
               Fix anything we misread and fill in what is missing. Every result
               is built from these numbers.
+              {existingOwner &&
+                (intent === "refinance"
+                  ? " Enter today's value and your current loan; you will land on the Refinance check."
+                  : " Enter today's value and your current loan; you will land on Sell vs hold.")}
             </p>
             <div className="iq-review-note">
               {recognized.length
@@ -229,7 +266,12 @@ export default function StartPage({
                     setFileError(errors.join(" "));
                     return;
                   }
-                  onAnnual(a);
+                  onAnnual(
+                    a,
+                    existingOwner
+                      ? (intent as "refinance" | "sellhold")
+                      : undefined,
+                  );
                   return;
                 }
                 onOpen({
@@ -238,7 +280,9 @@ export default function StartPage({
                     ? "imports"
                     : intent === "price" || intent === "financing"
                       ? "decisionlab"
-                      : intent,
+                      : intent === "monthly"
+                        ? "monthly"
+                        : "overview",
                   file: file ?? undefined,
                   decision:
                     intent === "price"
@@ -294,7 +338,9 @@ export default function StartPage({
                   "price",
                   values.strategy.startsWith("development")
                     ? "Land / acquisition cost ($)"
-                    : "Purchase price ($)",
+                    : existingOwner
+                      ? "Value today ($)"
+                      : "Purchase price ($)",
                   { min: 0 },
                 )}
                 {values.strategy === "existing" &&
@@ -419,6 +465,83 @@ export default function StartPage({
                 </button>
               </div>
             </form>
+          </section>
+        ) : guide ? (
+          <section className="iq-guided" aria-labelledby="iq-guided-title">
+            <button
+              className="iq-text-link"
+              onClick={() => showGuide(guide.step === 2 ? { step: 1 } : null)}
+            >
+              <ArrowLeft size={16} />{" "}
+              {guide.step === 2 ? "Back" : "Back to start"}
+            </button>
+            <p className="iq-guided-step">Step {guide.step} of 2</p>
+            <h1 id="iq-guided-title">
+              {guide.step === 1
+                ? "What are you deciding?"
+                : "What kind of property?"}
+            </h1>
+            <div className="iq-guided-options">
+              {(guide.step === 1
+                ? ([
+                    [
+                      "buy",
+                      "Buy a property",
+                      "Test an acquisition: returns, debt and sensitivity.",
+                    ],
+                    [
+                      "refinance",
+                      "Refinance a loan",
+                      "See how much a new loan could pay out and when it pays back.",
+                    ],
+                    [
+                      "sellhold",
+                      "Sell or hold",
+                      "Compare cash in hand today with keeping the property.",
+                    ],
+                  ] as const)
+                : ([
+                    [
+                      "rental",
+                      "Rental apartments",
+                      "A building with a rent roll or a few rent figures. Annual analysis.",
+                    ],
+                    ...(guide.transaction === "buy"
+                      ? ([
+                          [
+                            "development",
+                            "A development",
+                            "Construction or lease-up on a monthly timeline, in the Monthly planner.",
+                          ],
+                        ] as const)
+                      : []),
+                  ] as const)
+              ).map(([id, title, text]) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    if (guide.step === 1)
+                      return showGuide({
+                        step: 2,
+                        transaction: id as "buy" | "refinance" | "sellhold",
+                      });
+                    const t = guide.transaction;
+                    swap(() => setGuide(null));
+                    start(
+                      t === "refinance"
+                        ? "refinance"
+                        : t === "sellhold"
+                          ? "sellhold"
+                          : "overview",
+                      id === "development" ? "development-hold" : "acquisition",
+                    );
+                  }}
+                >
+                  <strong>{title}</strong>
+                  <span>{text}</span>
+                </button>
+              ))}
+            </div>
           </section>
         ) : (
           <>
@@ -553,24 +676,24 @@ export default function StartPage({
                 </li>
               </ul>
               <section className="iq-other" aria-labelledby="iq-other-title">
-                <h2 id="iq-other-title">Other ways to start</h2>
+                <h2 id="iq-other-title">Or start with a tool</h2>
                 <div className="iq-other-modes">
                   <button onClick={() => onAnnual()}>
+                    <LayoutDashboard size={22} aria-hidden="true" />
                     <strong>Quick analysis</strong>
-                    <span>
-                      Use this when you want annual returns, debt and
-                      sensitivity for one deal.
-                    </span>
+                    <span>Use when you want annual returns and debt.</span>
                   </button>
                   <button onClick={() => onOpen()}>
+                    <CalendarRange size={22} aria-hidden="true" />
                     <strong>Monthly planner</strong>
-                    <span>
-                      Use this when timing matters: lease-up, renovations,
-                      construction or refinancing.
-                    </span>
+                    <span>Use when timing matters: lease-up, renovations.</span>
                   </button>
                 </div>
                 <div className="iq-other-more">
+                  <button onClick={() => showGuide({ step: 1 })}>
+                    <Compass size={18} aria-hidden="true" />
+                    Guided start
+                  </button>
                   <button
                     onClick={() => {
                       setDescription("");
@@ -580,21 +703,25 @@ export default function StartPage({
                       showReview(true);
                     }}
                   >
+                    <PenLine size={18} aria-hidden="true" />
                     Enter numbers manually
                   </button>
                   <button onClick={() => start("monthly")}>
-                    <ChartNoAxesColumnIncreasing size={18} />
+                    <ChartNoAxesColumnIncreasing size={18} aria-hidden="true" />
                     Review cash flow
                   </button>
                   <button onClick={() => start("price")}>
-                    <House size={18} />
+                    <House size={18} aria-hidden="true" />
                     Check an asking price
                   </button>
                   <button onClick={() => start("financing")}>
-                    <Calculator size={18} />
+                    <Calculator size={18} aria-hidden="true" />
                     Compare financing
                   </button>
-                  <button onClick={() => onOpen()}>Open saved workspace</button>
+                  <button onClick={() => onOpen()}>
+                    <FolderOpen size={18} aria-hidden="true" />
+                    Open saved workspace
+                  </button>
                 </div>
               </section>
             </section>

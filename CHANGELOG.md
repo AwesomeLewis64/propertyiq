@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.5.0 — Trust, clarity and new transaction checks
+
+- Start page: one primary action ("Start an analysis"), a "Try a sample" secondary, trust signals under them, and a quiet "Or start with a tool" group with a guided start. A border beam circles the primary button.
+- Review screen: "Check these before you trust the returns"; vacancy, management and CapEx are editable, still 0 by default, and flagged. Plain-English helper text for exit cap, going-in cap, IO, amortization, DSCR and target return.
+- Results first: the deal summary sits above exports and backups; on phones sections, planner tools and project controls fold behind one-line summaries and assumptions start closed.
+- Report: one plain-language line per metric with a jump link to its methodology section; warnings print once.
+- Saving: Quick shows last saved, unsaved changes and a backup reminder. Rent-roll import lists what will change, offers undo and a recovery path after a failed file. Sensitivity cells mark above/below target without color.
+- New Quick analysis views: Refinance check (loan sizing, cash out, payment and DSCR change, months to repay closing costs) and Sell vs hold (cash today vs the hold case at your target return, return on equity, break-even exit cap).
+- Fixes: top bars fit from 320px; planner tools wrap instead of scrolling sideways; the theme reveal covers the page evenly with no white corner; honest social metadata (no AI claim) with a new preview image.
+- Tests: 236 unit tests and a six-project browser suite covering phone menus, import undo, save status, the guided start and the new views.
+
 ## 2.4.0 — Visuals and shipping verification
 
 - Added reconciled cash-flow bridges, configurable sensitivity tornadoes in percentage points, and capital recovery with separate operating distributions and sale receipts.

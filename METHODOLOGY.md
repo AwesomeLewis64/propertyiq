@@ -52,6 +52,14 @@ Year 1 cash-on-cash = Year 1 operating equity cash / initial equity. Average cas
 
 Appreciation after selling costs = gross exit value − selling costs − purchase price. This excludes leverage, improvements and tax basis adjustments and is not a taxable capital gain calculation.
 
+## Refinance check and sell vs hold
+
+These two Quick analysis views are separate calculators over the entered numbers and the existing annual model. They do not change any other result.
+
+**Refinance check.** The new loan is the smaller of two limits. By value: value × maximum LTV. By coverage: Year 1 NOI ÷ minimum DSCR ÷ 12, divided by the monthly payment per dollar of the new loan (nominal rate ÷ 12, amortization in months, the same level-payment formula as the debt schedule). Closing costs are a percentage of the new loan. Cash out = new loan − current balance − closing costs; a negative number is cash you bring to closing. DSCR = Year 1 NOI ÷ (12 × monthly payment). Months to repay closing costs = closing costs ÷ the monthly payment saved, shown only when the payment falls. It is a modeled estimate: it ignores prepayment penalties, rate resets, interest-only periods and taxes.
+
+**Sell vs hold.** Selling today nets value × (1 − selling costs) − loan payoff. Holding uses the analysis' own cash flows for years 1 to N (operating cash after debt, reserves and CapEx, with the net sale from the exit-cap valuation in year N), discounted at the target return. The advantage is the present value of holding minus the cash from selling today. Return on today's equity is the IRR of the cash from selling today (as an outflow) against those hold flows. The break-even exit cap is found by bisection between 2% and 25%; if holding wins or loses across that whole range, the view says so. Income taxes and depreciation recapture are not modeled.
+
 ## Sensitivity and imports
 
 IRR, DSCR, NOI and initial-equity sensitivity cells fully rerun the model. In LTV mode, changing price changes the loan amount. In manual loan mode, price changes retain the explicit loan amount; a loan exceeding purchase price invalidates that cell. Absolute closing costs and initial capital spending remain as entered in price scenarios. Rates use nominal annual interest. The terminal-value-only table varies forward NOI directly and applies the valuation identity; it does not fabricate financing or operating results for that independent NOI input.
