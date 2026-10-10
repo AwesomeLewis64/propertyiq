@@ -1,6 +1,6 @@
 # Cloudflare Pages deployment
 
-Production: **https://propertyiq.pages.dev/**. Cloudflare Pages is connected to `AwesomeLewis64/propertyiq`, with automatic deployments from `main`. The first public deployment succeeded on October 8, 2026.
+Production: **https://propertyiq.pages.dev/**. Cloudflare Pages is connected to `LewisAdk/propertyiq`, with automatic deployments from `main`. The first public deployment succeeded on October 8, 2026.
 
 Current settings: no framework preset, repository root, build command `pnpm install --frozen-lockfile && pnpm build`, output `dist`, `NODE_VERSION=22`, `PNPM_VERSION=11.25.0`, and `SITE_URL=https://propertyiq.pages.dev` in Production and Preview. No custom domain or paid services were added.
 

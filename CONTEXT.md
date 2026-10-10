@@ -3,7 +3,7 @@
 Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defined in METHODOLOGY.md.
 
 - **Start page**: the `#home` route (`StartPage.tsx`): hero, composer, story, how-it-works.
-- **Composer**: the hero form where a deal description is pasted or a file uploaded. Its submit button is **Analyze property**.
+- **Composer**: the hero form where a deal description is pasted or a file uploaded. Its submit button is **Start an analysis**.
 - **Input review**: the start page's second state (`review === true`), where extracted figures are checked before an analysis is created.
 - **Quick analysis**: the annual workspace in `App.tsx` (`#quick/...`). Its default view is the **results** (overview).
 - **Monthly planner**: `AdvancedWorkspace` (`#monthly`). It gets the shared tokens only.
