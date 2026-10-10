@@ -6497,6 +6497,7 @@ button.theme-toggle[role="switch"]:hover {
   padding-block: var(--space-8);
 }
 .advanced .adv-field input[type="file"] {
+  align-items: center; /* the UA default is baseline, which sits the button low */
   height: 44px;
   padding: 0 var(--space-8);
   line-height: 1;
@@ -6549,15 +6550,31 @@ button.theme-toggle[role="switch"]:hover {
   margin: var(--space-16) 0;
 }
 .advanced .adv-metrics .metric {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: var(--space-12);
-  min-height: 120px;
+  display: grid;
+  grid-template-rows: minmax(40px, auto) auto minmax(36px, auto) auto;
+  align-content: start;
+  row-gap: var(--space-8);
+  min-height: 150px;
   border-top-width: var(--stroke-thin);
 }
-.advanced .adv-metrics .metric strong {
-  margin-top: auto;
+.advanced .adv-metrics .metric:first-child {
+  border-top-width: var(--stroke-thin);
+}
+.advanced .adv-metrics .metric > span {
+  grid-row: 1;
+}
+.advanced .adv-metrics .metric > strong {
+  grid-row: 2;
+  margin: 0;
+  line-height: 1.15;
+}
+.advanced .adv-metrics .metric > small {
+  grid-row: 3;
+  margin: 0;
+}
+.advanced .adv-metrics .metric > .trace-calculation {
+  grid-row: 4;
+  justify-self: start;
 }
 /* Decisions: the empty state sits centered under the add button. */
 .adv-add-row {
