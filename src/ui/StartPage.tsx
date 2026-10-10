@@ -13,6 +13,7 @@ import {
   FileSpreadsheet,
   TriangleAlert,
   Compass,
+  ShieldCheck,
   LayoutDashboard,
   CalendarRange,
   PenLine,
@@ -656,13 +657,16 @@ export default function StartPage({
                   </span>
                 ))}
               </div>
-              <div className="iq-start-secondary">
-                <button className="button" onClick={() => onAnnual()}>
-                  <Play size={17} className="iq-play" />
-                  Try a sample
-                </button>
-              </div>
-              <ul className="iq-trust" aria-label="Privacy and cost">
+              <ul
+                className="iq-trust"
+                aria-label="Try a sample, privacy and validation"
+              >
+                <li>
+                  <button onClick={() => onAnnual()}>
+                    <Play size={14} aria-hidden="true" />
+                    Try a sample
+                  </button>
+                </li>
                 <li>
                   <Check size={14} aria-hidden="true" />
                   Free, no account
@@ -672,6 +676,7 @@ export default function StartPage({
                   Your files stay in this browser
                 </li>
                 <li>
+                  <ShieldCheck size={14} aria-hidden="true" />
                   <a href="#quick/methodology">How the math is validated</a>
                 </li>
               </ul>

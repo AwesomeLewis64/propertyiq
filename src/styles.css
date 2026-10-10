@@ -6102,11 +6102,6 @@ button.theme-toggle[role="switch"]:hover {
 .iq-composer-example:hover {
   color: var(--color-accent);
 }
-.iq-start-secondary {
-  display: flex;
-  justify-content: center;
-  margin-top: var(--space-20);
-}
 .iq-trust {
   display: flex;
   flex-wrap: wrap;
@@ -6124,7 +6119,40 @@ button.theme-toggle[role="switch"]:hover {
   gap: var(--space-4);
 }
 .iq-trust a {
-  color: var(--color-accent);
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.iq-trust a:hover {
+  color: var(--color-ink);
+}
+/* The sample action is a row item, not a boxed button: same size and baseline
+   as its neighbours, a step darker so it still reads as the thing to try. */
+.iq-trust button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.iq-trust button:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.iq-trust button:focus-visible {
+  outline: var(--stroke-focus) solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-control);
+}
+@media (pointer: coarse) {
+  .iq-trust li {
+    min-height: 44px;
+  }
 }
 .iq-other {
   margin: var(--space-48) auto 0;
