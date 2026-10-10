@@ -470,6 +470,7 @@ test("refinance and sell-vs-hold answer with the sample deal", async ({
     page.getByRole("heading", { name: "Sell vs hold", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Break-even exit cap")).toBeVisible();
+  await expect(page).toHaveTitle("PropertyIQ | Sell vs hold");
   await expect(
     page.getByRole("status").filter({ hasText: /more than/ }),
   ).toBeVisible();

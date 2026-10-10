@@ -266,7 +266,7 @@ function WorkspaceApp() {
     if (advanced) return;
     document.title = home
       ? "PropertyIQ | Multifamily Investment Analytics"
-      : `PropertyIQ | ${view === "overview" ? "Investment overview" : view === "cash" ? "Cash flows" : view === "debt" ? "Debt schedule" : view === "sensitivity" ? "Sensitivity analysis" : view === "import" ? "Rent-roll import" : view === "report" ? "Investment report" : "Methodology"}`;
+      : `PropertyIQ | ${view === "overview" ? "Investment overview" : view === "cash" ? "Cash flows" : view === "debt" ? "Debt schedule" : view === "sensitivity" ? "Sensitivity analysis" : view === "refinance" ? "Refinance check" : view === "sellhold" ? "Sell vs hold" : view === "import" ? "Rent-roll import" : view === "report" ? "Investment report" : "Methodology"}`;
   }, [home, view, advanced]);
   const nav = [
     {
