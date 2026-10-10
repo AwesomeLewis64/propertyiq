@@ -48,9 +48,21 @@ Periodic annual IRR solves Σ CF[t] / (1+r)^t = 0, starting with Year 0. It is n
 
 Total equity contributions = absolute sum of every negative equity cash flow, including additional annual funding. Distributions = sum of every positive equity cash flow. Equity multiple = distributions / contributions. An exit-year operating shortfall and sale receipt are netted at the same annual cash-flow date; intra-year funding is not modeled.
 
-Year 1 cash-on-cash = Year 1 operating equity cash / initial equity. Average cash-on-cash = mean annual operating equity cash during the hold / initial equity. Both exclude sale proceeds.
+Year 1 cash-on-cash = Year 1 operating equity cash / initial equity. Average cash-on-cash = mean annual operating equity cash during the hold / initial equity. Both exclude sale proceeds. Cash-on-cash by year uses the same formula for every year of the hold: that year's operating equity cash / initial equity. The denominator is always initial equity, so Year 1 in that table equals the Year 1 metric. Sale proceeds are listed beside it and are not part of the ratio; Quick analysis assumes no refinancing.
 
 Appreciation after selling costs = gross exit value − selling costs − purchase price. This excludes leverage, improvements and tax basis adjustments and is not a taxable capital gain calculation.
+
+## Investment criteria and the calculators built on them
+
+These are additive (ADR-0010): they call the existing engines and change no other result.
+
+**Investment criteria.** Four optional targets of your own: minimum annual IRR, minimum Year 1 DSCR (x), maximum initial equity ($) and minimum Year 1 cash-on-cash (annual %). In Quick analysis the minimum IRR is the existing target annual return; in the Monthly planner it is the existing required return. Each target shows meets, misses or not enough information. Not enough information means the target is blank, the model has errors, or the figure cannot be calculated (no IRR, no debt service, no equity). It is never shown as a pass. The lender's sizing rules are separate inputs and are not changed by these targets. In the planner, Year 1 is forecast months 1-12 with actual overrides removed: DSCR = NOI / regular debt service, cash-on-cash = (NOI - CapEx - reserves - regular debt service) / initial equity.
+
+**Maximum offer (Monthly planner).** The plan is re-run at different purchase prices, by bisection to the nearest dollar between $0 and ten times the current price, to find the highest price at which every set target still holds. You choose what stays fixed: loan-to-price (default; the first opening term loan scales with price) or every loan amount. Closing costs stay at the dollars entered and nothing else in the plan changes. The result names the target that sets the price and lists the highest price for each target on its own. With loan amounts fixed, Year 1 DSCR does not move with price and is reported that way. If no positive price qualifies, or every target still holds at the top of the range, the tool says so and shows no number. It does not apply to an existing holding. It is a planning figure, not a valuation.
+
+**What breaks first (Monthly planner).** Rent, vacancy, operating costs and interest rate are each moved on their own, by bisection, until Year 1 cash flow (NOI - CapEx - reserves - regular debt service) turns negative, and until Year 1 DSCR falls below your saved target. Rent falls and costs rise by a percentage of the plan (costs include the management share); vacancy and interest rate move by annual percentage points. Vacancy is tested up to the point where vacancy, concessions and credit loss reach 100%; costs up to +300%; interest up to +20 points on floating-rate loans only, with their rate ceilings still applied. A plan whose loans are all fixed-rate, or that has no debt, lists interest rate as not applicable. Rows are ordered by the smallest move. The added owner cash shown is the total additional owner funding over the hold at the cash-flow break point.
+
+**Rent per sq ft (Monthly planner).** Square footage per unit is optional. A unit's rent per sq ft is its monthly rent / its area, shown monthly and annual (x 12). The property figure is total rent / total area, not an average of unit ratios, and counts only units that have an area; current rent also counts only occupied units. A blank area shows "-".
 
 ## Refinance check and sell vs hold
 

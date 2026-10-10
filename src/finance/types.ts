@@ -21,6 +21,7 @@ export type Assumptions = {
   requiredReturn?: number;
   minDscr?: number;
   minDebtYield?: number;
+  criteria?: import("./criteria").Criteria;
   ioConvention?: "after-io" | "consumes-term";
   accrual?: "30/360" | "actual/360";
   startDate?: string;

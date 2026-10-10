@@ -1,5 +1,5 @@
 import { provenance } from "../data/provenance";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { Card, NumberField, TextField, Toggle, Metric, Plot } from "./Controls";
 import type { ProjectEditor } from "./UnitEditor";
 import type { Project } from "./types";
@@ -18,8 +18,15 @@ import {
   applyRenovationPlan,
   offerProject,
   breakEven,
+  breaksFirst,
+  maxOffer,
+  openingLoan,
+  yearOne,
+  type BreakPoint,
 } from "./decisionAnalytics";
 import { money, pct, multiple } from "../ui/format";
+import { criteriaOf, judge, withCriterion } from "../finance/criteria";
+import Targets from "../ui/Targets";
 import { uid } from "./defaults";
 type Props = ProjectEditor & {
   create: (p: Project) => void;
@@ -43,6 +50,7 @@ export default function DecisionLab(props: Props) {
             ["renovations", "Renovation prioritization"],
             ["lenders", "Lender quote comparison"],
             ["breakeven", "Break-even dashboard"],
+            ["offer", "Maximum offer & criteria"],
           ].map(([id, label]) => (
             <button
               type="button"
@@ -62,6 +70,8 @@ export default function DecisionLab(props: Props) {
         <Renovations {...props} />
       ) : section === "lenders" ? (
         <Lenders {...props} />
+      ) : section === "offer" ? (
+        <MaximumOffer {...props} />
       ) : (
         <BreakEven {...props} />
       )}
@@ -353,7 +363,7 @@ function Renovations({ p, set }: Props) {
 }
 function Lenders({ p, set, create }: Props) {
   const t = toolsFor(p),
-    opening = p.loans.find((l) => l.kind === "term" && l.fundingMonth === 0);
+    opening = openingLoan(p);
   const results = useMemo(
     () =>
       t.offers.map((o) => {
@@ -538,6 +548,223 @@ function Lenders({ p, set, create }: Props) {
     </Card>
   );
 }
+function MaximumOffer({ p, set }: Props) {
+  const t = toolsFor(p),
+    c = criteriaOf(t.criteria),
+    opening = openingLoan(p);
+  const [holdLtv, setHoldLtv] = useState(true);
+  const scale = holdLtv && !!opening && p.price > 0;
+  const year = useMemo(() => yearOne(forecast({ ...p, actuals: [] })), [p]);
+  // The search re-runs the plan many times, so typing is not held up by it.
+  const settled = useDeferredValue(p);
+  const r = useMemo(() => maxOffer(settled, scale), [settled, scale]);
+  return (
+    <>
+      <Card
+        title="Investment criteria"
+        note="Your own targets, saved with this project. A blank target is not judged, and a figure that cannot be calculated is never shown as a pass."
+      >
+        <div className="adv-form">
+          <NumberField
+            label="Minimum annual IRR"
+            percent
+            value={p.discount}
+            onChange={(v) => set({ ...p, discount: v })}
+          />
+          {(
+            [
+              ["minDscr", "Minimum Year 1 DSCR (x, optional)", false, false],
+              ["maxEquity", "Maximum initial equity (optional)", false, true],
+              [
+                "minCoc",
+                "Minimum Year 1 cash-on-cash (annual, optional)",
+                true,
+                false,
+              ],
+            ] as const
+          ).map(([key, label, percent, currency]) => (
+            <NumberField
+              key={key}
+              label={label}
+              optional
+              percent={percent}
+              currency={currency}
+              value={c[key] ?? NaN}
+              onChange={(v) =>
+                set({
+                  ...p,
+                  tools: { ...t, criteria: withCriterion(c, key, v) },
+                })
+              }
+            />
+          ))}
+        </div>
+        <Targets targets={judge(p.discount, c, year)} />
+        <p>
+          Minimum annual IRR is the same required return used for NPV and the
+          overview verdict. Year 1 is forecast months 1–12. DSCR is NOI ÷
+          regular debt service; cash-on-cash is operating cash after debt,
+          reserves and CapEx ÷ initial equity.
+        </p>
+      </Card>
+      <Card
+        title="Maximum offer"
+        note="The highest purchase price at which every target above still holds, found by re-running this plan at different prices. Nothing else in the plan changes."
+      >
+        {opening && p.price > 0 ? (
+          <Toggle
+            label="Hold loan-to-price fixed as the price moves"
+            value={holdLtv}
+            onChange={setHoldLtv}
+          />
+        ) : (
+          <p>
+            This plan has no opening term loan, so every loan stays at its
+            entered amount.
+          </p>
+        )}
+        <p>
+          {scale
+            ? `Loan-to-price is held at ${pct(opening.amount / p.price)}: ${opening.name || "the opening term loan"} grows and shrinks with the price.`
+            : "Every loan stays at its entered amount, so a higher price is paid for with more equity."}{" "}
+          Closing costs stay at {money(p.closing)}.
+        </p>
+        {"error" in r ? (
+          <p className="alert error">{r.error}</p>
+        ) : (
+          <>
+            {r.status === "price" ? (
+              <div className="metrics adv-metrics">
+                <Metric
+                  label="Maximum offer"
+                  value={money(r.binding!.price)}
+                  note={`Set by: ${r.binding!.label}`}
+                />
+                <Metric label="Current price" value={money(p.price)} />
+                <Metric
+                  label={
+                    r.binding!.price! >= p.price
+                      ? "Room above current price"
+                      : "Current price is over by"
+                  }
+                  value={money(Math.abs(r.binding!.price! - p.price))}
+                />
+              </div>
+            ) : (
+              <p className="alert" role="status">
+                {r.status === "none"
+                  ? "No positive price meets every target. Loosen the target marked below, or change the financing."
+                  : `Every target still holds at ${money(r.ceiling)}, ten times the current price, so these targets do not limit the offer.`}
+              </p>
+            )}
+            <div className="table-scroll" tabIndex={0}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Target</th>
+                    <th>Highest price on its own</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {r.limits.map((l) => (
+                    <tr key={l.key}>
+                      <th>{l.label}</th>
+                      <td>
+                        {l.fixed
+                          ? `Does not depend on price: ${l.kind === "none" ? "missed at any price" : "met at any price"}`
+                          : l.kind === "limit"
+                            ? money(l.price)
+                            : l.kind === "none"
+                              ? "No positive price qualifies"
+                              : `No limit up to ${money(r.ceiling)}`}
+                        {l === r.binding && " · sets the maximum offer"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p>
+              Prices from $0 to {money(r.ceiling)} are searched to the nearest
+              dollar. Blank targets are left out. This is a planning figure from
+              your assumptions, not a valuation.
+            </p>
+          </>
+        )}
+      </Card>
+    </>
+  );
+}
+const breakPoint = (
+  x: BreakPoint | null,
+  unit: "percent" | "points",
+  already: string,
+) =>
+  !x
+    ? "—"
+    : x.kind === "already"
+      ? already
+      : x.kind === "never"
+        ? "Does not happen in the tested range"
+        : unit === "percent"
+          ? pct(x.move)
+          : `${(x.move * 100).toFixed(2)} pts`;
+function BreaksFirst({ p }: { p: Project }) {
+  const settled = useDeferredValue(p);
+  const rows = useMemo(() => breaksFirst(settled), [settled]);
+  const { minDscr } = criteriaOf(toolsFor(p).criteria);
+  if (!rows) return null;
+  return (
+    <Card
+      title="What breaks first?"
+      note="Each variable is moved on its own until Year 1 (months 1–12) cash flow after debt, reserves and CapEx turns negative, and until Year 1 DSCR falls below your target. Smallest move first."
+    >
+      <div className="table-scroll" tabIndex={0}>
+        <table>
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Year 1 cash flow turns negative at</th>
+              <th>
+                Year 1 DSCR falls below{" "}
+                {minDscr === undefined ? "target" : multiple(minDscr)} at
+              </th>
+              <th>Added owner cash over the hold at that point</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((b) => (
+              <tr key={b.key}>
+                <th>{b.label}</th>
+                {b.skipped ? (
+                  <td colSpan={3}>Not applicable: {b.skipped}.</td>
+                ) : (
+                  <>
+                    <td>{breakPoint(b.cash, b.unit, "Already negative")}</td>
+                    <td>
+                      {breakPoint(b.dscr, b.unit, "Already below target")}
+                    </td>
+                    <td>
+                      {b.cash?.kind === "at" ? money(b.cash.funding) : "—"}
+                    </td>
+                  </>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Rent and operating costs move by a percentage of the plan; vacancy and
+        interest rate move by percentage points (pts), annual. Interest moves
+        only on floating-rate loans, and their rate ceilings still apply.{" "}
+        {minDscr === undefined
+          ? "Set a minimum Year 1 DSCR under Maximum offer & criteria to fill the DSCR column."
+          : "A dash in the DSCR column means the plan has no Year 1 debt service."}
+      </p>
+    </Card>
+  );
+}
 function BreakEven({ p }: Props) {
   const [month, setMonth] = useState(1),
     [capex, setCapex] = useState(false);
@@ -545,75 +772,80 @@ function BreakEven({ p }: Props) {
     f = useMemo(() => forecast(q), [q]);
   const b = breakEven(q, f, month, capex);
   return (
-    <Card
-      title="Break-even dashboard"
-      note="Recurring monthly cash coverage under entered expenses and financing. Balloons, refinance fees, tax and construction debt draws are excluded from the monthly coverage equation."
-    >
-      <div className="adv-form">
-        <NumberField
-          label="Break-even forecast month"
-          value={month}
-          min={1}
-          max={p.months}
-          onChange={setMonth}
-        />
-        <Toggle
-          label="Include this month's planned capital spending"
-          value={capex}
-          onChange={setCapex}
-        />
-      </div>
-      {p.strategy === "development-sale" ? (
-        <p>
-          Occupancy and rent break-even apply to rental strategies. Use
-          development sales scenarios to assess unit-sale economics.
-        </p>
-      ) : b ? (
-        <>
-          <div className="metrics adv-metrics">
-            <Metric
-              label="Required economic occupancy"
-              value={pct(b.occupancy)}
-              note="Uniform collected share of this month's potential rent"
-            />
-            <Metric
-              label="Minimum billed monthly rent"
-              value={money(b.billedNeeded)}
-            />
-            <Metric
-              label="Rent factor versus current plan"
-              value={pct(b.rentFactor)}
-            />
-            <Metric
-              label="Gross exit price returning nominal capital"
-              value={money(b.nominalSale)}
-              note="All owner contributions recovered; pre-tax, no required return"
-            />
-          </div>
-          {b.occupancy !== null && b.occupancy > 1 && (
-            <p className="alert error">
-              More than 100% economic occupancy would be required. These entered
-              rents cannot cover the selected obligations.
+    <>
+      <Card
+        title="Break-even dashboard"
+        note="Recurring monthly cash coverage under entered expenses and financing. Balloons, refinance fees, tax and construction debt draws are excluded from the monthly coverage equation."
+      >
+        <div className="adv-form">
+          <NumberField
+            label="Break-even forecast month"
+            value={month}
+            min={1}
+            max={p.months}
+            onChange={setMonth}
+          />
+          <Toggle
+            label="Include this month's planned capital spending"
+            value={capex}
+            onChange={setCapex}
+          />
+        </div>
+        {p.strategy === "development-sale" ? (
+          <p>
+            Occupancy and rent break-even apply to rental strategies. Use
+            development sales scenarios to assess unit-sale economics.
+          </p>
+        ) : b ? (
+          <>
+            <div className="metrics adv-metrics">
+              <Metric
+                label="Required economic occupancy"
+                value={pct(b.occupancy)}
+                note="Uniform collected share of this month's potential rent"
+              />
+              <Metric
+                label="Minimum billed monthly rent"
+                value={money(b.billedNeeded)}
+              />
+              <Metric
+                label="Rent factor versus current plan"
+                value={pct(b.rentFactor)}
+              />
+              <Metric
+                label="Gross exit price returning nominal capital"
+                value={money(b.nominalSale)}
+                note="All owner contributions recovered; pre-tax, no required return"
+              />
+            </div>
+            {b.occupancy !== null && b.occupancy > 1 && (
+              <p className="alert error">
+                More than 100% economic occupancy would be required. These
+                entered rents cannot cover the selected obligations.
+              </p>
+            )}
+            <p>
+              Required billed rent = ((fixed operating costs + scheduled debt +
+              reserves + optional CapEx) / (1 − management share) − other
+              income) / (1 − collection loss) + planned concessions. Economic
+              occupancy divides that amount by full potential rent; it is not an
+              integer count of leased units. The rent factor holds the occupied
+              mix and concessions fixed.
             </p>
-          )}
+            <p>
+              Nominal exit break-even includes capital calls, retained cash,
+              debt payoff and transaction costs under the complete rental-exit
+              model. It does not mean the investment meets your NPV hurdle.
+              Review monthly cash needs separately.
+            </p>
+          </>
+        ) : (
           <p>
-            Required billed rent = ((fixed operating costs + scheduled debt +
-            reserves + optional CapEx) / (1 − management share) − other income)
-            / (1 − collection loss) + planned concessions. Economic occupancy
-            divides that amount by full potential rent; it is not an integer
-            count of leased units. The rent factor holds the occupied mix and
-            concessions fixed.
+            Choose a valid whole month and correct the project inputs first.
           </p>
-          <p>
-            Nominal exit break-even includes capital calls, retained cash, debt
-            payoff and transaction costs under the complete rental-exit model.
-            It does not mean the investment meets your NPV hurdle. Review
-            monthly cash needs separately.
-          </p>
-        </>
-      ) : (
-        <p>Choose a valid whole month and correct the project inputs first.</p>
-      )}
-    </Card>
+        )}
+      </Card>
+      {p.strategy !== "development-sale" && <BreaksFirst p={p} />}
+    </>
   );
 }

@@ -502,6 +502,23 @@ describe("imports, backups, and scenario risk", () => {
       applyTable(p, r, "units", mapDefault(r.headers, "units")),
     ).toThrow(/calendar date/);
   });
+  it("imports optional square footage and leaves a blank cell unset", () => {
+    const p = simple();
+    const r = raw(
+      ["Unit", "Status", "Monthly Rent", "Square Feet"],
+      [
+        ["A", "occupied", 1000, "850"],
+        ["B", "occupied", 900, ""],
+      ],
+    );
+    const units = applyTable(
+      p,
+      r,
+      "units",
+      mapDefault(r.headers, "units"),
+    ).units;
+    expect(units.map((u) => u.sqft)).toEqual([850, undefined]);
+  });
   it("parses currency/percent values but rejects ambiguous commas", () => {
     const p = simple();
     const r = raw(

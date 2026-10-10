@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { expenseKeys, type Assumptions } from "../finance/types";
 import { calculate } from "../finance/model";
+import { criteriaOf, withCriterion } from "../finance/criteria";
 const expenseLabels = {
   taxes: "Property taxes",
   insurance: "Insurance",
@@ -19,6 +20,7 @@ function NumberField({
   percent = false,
   suffix = "",
   help = "",
+  optional = false,
 }: {
   label: string;
   value: number;
@@ -26,15 +28,18 @@ function NumberField({
   percent?: boolean;
   suffix?: string;
   help?: string;
+  optional?: boolean;
 }) {
   const [draft, setDraft] = useState(
-    suffix.includes("$")
-      ? new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-          maximumFractionDigits: 2,
-        }).format(value)
-      : String(percent ? Number((value * 100).toFixed(8)) : value),
+    !Number.isFinite(value)
+      ? ""
+      : suffix.includes("$")
+        ? new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 2,
+          }).format(value)
+        : String(percent ? Number((value * 100).toFixed(8)) : value),
   );
   const emitted = useRef<{ value: number; percent: boolean } | null>(null);
   useEffect(() => {
@@ -63,7 +68,7 @@ function NumberField({
       <div className="input-wrap">
         <input
           aria-label={label}
-          aria-invalid={!Number.isFinite(value)}
+          aria-invalid={!optional && !Number.isFinite(value)}
           inputMode="decimal"
           value={draft}
           onFocus={(e) => e.currentTarget.select()}
@@ -395,6 +400,33 @@ export default function Inputs({
             "",
             "The yearly return you need for this deal to be worth doing. Results are compared against it.",
           )}
+          {(
+            [
+              ["minDscr", "Minimum Year 1 DSCR", false, "x"],
+              ["maxEquity", "Maximum initial equity", false, "$"],
+              ["minCoc", "Minimum Year 1 cash-on-cash", true, ""],
+            ] as const
+          ).map(([key, label, percent, suffix]) => (
+            <NumberField
+              key={key}
+              label={`${label} (optional)`}
+              optional
+              value={criteriaOf(a.criteria)[key] ?? NaN}
+              percent={percent}
+              suffix={suffix}
+              onChange={(v) =>
+                update(
+                  "criteria",
+                  withCriterion(criteriaOf(a.criteria), key, v),
+                )
+              }
+            />
+          ))}
+          <small>
+            Your own targets, saved with this analysis. The deal summary shows
+            whether the deal meets each one you set; a blank target is not
+            judged.
+          </small>
           <label className="field">
             <span>
               <input

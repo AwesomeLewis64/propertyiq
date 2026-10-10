@@ -1,12 +1,20 @@
 import type { Project, Unit, Forecast } from "./types";
-import { unitMonth } from "./engine";
+import { unitMonth, forecast } from "./engine";
 import { dateAt } from "./returns";
 import {
   toolsFor,
+  baseScenario,
   type MetricKey,
   type Scenario,
   type Offer,
 } from "./toolSchema";
+import {
+  criteriaOf,
+  passes,
+  targetLabels,
+  type Actuals,
+  type TargetKey,
+} from "../finance/criteria";
 
 export function scenarioProject(p: Project, s: Scenario): Project {
   const q = structuredClone(p);
@@ -253,9 +261,7 @@ export function applyRenovationPlan(
 export function offerProject(p: Project, o: Offer): Project {
   const q = structuredClone(p);
   q.actuals = [];
-  const selected = q.loans.find(
-    (l) => l.kind === "term" && l.fundingMonth === 0,
-  );
+  const selected = openingLoan(q);
   if (!selected)
     throw new Error(
       "Quote comparison needs an opening term loan. Construction quotes need their own draw assumptions.",
@@ -530,4 +536,330 @@ export function calendarEvents(p: Project) {
   return events.sort(
     (a, b) => a.month - b.month || a.unit.localeCompare(b.unit),
   );
+}
+
+/** Months 1-12, the basis for criteria, maximum offer and what breaks first. */
+export function yearOne(f: Forecast): (Actuals & { cash: number }) | null {
+  const rows = f.rows.slice(0, 12);
+  if (f.errors.length || rows.length < 12) return null;
+  const noi = rows.reduce((s, r) => s + r.noi, 0),
+    ds = rows.reduce((s, r) => s + r.debtService, 0),
+    cash = rows.reduce(
+      (s, r) => s + r.noi - r.capex - r.reserves - r.debtService,
+      0,
+    );
+  return {
+    cash,
+    irr: f.irr,
+    dscr: ds > 0 ? noi / ds : null,
+    equity: f.initialEquity,
+    coc: f.initialEquity > 0 ? cash / f.initialEquity : null,
+  };
+}
+export const openingLoan = (p: Project) =>
+  p.loans.find((l) => l.kind === "term" && l.fundingMonth === 0);
+export type OfferLimit = {
+  key: TargetKey;
+  label: string;
+  /** limit: a price; none: no price qualifies; open: holds to the top of the range. */
+  kind: "limit" | "none" | "open";
+  price: number | null;
+  /** The figure does not move with price, so it is met or missed at any price. */
+  fixed: boolean;
+};
+export type MaxOffer =
+  | { error: string }
+  | {
+      limits: OfferLimit[];
+      status: "none" | "open" | "price";
+      /** The limit that sets the maximum offer, when status is "price". */
+      binding: OfferLimit | null;
+      ceiling: number;
+    };
+/**
+ * Highest purchase price at which every set target still holds. Calls the
+ * existing engine only (ADR-0010); `holdLtv` scales the opening term loan with
+ * price, otherwise every loan stays at its entered amount.
+ */
+export function maxOffer(p: Project, holdLtv: boolean): MaxOffer {
+  if (p.strategy === "existing")
+    return {
+      error:
+        "Maximum offer applies to a purchase. This project is an existing holding, so price does not change its equity.",
+    };
+  if (!(p.price > 0))
+    return {
+      error: "Enter a purchase price first; the search starts from it.",
+    };
+  const base = { ...p, actuals: [] },
+    c = criteriaOf(toolsFor(p).criteria),
+    opening = openingLoan(p),
+    scale = holdLtv && opening;
+  // Targets probe many of the same prices; each price is forecast once.
+  const runs = new Map<number, Forecast>();
+  const at = (price: number) => {
+    let f = runs.get(price);
+    if (!f)
+      runs.set(
+        price,
+        (f = forecast({
+          ...base,
+          price,
+          loans: scale
+            ? base.loans.map((l) =>
+                l.id === opening.id
+                  ? { ...l, amount: (opening.amount * price) / p.price }
+                  : l,
+              )
+            : base.loans,
+        })),
+      );
+    return f;
+  };
+  if (at(p.price).errors.length)
+    return { error: "Correct the project inputs first." };
+  const targets: [TargetKey, number | undefined][] = [
+    ["irr", p.discount],
+    ["dscr", c.minDscr],
+    ["equity", c.maxEquity],
+    ["coc", c.minCoc],
+  ];
+  const met = (key: TargetKey, target: number, f: Forecast) => {
+    const y = yearOne(f);
+    if (!y) return false;
+    // No regular debt service means there is no coverage test to fail.
+    if (key === "dscr") return y.dscr === null || y.dscr >= target;
+    const v = y[key];
+    return v !== null && passes(key, v, target);
+  };
+  // 1e12 is the largest amount the engine accepts.
+  const ceiling = Math.min(p.price * 10, 1e12);
+  const limits = targets.flatMap(([key, target]): OfferLimit[] => {
+    if (target === undefined) return [];
+    const row = (kind: OfferLimit["kind"], price: number | null = null) => ({
+      key,
+      label: targetLabels[key],
+      kind,
+      price,
+      // A construction draw at closing is capped by price, so its payment moves.
+      fixed:
+        key === "dscr" &&
+        !scale &&
+        !base.loans.some((l) => l.kind === "construction"),
+    });
+    const ok = (price: number) => met(key, target, at(price));
+    // A low price can leave no equity to invest, which the engine reports as an
+    // error: that is below the valid range, not a missed target.
+    const holds = (price: number) => {
+      const f = at(price);
+      return f.errors.length > 0 || met(key, target, f);
+    };
+    const now = ok(p.price);
+    if (now && holds(ceiling)) return [row("open")];
+    let lo = now ? p.price : 0,
+      hi = now ? ceiling : p.price;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) / 2;
+      if (holds(mid)) lo = mid;
+      else hi = mid;
+    }
+    // The boundary sits within a dollar: prefer the whole dollar above it.
+    const price = [Math.floor(hi), Math.floor(lo)].find((v) => v > 0 && ok(v));
+    return [price ? row("limit", price) : row("none")];
+  });
+  const binding = limits
+    .filter((l) => l.kind === "limit")
+    .reduce<OfferLimit | null>(
+      (a, l) => (a === null || l.price! < a.price! ? l : a),
+      null,
+    );
+  // Each target holds below its own limit, but a low price can still be
+  // outside the valid range for the plan as a whole.
+  const none =
+    limits.some((l) => l.kind === "none") ||
+    (binding !== null && at(binding.price!).errors.length > 0);
+  return {
+    limits,
+    ceiling,
+    status: none ? "none" : binding ? "price" : "open",
+    binding: none ? null : binding,
+  };
+}
+
+export type BreakPoint =
+  | { kind: "already" }
+  | { kind: "never" }
+  | { kind: "at"; move: number; funding: number };
+export type Break = {
+  key: "rent" | "vacancy" | "expenses" | "rate";
+  label: string;
+  unit: "percent" | "points";
+  /** Why the variable cannot move in this plan; the row is still listed. */
+  skipped?: string;
+  cash: BreakPoint | null;
+  /** null when no DSCR target is saved or the plan has no Year 1 debt service. */
+  dscr: BreakPoint | null;
+};
+/**
+ * How far rent, vacancy, operating costs and floating interest rates can each
+ * move, one at a time, before Year 1 cash flow turns negative and before Year 1
+ * DSCR falls below the saved target. Sorted by the smallest move.
+ */
+export function breaksFirst(p: Project): Break[] | null {
+  const base = { ...p, actuals: [] },
+    { minDscr } = criteriaOf(toolsFor(p).criteria),
+    y0 = yearOne(forecast(base));
+  if (!y0) return null;
+  type Year = NonNullable<ReturnType<typeof yearOne>>;
+  const floating = base.loans.filter((l) => l.floating);
+  const negative = (y: Year) => y.cash < 0,
+    uncovered = (y: Year) =>
+      minDscr !== undefined && y.dscr !== null && y.dscr < minDscr;
+  const variable = (
+    key: Break["key"],
+    label: string,
+    unit: Break["unit"],
+    limit: number,
+    shock: (d: number) => Project,
+    skipped?: string,
+  ): Break => {
+    // Stay a hair inside the limit: rounding at the exact edge fails validation.
+    const max = limit * (1 - 1e-9);
+    // The cash and DSCR searches try many of the same moves.
+    const runs = new Map<number, { year: Year | null; funding: number }>();
+    const run = (d: number) => {
+      let r = runs.get(d);
+      if (!r) {
+        const f = forecast(shock(d));
+        runs.set(d, (r = { year: yearOne(f), funding: f.additionalEquity }));
+      }
+      return r;
+    };
+    const point = (test: (y: Year) => boolean): BreakPoint => {
+      if (test(y0)) return { kind: "already" };
+      // An invalid shocked plan is never reported as a break point.
+      const broken = (d: number) => {
+        const y = run(d).year;
+        return y !== null && test(y);
+      };
+      if (!(max > 0) || !broken(max)) return { kind: "never" };
+      let lo = 0,
+        hi = max;
+      for (let k = 0; k < 14; k++) {
+        const mid = (lo + hi) / 2;
+        if (broken(mid)) hi = mid;
+        else lo = mid;
+      }
+      return {
+        kind: "at",
+        move: hi,
+        funding: run(hi).funding,
+      };
+    };
+    return {
+      key,
+      label,
+      unit,
+      skipped,
+      cash: skipped ? null : point(negative),
+      dscr:
+        skipped || minDscr === undefined || y0.dscr === null
+          ? null
+          : point(uncovered),
+    };
+  };
+  const rows = [
+    variable("rent", "Rent falls", "percent", 1, (d) =>
+      scenarioProject(base, { ...baseScenario(), rent: 1 - d }),
+    ),
+    variable(
+      "vacancy",
+      "Vacancy rises",
+      "points",
+      1 -
+        (base.vacancyRate ?? 0) -
+        (base.concessionRate ?? 0) -
+        base.creditLoss,
+      (d) => ({ ...base, vacancyRate: (base.vacancyRate ?? 0) + d }),
+    ),
+    variable(
+      "expenses",
+      "Operating costs rise",
+      "percent",
+      // Keeps the management share a valid percentage.
+      Math.min(3, base.management > 0 ? 1 / base.management - 1 : 3),
+      (d) => ({
+        ...base,
+        expenses: base.expenses.map((e) => ({
+          ...e,
+          annual: e.annual * (1 + d),
+          replacementAnnual: e.replacementAnnual * (1 + d),
+        })),
+        management: base.management * (1 + d),
+        fixedManagement: (base.fixedManagement ?? 0) * (1 + d),
+      }),
+    ),
+    variable(
+      "rate",
+      "Interest rate rises",
+      "points",
+      Math.min(
+        0.2,
+        1 -
+          Math.max(
+            0,
+            ...floating.flatMap((l) => [
+              l.rate,
+              ...l.ratePoints.map((r) => r.annual),
+            ]),
+          ),
+      ),
+      (d) => ({
+        ...base,
+        loans: base.loans.map((l) =>
+          l.floating
+            ? {
+                ...l,
+                rate: l.rate + d,
+                ratePoints: l.ratePoints.map((r) => ({
+                  ...r,
+                  annual: r.annual + d,
+                })),
+              }
+            : l,
+        ),
+      }),
+      !base.loans.length
+        ? "no debt in this plan"
+        : !floating.length
+          ? "every loan is fixed-rate, so its payment cannot change"
+          : undefined,
+    ),
+  ];
+  const first = (b: Break) =>
+    Math.min(
+      ...[b.cash, b.dscr].map((x) =>
+        x?.kind === "already" ? 0 : x?.kind === "at" ? x.move : Infinity,
+      ),
+    );
+  return rows.sort((a, b) => first(a) - first(b));
+}
+
+/**
+ * Monthly rent per sq ft. Totals divide total rent by total area and count only
+ * units that have an area; current rent also needs the unit to be occupied.
+ */
+export function rentPerSqft(units: Unit[]) {
+  const sized = units.filter((u) => (u.sqft ?? 0) > 0),
+    occupied = sized.filter((u) => u.occupied);
+  const over = (list: Unit[], rent: (u: Unit) => number) =>
+    list.length
+      ? list.reduce((s, u) => s + rent(u), 0) /
+        list.reduce((s, u) => s + u.sqft!, 0)
+      : null;
+  return {
+    sized: sized.length,
+    current: over(occupied, (u) => u.rent),
+    market: over(sized, (u) => u.marketRent),
+  };
 }

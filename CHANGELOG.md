@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.6.0 — Criteria and decision calculators
+
+- Investment criteria: your own minimum return, minimum Year 1 DSCR, maximum equity and minimum Year 1 cash-on-cash, saved with each analysis or project. Each shows meets, misses or not enough information; a blank or uncalculable target is never a pass. Quick analysis shows them in the deal summary; the Monthly planner in Decision Lab.
+- Maximum offer (Decision Lab): the highest purchase price that still meets every set target, with loan-to-price or loan amounts held fixed, the target that sets it, and each target's own limit. It says so in words when no price qualifies.
+- What breaks first (Break-even dashboard): how far rent, vacancy, operating costs and interest rate can each move before Year 1 cash flow turns negative or Year 1 DSCR misses your target, ranked, with the added owner cash at that point.
+- Cash-on-cash by year (Quick analysis, Cash flows): table and chart on initial equity, with sale proceeds listed separately.
+- Rent per sq ft (Units & leasing): optional square footage per unit, monthly and annual figures, and a column in the units import.
+- Fix: the "Reassess property tax at sale" checkbox no longer stretches to the full width of its field.
+- All new calculations are additive (ADR-0010); no existing result changed. Tests: 253 unit tests and 199 browser checks, including one new check per project.
+
 ## 2.5.0 — Trust, clarity and new transaction checks
 
 - Start page: one primary action ("Start an analysis"), a "Try a sample" secondary, trust signals under them, and a quiet "Or start with a tool" group with a guided start. A border beam circles the primary button.

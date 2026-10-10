@@ -1,19 +1,19 @@
 # PropertyIQ verification
 
-Verification date: October 9, 2026. Release: 2.5.0.
+Verification date: October 9, 2026. Release: 2.6.0.
 
 ## Results
 
 | Check | Result |
 |---|---|
-| Regression tests | 236 pass across 16 files |
+| Regression tests | 253 pass across 17 files |
 | Application and browser-test TypeScript | Pass |
 | ESLint, including React hooks | Pass, zero warnings |
 | Production build | Pass |
-| Browser checks | 190 pass across six desktop/narrow-screen projects; eight skipped by design (five PDF-only cases, three phone-layout cases on wide projects) |
+| Browser checks | 199 pass across six desktop/narrow-screen projects; eleven skipped by design (PDF-only, phone-layout-only and pointer-only cases) |
 | Serious/critical axe violations on checked screens | Zero |
 | 390×844 page-level horizontal overflow | None on checked screens |
-| Finance coverage | 91.31% statements, 83.23% branches, 100% functions, 92.36% lines |
+| Finance coverage | 91.68% statements, 84.11% branches, 100% functions, 92.17% lines |
 | Actual PDF output | Chromium A4 landscape Quick brief and 120-month Monthly brief generated and visually inspected |
 
 Coverage gates apply to src/finance: 90% statements, lines and functions; 80% branches. This is aggregated finance coverage, not complete monthly-engine or interface coverage.
@@ -30,6 +30,7 @@ The production build runs through scripts/preview.mjs under public/_headers CSP.
 
 - Quick inputs, formatted money, save/load/reset, reload, setup extraction/defaults and annual report.
 - Annual and monthly CSV/XLSX import, explicit mapping/application and source retention.
+- Investment criteria states, maximum offer, what breaks first and cash-on-cash by year, including a blank optional target.
 - All 19 monthly tools, Decision Lab subtools, project switching, duplicate/back/forward/deep links, home and legal routes.
 - Quick snapshots and portable restore; monthly backup/restore including actual evidence-file bytes, fresh IDs and rejection of missing attachments.
 - Blank actuals, valid zero, signed historical flows, invalid monetary drafts and paused autosave.

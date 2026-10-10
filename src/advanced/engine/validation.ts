@@ -106,6 +106,7 @@ export function validateProject(p: Project): string[] {
         u.targetRent,
         u.concession,
         u.salePrice,
+        u.sqft ?? 0,
       ].some((v) => v < 0) ||
       !rate(u.renewalIncrease, -0.99)
     )

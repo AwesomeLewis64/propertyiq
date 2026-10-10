@@ -32,4 +32,11 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **Zero default**: an input that starts at 0 on a pasted or new analysis (vacancy, management, CapEx and others). The input review screen flags the ones that most change returns; the value is unchanged.
 - **Section menu**: on phones, the one-line "Section: …" (Quick analysis) or "Tool: …" (Monthly planner) summary that opens the full list of sections; wide screens show the list directly.
 - **Project panel**: on phones, the planner's "Project: name · saved time" summary that holds the project picker, origin note and project actions.
+- **Analysis** and **project**: the two saved objects. An analysis (`Assumptions`) belongs to Quick analysis; a project (`Project`) belongs to the Monthly planner. They have separate engines and are saved separately.
+- **Investment criteria**: the investor's own targets saved with an analysis or project: minimum annual IRR (the existing target return in Quick analysis, the required return in the planner), minimum Year 1 DSCR, maximum initial equity, minimum Year 1 cash-on-cash. Not the lender's sizing rules (ADR-0010).
+- **Target state**: one of meets, misses or not enough information, per criterion. Not enough information covers a blank target and a figure that cannot be computed.
+- **Maximum offer**: the highest purchase price at which every set criterion still holds, found in Decision Lab. The **binding target** is the criterion that sets it. (Quick analysis's "binding constraint" is a different thing: the lender rule that sizes the loan.)
+- **What breaks first**: the part of Decision Lab's break-even section that ranks how far rent, vacancy, expenses and interest rate can move before Year 1 cash flow turns negative or Year 1 DSCR misses its target.
+- **Yearly cash-on-cash**: operating cash flow for a year divided by initial equity, in Quick analysis. Year 1 equals the deal summary's cash-on-cash.
+- **Rent per sq ft**: rent divided by a unit's optional square footage, shown monthly and annual in Units & leasing. The property figure is total rent over total area for units that have area.
 - **Tilt zone**: the stationary wrapper around the pinned sample card; the card inside leans toward the pointer, and the zone keeps hover steady at the edges.

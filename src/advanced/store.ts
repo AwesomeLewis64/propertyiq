@@ -152,6 +152,11 @@ export function checkProject(value: unknown): Project {
       typeof u.renovationEnabled !== "boolean"
     )
       throw new Error("Invalid renovation toggle.");
+    if (
+      u.sqft !== undefined &&
+      (typeof u.sqft !== "number" || !Number.isFinite(u.sqft) || u.sqft < 0)
+    )
+      throw new Error("Invalid unit square footage.");
     if (u.events)
       shape(
         u.events,

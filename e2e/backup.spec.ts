@@ -28,6 +28,7 @@ test("monthly CSV/XLSX imports preserve their sources and all decision subtools 
     "Renovation prioritization",
     "Lender quote comparison",
     "Break-even dashboard",
+    "Maximum offer & criteria",
   ]) {
     await page.getByRole("tab", { name, exact: true }).click();
     await expect(page.getByRole("tab", { name, exact: true })).toHaveAttribute(

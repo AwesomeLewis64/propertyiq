@@ -599,6 +599,14 @@ footer small {
   font-size: var(--font-min);
   min-width: 0;
 }
+/* A checkbox in a field is not a text box: keep its native size. */
+.field input[type="checkbox"] {
+  width: auto;
+  height: auto;
+  padding: 0;
+  vertical-align: middle;
+  accent-color: var(--color-accent);
+}
 .input-wrap {
   position: relative;
 }
@@ -5831,7 +5839,7 @@ a.button {
   background: var(--color-success-soft);
   color: var(--color-success);
 }
-.deal-summary ul {
+.deal-summary-figures {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
@@ -5873,7 +5881,7 @@ a.button {
     padding: var(--space-8);
     gap: var(--space-4);
   }
-  .deal-summary ul {
+  .deal-summary-figures {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
@@ -5885,7 +5893,7 @@ a.button {
     padding: var(--space-4) var(--space-8);
   }
   .deal-summary button svg,
-  .deal-summary li:nth-child(n + 4) {
+  .deal-summary-figures li:nth-child(n + 4) {
     display: none;
   }
 }
@@ -5893,6 +5901,49 @@ a.button {
   .deal-summary {
     display: none;
   }
+}
+
+/* Investment criteria: one row per saved target; state in words and an icon. */
+.targets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-8);
+  list-style: none;
+  margin: var(--space-16) 0;
+  padding: 0;
+}
+.targets li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-8);
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-soft);
+  color: var(--color-ink);
+  font-size: var(--text-12);
+}
+.targets li svg {
+  grid-row: span 3;
+  margin-top: var(--space-4);
+}
+.targets li strong {
+  font-size: var(--text-14);
+}
+.targets li[data-state="meets"] {
+  background: var(--color-success-soft);
+}
+.targets li[data-state="meets"] :is(svg, strong) {
+  color: var(--color-success);
+}
+.targets li[data-state="misses"] {
+  background: var(--color-warning-soft);
+}
+.targets li[data-state="misses"] :is(svg, strong) {
+  color: var(--color-warning);
+}
+.deal-summary .targets {
+  width: 100%;
+  margin: 0;
 }
 
 /* Screen crossfades (View Transitions): quick and soft. */

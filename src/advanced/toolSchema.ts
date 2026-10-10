@@ -129,6 +129,8 @@ export type DecisionTools = {
     occupancyTarget: number;
     minDscr: number;
   };
+  // Optional and absent from newTools(): old saved projects have no criteria.
+  criteria?: import("../finance/criteria").Criteria;
 };
 export const baseScenario = (): Scenario => ({
   rent: 1,

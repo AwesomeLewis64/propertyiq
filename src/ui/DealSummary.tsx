@@ -1,6 +1,8 @@
 import { ArrowDownRight, CircleCheck, CircleAlert } from "lucide-react";
 import type { Assumptions, Model } from "../finance/types";
 import { money, pct, multiple } from "./format";
+import { criteriaOf, judge, quickActuals } from "../finance/criteria";
+import Targets from "./Targets";
 
 export type SummaryTarget = "overview" | "cash" | "debt";
 
@@ -20,6 +22,12 @@ export default function DealSummary({
   const y = m.years[0];
   const target = a.requiredReturn ?? 0.1;
   const meets = m.irr !== null && m.irr >= target;
+  // The IRR target is the verdict above; list only the other targets that are set.
+  const targets = judge(
+    undefined,
+    criteriaOf(a.criteria),
+    quickActuals(m),
+  ).filter((t) => t.target !== undefined);
   const items: [string, string, SummaryTarget, string][] = [
     ["Annual IRR", pct(m.irr), "overview", "Return details"],
     ["Year 1 NOI", money(y.noi), "cash", "Cash flows"],
@@ -44,7 +52,7 @@ export default function DealSummary({
           ? "IRR not available"
           : `IRR ${m.irr > target ? "above" : m.irr === target ? "at" : "below"} ${Number((target * 100).toFixed(2))}% target`}
       </p>
-      <ul>
+      <ul className="deal-summary-figures">
         {items.map(([label, value, view, where]) => (
           <li key={label}>
             <button
@@ -59,6 +67,7 @@ export default function DealSummary({
           </li>
         ))}
       </ul>
+      {targets.length > 0 && <Targets targets={targets} />}
     </nav>
   );
 }

@@ -25,6 +25,7 @@ export type Unit = {
   salePrice: number;
   renovationEnabled?: boolean;
   events?: LeaseEvent[];
+  sqft?: number;
 };
 export type LeaseEvent = {
   id: string;

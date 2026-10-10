@@ -56,7 +56,13 @@ export default function Methodology() {
         display N/A. Equity multiple divides all positive distributions by all
         negative contributions, including negative annual equity cash flows.
         Cash-on-cash uses operating cash after debt, reserves and CapEx divided
-        by initial equity and excludes sale proceeds.
+        by initial equity and excludes sale proceeds. Cash-on-cash by year uses
+        the same formula for each year of the hold; the denominator is always
+        initial equity, and sale proceeds are listed separately. Your own
+        targets (minimum DSCR, maximum equity, minimum cash-on-cash) are
+        compared with Year 1 figures and show meets, misses or not enough
+        information; a blank target or a figure that cannot be calculated is
+        never shown as a pass.
       </p>
       <p>
         Property appreciation after selling costs is gross exit value less

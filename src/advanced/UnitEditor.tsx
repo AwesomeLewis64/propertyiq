@@ -4,11 +4,19 @@ import { newUnit } from "./defaults";
 import { Card, NumberField, Toggle, TextField, Select } from "./Controls";
 import { money, pct } from "../ui/format";
 import LeaseEvents from "./LeaseEvents";
+import { rentPerSqft } from "./decisionAnalytics";
 export type ProjectEditor = { p: Project; set: (p: Project) => void };
+// Blank or zero area shows "-", never a zero rate.
+const perSqft = (monthly: number | null) =>
+  monthly === null
+    ? "-"
+    : `${money(monthly, 2)} monthly (${money(monthly * 12, 2)} annual)`;
 export default function UnitEditor({ p, set }: ProjectEditor) {
   const [index, setIndex] = useState(0),
     [filter, setFilter] = useState("");
   const unit = p.units[Math.min(index, p.units.length - 1)];
+  const sf = rentPerSqft(p.units),
+    mine = rentPerSqft(unit ? [unit] : []);
   const update = (key: keyof Unit, value: Unit[keyof Unit]) =>
     set({
       ...p,
@@ -59,6 +67,13 @@ export default function UnitEditor({ p, set }: ProjectEditor) {
             initially occupied
           </span>
         </div>
+        <p>
+          Rent per sq ft, current: {perSqft(sf.current)} · market:{" "}
+          {perSqft(sf.market)}.{" "}
+          {sf.sized
+            ? `Total rent ÷ total area for the ${sf.sized} of ${p.units.length} units with square footage; current rent counts occupied units only.`
+            : "Add square footage to a unit to see these."}
+        </p>
         <div className="adv-unit-layout">
           <div className="adv-unit-list" role="group" aria-label="Units">
             {p.units.map((u, i) =>
@@ -131,6 +146,14 @@ export default function UnitEditor({ p, set }: ProjectEditor) {
                 {number("targetRent", "Target monthly rent")}
                 {number("concession", "Monthly concession at lease-up")}
                 {number("concessionMonths", "Concession months")}
+                <NumberField
+                  label="Unit square footage (optional)"
+                  optional
+                  currency={false}
+                  value={unit.sqft ?? NaN}
+                  onChange={(v) => update("sqft", v > 0 ? v : undefined)}
+                  help={`Current rent per sq ft: ${perSqft(mine.current)} · Market: ${perSqft(mine.market)}`}
+                />
                 {p.strategy === "development-sale" && (
                   <>
                     {number("saleMonth", "Unit sale month")}

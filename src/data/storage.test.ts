@@ -21,6 +21,18 @@ describe("Local saved analysis validation", () => {
     };
     expect(decodeSaved(encodeSaved([data]))).toEqual([data]);
   });
+  it("saved criteria round-trip and older saves without them still load", () => {
+    const data = {
+      id: "test",
+      name: demo.name,
+      savedAt: "2026-10-09T00:00:00Z",
+      assumptions: { ...demo, criteria: { minDscr: 1.3, maxEquity: 500000 } },
+      scenarios: { upside: {}, downside: {} },
+    };
+    expect(decodeSaved(encodeSaved([data]))).toEqual([data]);
+    expect(isAssumptions(demo)).toBe(true);
+    expect("criteria" in demo).toBe(false);
+  });
   it("malformed or unsupported storage is rejected", () => {
     for (const value of [
       "invalid",

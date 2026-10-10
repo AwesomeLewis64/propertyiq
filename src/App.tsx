@@ -38,6 +38,7 @@ import ThemeToggle from "./ui/ThemeToggle";
 import LegalShell from "./ui/LegalShell";
 import type { WorkspaceLaunch } from "./ui/startFlow";
 const Charts = lazy(() => import("./ui/Charts"));
+const CocByYear = lazy(() => import("./ui/CocByYear"));
 const Sensitivity = lazy(() => import("./ui/Sensitivity"));
 const Report = lazy(() => import("./ui/Report"));
 const ImportRentRoll = lazy(() => import("./ui/ImportRentRoll"));
@@ -629,7 +630,16 @@ function WorkspaceApp() {
                       />
                     </>
                   ) : view === "cash" ? (
-                    <CashTable m={m} a={a} />
+                    <>
+                      <CashTable m={m} a={a} />
+                      <Suspense
+                        fallback={
+                          <LoadingFeedback label="Loading chart…" skeleton />
+                        }
+                      >
+                        <CocByYear m={m} a={a} />
+                      </Suspense>
+                    </>
                   ) : view === "debt" ? (
                     <DebtTable m={m} />
                   ) : view === "sensitivity" ? (

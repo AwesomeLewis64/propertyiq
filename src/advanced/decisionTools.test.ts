@@ -10,6 +10,10 @@ import {
   depositLedger,
   breakEven,
   metricValue,
+  maxOffer,
+  breaksFirst,
+  rentPerSqft,
+  yearOne,
 } from "./decisionAnalytics";
 import { cellIndex, storedNumber } from "./benchmark";
 import { checkProject } from "./store";
@@ -211,5 +215,227 @@ describe("focused decision-tool checks", () => {
     ).toBeNull();
     delete p.tools;
     expect(checkProject(p).name).toBe(p.name);
+  });
+});
+describe("maximum offer, what breaks first and rent per sq ft (ADR-0010)", () => {
+  const loan = () => ({
+    ...newLoan(),
+    amount: 60000,
+    fee: 0,
+    rate: 0,
+    amortMonths: 120,
+    maturityMonth: 120,
+  });
+  const costs = (annual: number) => [
+    {
+      id: "e",
+      name: "Costs",
+      annual,
+      growth: 0,
+      startMonth: 1,
+      changeMonth: 0,
+      replacementAnnual: 0,
+      reimbursement: 0,
+    },
+  ];
+  const at = (p: ReturnType<typeof fixture>, price: number) =>
+    yearOne(forecast({ ...p, price }))!;
+  const solved = (r: ReturnType<typeof maxOffer>) => {
+    if ("error" in r) throw new Error(r.error);
+    return r;
+  };
+  const move = (b: { cash: unknown; dscr: unknown }, k: "cash" | "dscr") =>
+    (b[k] as { move: number }).move;
+  it("finds the highest price that still meets the return target", () => {
+    const p = fixture();
+    const r = solved(maxOffer(p, false));
+    expect(r.status).toBe("price");
+    expect(r.binding!.key).toBe("irr");
+    expect(at(p, r.binding!.price!).irr!).toBeGreaterThanOrEqual(p.discount);
+    expect(at(p, r.binding!.price! + 100).irr!).toBeLessThan(p.discount);
+    // Only the return target is set, so it is the only row.
+    expect(r.limits.map((l) => l.key)).toEqual(["irr"]);
+  });
+  it("reports the limit of each target and the one that binds", () => {
+    const p = fixture();
+    p.discount = 0;
+    // No debt: equity equals price, and cash-on-cash is $12,000 / price.
+    p.tools!.criteria = { maxEquity: 90000, minCoc: 0.15, minDscr: 1.2 };
+    const r = solved(maxOffer(p, false));
+    const byKey = Object.fromEntries(r.limits.map((l) => [l.key, l]));
+    expect(byKey.equity.price).toBe(90000);
+    expect(byKey.coc.price).toBe(80000);
+    // No debt service: coverage cannot fail at any price.
+    expect(byKey.dscr).toMatchObject({ kind: "open", fixed: true });
+    expect(r.binding).toMatchObject({ key: "coc", price: 80000 });
+  });
+  it("scales the opening loan when loan-to-price is held, and not otherwise", () => {
+    const p = fixture();
+    p.discount = 0;
+    p.loans = [loan()];
+    // DSCR is 2.0x today; 2.5x needs a $48,000 loan, which is 60% of $80,000.
+    p.tools!.criteria = { minDscr: 2.5 };
+    const held = solved(maxOffer(p, true));
+    expect(held.limits.find((l) => l.key === "dscr")).toMatchObject({
+      kind: "limit",
+      price: 80000,
+      fixed: false,
+    });
+    const fixed = solved(maxOffer(p, false));
+    // With the loan amount fixed the miss does not depend on price.
+    expect(fixed.limits.find((l) => l.key === "dscr")).toMatchObject({
+      kind: "none",
+      fixed: true,
+    });
+    expect(fixed.status).toBe("none");
+    expect(fixed.binding).toBeNull();
+  });
+  it("says so when no price qualifies or the tool does not apply", () => {
+    const p = fixture();
+    p.discount = 0;
+    // Costs exceed rent: Year 1 cash flow is negative at every price.
+    p.expenses = costs(15000);
+    p.tools!.criteria = { minCoc: 0.01 };
+    const r = solved(maxOffer(p, false));
+    expect(r.status).toBe("none");
+    expect(r.binding).toBeNull();
+    expect(
+      maxOffer({ ...fixture(), strategy: "existing" }, true),
+    ).toHaveProperty("error");
+    expect(maxOffer({ ...fixture(), price: 0 }, true)).toHaveProperty("error");
+  });
+  it("leaves the price open when every target holds across the range", () => {
+    const p = fixture();
+    p.discount = 0;
+    p.exitCap = 0.001; // a very high exit value keeps IRR positive at any price tested
+    const r = solved(maxOffer(p, false));
+    expect(r.status).toBe("open");
+    expect(r.binding).toBeNull();
+    expect(r.ceiling).toBe(1_000_000);
+  });
+  it("ranks how far each variable moves before Year 1 cash flow or DSCR breaks", () => {
+    const p = fixture();
+    p.expenses = costs(3000);
+    p.loans = [loan()];
+    // Year 1: rent 12,000, costs 3,000, debt 6,000, so cash is 3,000.
+    const plain = breaksFirst(p)!;
+    const by = (rows: typeof plain) =>
+      Object.fromEntries(rows.map((b) => [b.key, b]));
+    const cash = by(plain);
+    expect(cash.rent.cash).toMatchObject({ kind: "at" });
+    expect(move(cash.rent, "cash")).toBeCloseTo(0.25, 3);
+    expect(move(cash.vacancy, "cash")).toBeCloseTo(0.25, 3);
+    expect(move(cash.expenses, "cash")).toBeCloseTo(1, 3);
+    expect(
+      (cash.rent.cash as { funding: number }).funding,
+    ).toBeGreaterThanOrEqual(0);
+    // No DSCR target saved: the column is empty rather than guessed.
+    expect(plain.every((b) => b.dscr === null)).toBe(true);
+    // A fixed-rate loan is listed as not applicable, not hidden.
+    expect(cash.rate.skipped).toMatch(/fixed-rate/);
+    expect(cash.rate.cash).toBeNull();
+    expect(
+      plain
+        .map((b) => b.key)
+        .slice(0, 2)
+        .sort(),
+    ).toEqual(["rent", "vacancy"]);
+    expect(plain.at(-1)!.key).toBe("rate");
+
+    // DSCR is 1.5x; a 1.2x target breaks at a 15% rent fall, before cash does.
+    p.tools!.criteria = { minDscr: 1.2 };
+    expect(move(by(breaksFirst(p)!).rent, "dscr")).toBeCloseTo(0.15, 3);
+  });
+  it("handles negative cash flow, floating debt and no debt", () => {
+    const p = fixture();
+    p.expenses = costs(13000);
+    const rows = breaksFirst(p)!;
+    expect(rows.find((b) => b.key === "rent")!.cash).toEqual({
+      kind: "already",
+    });
+    expect(rows.find((b) => b.key === "rate")!.skipped).toMatch(/no debt/);
+    const q = fixture();
+    q.loans = [{ ...loan(), rate: 0.05, floating: true, rateCap: 0.5 }];
+    const rate = breaksFirst(q)!.find((b) => b.key === "rate")!;
+    expect(rate.skipped).toBeUndefined();
+    expect(rate.cash).toMatchObject({ kind: "at" });
+    // Capped at the current rate, the payment cannot rise far enough to break.
+    q.loans[0].rateCap = 0.05;
+    expect(breaksFirst(q)!.find((b) => b.key === "rate")!.cash).toEqual({
+      kind: "never",
+    });
+    expect(breaksFirst({ ...q, price: -1 })).toBeNull();
+  });
+  it("rent per sq ft is total rent over total area and skips blank areas", () => {
+    const unit = (
+      id: string,
+      rent: number,
+      sqft?: number,
+      occupied = true,
+    ) => ({
+      ...newUnit(),
+      id,
+      rent,
+      marketRent: rent * 2,
+      occupied,
+      sqft,
+    });
+    expect(rentPerSqft([unit("1", 1000)])).toEqual({
+      sized: 0,
+      current: null,
+      market: null,
+    });
+    const r = rentPerSqft([
+      unit("1", 1000, 500),
+      unit("2", 3000, 1000),
+      unit("3", 9999), // no area: left out of rent and area
+      unit("4", 500, 500, false), // vacant: market only
+      unit("5", 700, 0), // zero area is blank
+    ]);
+    expect(r.sized).toBe(3);
+    // 4,000 / 1,500, not the 2.5 average of 2.0 and 3.0.
+    expect(r.current).toBeCloseTo(4000 / 1500, 10);
+    expect(r.market).toBeCloseTo(9000 / 2000, 10);
+  });
+  it("old projects load without the new fields, and bad values are rejected", () => {
+    const p = fixture();
+    const old = JSON.parse(JSON.stringify(p));
+    expect(old.tools.criteria).toBeUndefined();
+    expect(checkProject(old).units[0].sqft).toBeUndefined();
+    p.units[0].sqft = 750;
+    p.tools!.criteria = { minDscr: 1.25 };
+    const back = checkProject(JSON.parse(JSON.stringify(p)));
+    expect(back.units[0].sqft).toBe(750);
+    expect(back.tools!.criteria).toEqual({ minDscr: 1.25 });
+    expect(forecast(back).errors).toEqual([]);
+    const bad = JSON.parse(JSON.stringify(p));
+    bad.units[0].sqft = "750";
+    expect(() => checkProject(bad)).toThrow(/square footage/);
+  });
+});
+describe("what breaks first at the validation edge", () => {
+  it("still finds a vacancy break when rates sum to the 100% limit", () => {
+    const p = fixture();
+    // 0.05 + 0.935 + 0.015 rounds above 1 in floating point.
+    Object.assign(p, {
+      vacancyRate: 0.05,
+      creditLoss: 0.01,
+      concessionRate: 0.005,
+    });
+    p.expenses = [
+      {
+        id: "e",
+        name: "Costs",
+        annual: 3000,
+        growth: 0,
+        startMonth: 1,
+        changeMonth: 0,
+        replacementAnnual: 0,
+        reimbursement: 0,
+      },
+    ];
+    expect(forecast(p).errors).toEqual([]);
+    const vacancy = breaksFirst(p)!.find((b) => b.key === "vacancy")!;
+    expect(vacancy.cash).toMatchObject({ kind: "at" });
   });
 });

@@ -10,12 +10,15 @@ export default function MoneyInput({
   id,
   min,
   max,
+  optional,
 }: {
   value: number;
   onChange: (n: number) => void;
   id?: string;
   min?: number;
   max?: number;
+  /** A blank is a valid answer, not an error. */
+  optional?: boolean;
 }) {
   const [draft, setDraft] = useState(
     Number.isFinite(value) ? money(value, 2) : "",
@@ -31,7 +34,7 @@ export default function MoneyInput({
       inputMode="decimal"
       value={draft}
       aria-invalid={
-        !Number.isFinite(value) ||
+        (!optional && !Number.isFinite(value)) ||
         (min !== undefined && value < min) ||
         (max !== undefined && value > max)
       }

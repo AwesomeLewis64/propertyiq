@@ -17,6 +17,7 @@ export function NumberField({
   min,
   max,
   help,
+  optional,
 }: {
   label: string;
   value: number;
@@ -26,6 +27,7 @@ export function NumberField({
   min?: number;
   max?: number;
   help?: string;
+  optional?: boolean;
 }) {
   const id = useId();
   return (
@@ -41,11 +43,12 @@ export function NumberField({
           onChange={onChange}
           min={min}
           max={max}
+          optional={optional}
         />
       ) : (
         <input
           id={id}
-          aria-invalid={!Number.isFinite(value)}
+          aria-invalid={!optional && !Number.isFinite(value)}
           type="number"
           step="any"
           min={min}

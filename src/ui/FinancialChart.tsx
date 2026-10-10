@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { BusyLabel } from "./LoadingFeedback";
 import { zoomWindow } from "./chartZoom";
-import { money } from "./format";
+import { money, pct } from "./format";
 import { csvText, download } from "../data/export";
 import type { BridgeRow } from "../analytics/visuals";
 
@@ -53,7 +53,7 @@ export default function FinancialChart({
   series: string[];
   rows: ChartRow[];
   bridge?: BridgeRow[];
-  unit?: "money" | "points";
+  unit?: "money" | "points" | "percent";
 }) {
   const id = useId(),
     wrap = useRef<HTMLDivElement>(null),
@@ -130,7 +130,9 @@ export default function FinancialChart({
       ? "N/A"
       : unit === "points"
         ? `${v >= 0 ? "+" : ""}${v.toFixed(2)} pp`
-        : money(v);
+        : unit === "percent"
+          ? pct(v)
+          : money(v);
   const finite = plot.flatMap((r) =>
     r.values.filter((v): v is number => v !== null && Number.isFinite(v)),
   );
@@ -138,7 +140,8 @@ export default function FinancialChart({
     ? bridge.flatMap((r) => [r.start, ...(r.end === null ? [] : [r.end])])
     : finite;
   const low = Math.min(0, ...rangeValues),
-    high = Math.max(1, ...rangeValues),
+    // Ratios are far below 1, so a floor of 1 would flatten a percent chart.
+    high = Math.max(unit === "percent" ? 0.01 : 1, ...rangeValues),
     range = high - low;
   const left = horizontal ? Math.min(155, width * 0.43) : 65,
     right = width - 18;
@@ -458,9 +461,11 @@ export default function FinancialChart({
                       stroke="var(--color-border)"
                     />
                     <text x={0} y={y(v) + 4} fontSize="var(--text-12)">
-                      {Math.abs(v) >= 1000000
-                        ? `$${(v / 1000000).toFixed(1)}m`
-                        : `$${(v / 1000).toFixed(0)}k`}
+                      {unit === "percent"
+                        ? `${(v * 100).toFixed(1)}%`
+                        : Math.abs(v) >= 1000000
+                          ? `$${(v / 1000000).toFixed(1)}m`
+                          : `$${(v / 1000).toFixed(0)}k`}
                     </text>
                   </g>
                 );
@@ -672,7 +677,12 @@ export default function FinancialChart({
         <div className="table-scroll" tabIndex={0}>
           <table>
             <caption>
-              {title} · {unit === "points" ? "percentage points" : "USD"}
+              {title} ·{" "}
+              {unit === "points"
+                ? "percentage points"
+                : unit === "percent"
+                  ? "percent"
+                  : "USD"}
             </caption>
             <thead>
               <tr>
