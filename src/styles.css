@@ -2980,7 +2980,8 @@ h2 {
   font-size: var(--font-min);
 }
 .iq-model-status[open] summary::after {
-  content: "Less −";
+  /* Same length as the closed label, so opening never re-wraps the row. */
+  content: "Details −";
 }
 .iq-model-status p {
   margin-top: var(--space-8);
@@ -6140,6 +6141,30 @@ button.theme-toggle[role="switch"]:hover {
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
+  }
+}
+
+/* Fallback fonts differ in width (Linux falls back to a wide sans). Whatever the
+   font, the controls stay on screen and the wordmark gives way first. */
+@media (max-width: 760px) {
+  :is(.iq-start-header, .topbar) .brand {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  :is(.iq-start-header, .topbar) .iq-brand-mark {
+    flex-shrink: 0;
+  }
+  :is(.iq-start-header, .topbar) .iq-brand-name {
+    min-width: 0;
+    /* Clip sideways only: the trimmed line box must keep its descenders. */
+    overflow-x: clip;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .iq-start-header nav,
+  .topbar-links,
+  .iq-workspace-header-actions {
+    flex-shrink: 0;
   }
 }
 
