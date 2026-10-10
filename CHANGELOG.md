@@ -11,7 +11,7 @@
 - Fixes: top bars fit from 320px; planner tools wrap instead of scrolling sideways; the theme reveal covers the page evenly with no white corner; honest social metadata (no AI claim) with a new preview image.
 - Start page hook: "Analyze cash flow and financing." with one line saying what to paste and what comes back; the social preview matches.
 - Monthly planner forms share one control system: equal-height inputs, selects and file pickers, aligned label rows, identical action buttons, a steady project card (the model-status note opens as an overlay), a centered empty state for decisions, and long month-by-month tables that fold away with a row count.
-- Pointer effects: the pinned sample card leans toward the cursor from every side (inside a stationary hover zone, so edges do not flicker), and a prismatic lens follows the cursor through the headline letters. Both are off for reduced motion and touch.
+- Pointer effects: the pinned sample card leans a few degrees toward the cursor from every side (inside a stationary hover zone, so edges do not flicker), and start-page text gives a small prismatic glint under the cursor. Both are off for reduced motion and touch.
 - Tests: 236 unit tests and a six-project browser suite covering phone menus, import undo, save status, the guided start and the new views.
 
 ## 2.4.0 — Visuals and shipping verification

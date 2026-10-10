@@ -6693,9 +6693,9 @@ button.theme-toggle[role="switch"]:hover {
   }
 }
 
-/* Headline lens: a prismatic highlight follows the pointer through the letters
-   (StartPage sets --mx/--my per word). Light theme: a white-hot core with
-   cyan and pink fringes. Dark theme: a blue-violet glow in the pale letters. */
+/* Text glint: a small prismatic highlight under the pointer on the start
+   page's own text (StartPage marks the hovered element and sets --mx/--my).
+   The text keeps its colour; only the glyphs under the glint shift. */
 @property --iq-shine {
   syntax: "<number>";
   initial-value: 0;
@@ -6703,54 +6703,49 @@ button.theme-toggle[role="switch"]:hover {
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) and (forced-colors: none) {
   @supports ((background-clip: text) or (-webkit-background-clip: text)) {
-    .iq-hero h1 .iq-word {
+    [data-glint] {
       --mx: -999px;
       --my: -999px;
-      --word-base: linear-gradient(var(--color-ink), var(--color-ink));
-      --lens-core: light-dark(#ffffff, #7aaaff);
-      --lens-mid: light-dark(var(--color-pastel-cyan), #a58bff);
-      --lens-edge: light-dark(
-        var(--color-pastel-pink),
-        var(--color-pastel-pink)
-      );
+      --glint-base: linear-gradient(currentcolor, currentcolor);
+      --glint-core: light-dark(#ffffff, #7aaaff);
+      --glint-mid: light-dark(var(--color-pastel-cyan), #a58bff);
       background-image:
         radial-gradient(
-          circle 150px at var(--mx) var(--my),
+          circle 44px at var(--mx) var(--my),
           color-mix(
               in srgb,
-              var(--lens-core) calc(var(--iq-shine) * 100%),
+              var(--glint-core) calc(var(--iq-shine) * 100%),
               transparent
             )
             0%,
           color-mix(
               in srgb,
-              var(--lens-mid) calc(var(--iq-shine) * 100%),
+              var(--glint-mid) calc(var(--iq-shine) * 100%),
               transparent
             )
-            38%,
+            45%,
           color-mix(
               in srgb,
-              var(--lens-edge) calc(var(--iq-shine) * 85%),
+              var(--color-pastel-pink) calc(var(--iq-shine) * 80%),
               transparent
             )
-            62%,
+            75%,
           transparent 100%
         ),
-        var(--word-base);
+        var(--glint-base);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      color: transparent;
-      transition: --iq-shine 380ms ease-out;
+      transition: --iq-shine 320ms ease-out;
     }
-    .iq-hero h1 .iq-key {
-      --word-base: linear-gradient(
+    [data-glint].iq-key {
+      --glint-base: linear-gradient(
         100deg,
         var(--color-key-from) 10%,
         var(--color-key-to) 90%
       );
     }
-    .iq-hero h1[data-shine] .iq-word {
+    [data-glint][data-lit] {
       --iq-shine: 1;
     }
   }

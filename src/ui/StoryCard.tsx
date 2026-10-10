@@ -12,7 +12,7 @@ import { calculate } from "../finance/model";
 import { money, pct, multiple } from "./format";
 
 // The pinned card leans toward the pointer, in any direction, up to this angle.
-const TILT_DEG = 7;
+const TILT_DEG = 3;
 const canTilt = () =>
   matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)")
     .matches;
