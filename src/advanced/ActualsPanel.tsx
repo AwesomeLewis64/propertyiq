@@ -1,3 +1,4 @@
+import Collapsible from "../ui/Collapsible";
 import { useMemo } from "react";
 import { forecast } from "./engine";
 import type { ProjectEditor } from "./UnitEditor";
@@ -149,46 +150,48 @@ export default function ActualsPanel({ p, set }: ProjectEditor) {
         ))}
       </Card>
       <Card title="Monthly NOI budget versus actual">
-        <div className="table-scroll" tabIndex={0}>
-          <table>
-            <thead>
-              <tr>
-                {[
-                  "Period",
-                  "Budget NOI",
-                  "Actual NOI",
-                  "Actual − budget",
-                  "Budget CapEx",
-                  "Actual CapEx",
-                  "Budget regular debt",
-                  "Actual regular debt",
-                ].map((v) => (
-                  <th key={v}>{v}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {p.actuals.map((a) => {
-                const b = budget.rows.find(
-                    (r) => r.date.slice(0, 7) === a.month,
-                  ),
-                  noi = a.rent + a.otherIncome - a.opex;
-                return (
-                  <tr key={a.month}>
-                    <td>{a.month}</td>
-                    <td>{money(b?.noi)}</td>
-                    <td>{money(noi)}</td>
-                    <td>{money(b ? noi - b.noi : null)}</td>
-                    <td>{money(b?.capex)}</td>
-                    <td>{money(a.capex)}</td>
-                    <td>{money(b?.debtService)}</td>
-                    <td>{money(a.debtService)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <Collapsible title="Budget vs actual by month" count={p.actuals.length}>
+          <div className="table-scroll" tabIndex={0}>
+            <table>
+              <thead>
+                <tr>
+                  {[
+                    "Period",
+                    "Budget NOI",
+                    "Actual NOI",
+                    "Actual − budget",
+                    "Budget CapEx",
+                    "Actual CapEx",
+                    "Budget regular debt",
+                    "Actual regular debt",
+                  ].map((v) => (
+                    <th key={v}>{v}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {p.actuals.map((a) => {
+                  const b = budget.rows.find(
+                      (r) => r.date.slice(0, 7) === a.month,
+                    ),
+                    noi = a.rent + a.otherIncome - a.opex;
+                  return (
+                    <tr key={a.month}>
+                      <td>{a.month}</td>
+                      <td>{money(b?.noi)}</td>
+                      <td>{money(noi)}</td>
+                      <td>{money(b ? noi - b.noi : null)}</td>
+                      <td>{money(b?.capex)}</td>
+                      <td>{money(a.capex)}</td>
+                      <td>{money(b?.debtService)}</td>
+                      <td>{money(a.debtService)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Collapsible>
         <p>
           Actual NOI follows the entered statement classification. Debt
           principal is not an operating expense. Lender NCF adjustments remain

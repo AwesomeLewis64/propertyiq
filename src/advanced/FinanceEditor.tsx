@@ -1,3 +1,4 @@
+import Collapsible from "../ui/Collapsible";
 import { useState } from "react";
 import {
   Card,
@@ -313,46 +314,48 @@ export default function FinanceEditor({
         )}
       </Card>
       <Card title="Debt audit trail">
-        <div className="table-scroll" tabIndex={0}>
-          <table>
-            <thead>
-              <tr>
-                {[
-                  "Month",
-                  "Loan",
-                  "Opening",
-                  "Draw",
-                  "Rate",
-                  "Interest",
-                  "Capitalized",
-                  "Regular service",
-                  "Payoff",
-                  "Refi proceeds",
-                  "Ending",
-                ].map((v) => (
-                  <th key={v}>{v}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {m.debt.map((r, i) => (
-                <tr key={i}>
-                  <td>{r.month}</td>
-                  <td>{r.loan}</td>
-                  <td>{money(r.opening)}</td>
-                  <td>{money(r.draw)}</td>
-                  <td>{pct(r.rate)}</td>
-                  <td>{money(r.interest)}</td>
-                  <td>{money(r.capitalized)}</td>
-                  <td>{money(r.service)}</td>
-                  <td>{money(r.payoff)}</td>
-                  <td>{money(r.refinance)}</td>
-                  <td>{money(r.balance)}</td>
+        <Collapsible title="Month-by-month debt audit" count={m.debt.length}>
+          <div className="table-scroll" tabIndex={0}>
+            <table>
+              <thead>
+                <tr>
+                  {[
+                    "Month",
+                    "Loan",
+                    "Opening",
+                    "Draw",
+                    "Rate",
+                    "Interest",
+                    "Capitalized",
+                    "Regular service",
+                    "Payoff",
+                    "Refi proceeds",
+                    "Ending",
+                  ].map((v) => (
+                    <th key={v}>{v}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {m.debt.map((r, i) => (
+                  <tr key={i}>
+                    <td>{r.month}</td>
+                    <td>{r.loan}</td>
+                    <td>{money(r.opening)}</td>
+                    <td>{money(r.draw)}</td>
+                    <td>{pct(r.rate)}</td>
+                    <td>{money(r.interest)}</td>
+                    <td>{money(r.capitalized)}</td>
+                    <td>{money(r.service)}</td>
+                    <td>{money(r.payoff)}</td>
+                    <td>{money(r.refinance)}</td>
+                    <td>{money(r.balance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Collapsible>
       </Card>
     </>
   );

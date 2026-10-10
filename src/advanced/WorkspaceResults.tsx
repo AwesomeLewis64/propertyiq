@@ -1,3 +1,4 @@
+import Collapsible from "../ui/Collapsible";
 import { provenance } from "../data/provenance";
 import { SlidersHorizontal } from "lucide-react";
 import VisualAdditions from "../ui/VisualAdditions";
@@ -386,80 +387,86 @@ export function MonthlyTable({ p, m }: { p: Project; m: Forecast }) {
           onChange={setTo}
         />
       </div>
-      <div className="table-scroll" tabIndex={0}>
-        <table>
-          <thead>
-            <tr>
-              {[
-                "Month / date",
-                "Occupied",
-                "Rent",
-                "NOI",
-                "CapEx",
-                "Reserves",
-                "Regular debt",
-                "Draws",
-                "Refi proceeds",
-                "Payoffs",
-                "Fees",
-                "Disposition receipts",
-                "Before funding",
-                "Owner call",
-                "Distribution",
-                "Ending cash",
-                "Debt balance",
-                "Owner flow",
-              ].map((v) => (
-                <th key={v}>{v}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {m.rows
-              .filter((r) => r.month >= from && r.month <= to)
-              .map((r) => (
-                <tr key={r.month}>
-                  <td>
-                    {r.month} · {r.date}
-                    {r.actual ? " · actual" : ""}
-                  </td>
-                  <td>{r.occupied}</td>
-                  {(
-                    [
-                      "rent",
-                      "noi",
-                      "capex",
-                      "reserves",
-                      "debtService",
-                      "draws",
-                      "refinance",
-                      "payoffs",
-                      "fees",
-                      "netSale",
-                      "cashBefore",
-                      "capitalCall",
-                      "distribution",
-                      "cash",
-                      "balance",
-                      "equityFlow",
-                    ] as const
-                  ).map((k) => (
-                    <td
-                      key={k}
-                      className={
-                        (k === "capitalCall" && r[k] > 0) || r[k] < 0
-                          ? "negative"
-                          : ""
-                      }
-                    >
-                      {money(r[k])}
+      <Collapsible
+        title="Month-by-month cash flow"
+        count={m.rows.filter((r) => r.month >= from && r.month <= to).length}
+        defaultOpen
+      >
+        <div className="table-scroll" tabIndex={0}>
+          <table>
+            <thead>
+              <tr>
+                {[
+                  "Month / date",
+                  "Occupied",
+                  "Rent",
+                  "NOI",
+                  "CapEx",
+                  "Reserves",
+                  "Regular debt",
+                  "Draws",
+                  "Refi proceeds",
+                  "Payoffs",
+                  "Fees",
+                  "Disposition receipts",
+                  "Before funding",
+                  "Owner call",
+                  "Distribution",
+                  "Ending cash",
+                  "Debt balance",
+                  "Owner flow",
+                ].map((v) => (
+                  <th key={v}>{v}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {m.rows
+                .filter((r) => r.month >= from && r.month <= to)
+                .map((r) => (
+                  <tr key={r.month}>
+                    <td>
+                      {r.month} · {r.date}
+                      {r.actual ? " · actual" : ""}
                     </td>
-                  ))}
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
+                    <td>{r.occupied}</td>
+                    {(
+                      [
+                        "rent",
+                        "noi",
+                        "capex",
+                        "reserves",
+                        "debtService",
+                        "draws",
+                        "refinance",
+                        "payoffs",
+                        "fees",
+                        "netSale",
+                        "cashBefore",
+                        "capitalCall",
+                        "distribution",
+                        "cash",
+                        "balance",
+                        "equityFlow",
+                      ] as const
+                    ).map((k) => (
+                      <td
+                        key={k}
+                        className={
+                          (k === "capitalCall" && r[k] > 0) || r[k] < 0
+                            ? "negative"
+                            : ""
+                        }
+                      >
+                        {money(r[k])}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </Collapsible>
     </Card>
   );
 }

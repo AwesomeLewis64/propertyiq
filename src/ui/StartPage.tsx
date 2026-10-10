@@ -549,7 +549,7 @@ export default function StartPage({
             <section className="iq-hero">
               <h1>
                 {/* Words sharpen in one after another; the key phrase lands last. */}
-                {["Check", "if", "a", "multifamily"].map((word, i) => (
+                {["Is", "it", "a"].map((word, i) => (
                   <span
                     className="iq-word"
                     style={{ "--i": i } as CSSProperties}
@@ -561,15 +561,14 @@ export default function StartPage({
                 <br />
                 <span
                   className="iq-word iq-key"
-                  style={{ "--i": 4 } as CSSProperties}
+                  style={{ "--i": 3 } as CSSProperties}
                 >
-                  deal works.
+                  good deal?
                 </span>
               </h1>
               <p className="iq-hero-subtitle">
-                Built for investors sizing up rental buildings. Paste the
-                listing details or upload a rent roll to see cash flow, loan
-                coverage and returns, with every assumption in view.
+                Paste a multifamily listing or upload a rent roll to see cash
+                flow, debt coverage and returns. Free, private, in your browser.
               </p>
               <form
                 className="iq-composer"

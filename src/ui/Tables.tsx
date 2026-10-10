@@ -1,3 +1,4 @@
+import Collapsible from "./Collapsible";
 import type { Assumptions, Model } from "../finance/types";
 import { money, multiple } from "./format";
 export function CashTable({ m, a }: { m: Model; a: Assumptions }) {
@@ -160,40 +161,42 @@ export function DebtTable({ m }: { m: Model }) {
             </p>
           </div>
         </div>
-        <div className="table-scroll debt-scroll" tabIndex={0}>
-          <table>
-            <thead>
-              <tr>
-                {[
-                  "Month",
-                  "Opening balance",
-                  "Payment",
-                  "Interest",
-                  "Principal",
-                  "Ending balance",
-                ].map((v) => (
-                  <th key={v}>{v}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {m.months.map((r) => (
-                <tr key={r.month}>
-                  <th>{r.month}</th>
+        <Collapsible title="Monthly debt schedule" count={m.months.length}>
+          <div className="table-scroll debt-scroll" tabIndex={0}>
+            <table>
+              <thead>
+                <tr>
                   {[
-                    r.opening,
-                    r.payment,
-                    r.interest,
-                    r.principal,
-                    r.balance,
-                  ].map((v, i) => (
-                    <td key={i}>{money(v, 2)}</td>
+                    "Month",
+                    "Opening balance",
+                    "Payment",
+                    "Interest",
+                    "Principal",
+                    "Ending balance",
+                  ].map((v) => (
+                    <th key={v}>{v}</th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {m.months.map((r) => (
+                  <tr key={r.month}>
+                    <th>{r.month}</th>
+                    {[
+                      r.opening,
+                      r.payment,
+                      r.interest,
+                      r.principal,
+                      r.balance,
+                    ].map((v, i) => (
+                      <td key={i}>{money(v, 2)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Collapsible>
       </section>
     </>
   );

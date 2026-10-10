@@ -475,6 +475,29 @@ test("refinance and sell-vs-hold answer with the sample deal", async ({
     page.getByRole("status").filter({ hasText: /more than/ }),
   ).toBeVisible();
 });
+test("long monthly tables fold away and the project card stays put", async ({
+  page,
+}) => {
+  await page.goto("/#monthly/maple-grove-shared/portfolio");
+  await openMenus(page);
+  const fold = page.locator("summary", {
+    hasText: "Month-by-month owner funding",
+  });
+  await expect(fold).toContainText("rows");
+  const table = page.locator("details", { has: fold }).locator("table");
+  await expect(table).toBeHidden();
+  await fold.click();
+  await expect(table).toBeVisible();
+  await page.goto("/#monthly/maple-grove-shared/overview");
+  const bar = page.locator(".adv-project-bar");
+  await expect(bar).toBeVisible();
+  const top = async () =>
+    bar.evaluate((el) => el.getBoundingClientRect().top + scrollY);
+  const before = await top();
+  await page.locator(".iq-model-status > summary").click();
+  await expect(page.locator(".iq-model-status[open]")).toBeVisible();
+  expect(await top()).toBeCloseTo(before, 0);
+});
 test("monthly wayfinding, exact project history, deep links and legal routing", async ({
   page,
 }, info) => {

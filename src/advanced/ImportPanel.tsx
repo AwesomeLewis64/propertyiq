@@ -174,15 +174,19 @@ export default function ImportPanel({
             />
           )}
         </div>
-        <button
-          className="button small"
-          onClick={() =>
-            download(`propertyiq-${kind}-template.csv`, csvText([fields[kind]]))
-          }
-        >
-          Download column template
-        </button>
-        <p className="sample-downloads">
+        <div className="sample-downloads">
+          <button
+            className="button small"
+            onClick={() =>
+              download(
+                `propertyiq-${kind}-template.csv`,
+                csvText([fields[kind]]),
+              )
+            }
+          >
+            <Download size={14} aria-hidden="true" />
+            Download column template
+          </button>
           <a
             className="button small"
             href="/samples/advanced-fictional-workbook.xlsx"
@@ -207,7 +211,7 @@ export default function ImportPanel({
             <Download size={14} aria-hidden="true" />
             Monthly actuals CSV
           </a>
-        </p>
+        </div>
         <p className="adv-muted">
           Percentages accept decimal fractions (0.06) or percent text (6%).
           Financial periods use YYYY-MM; dates use YYYY-MM-DD. Schedule months

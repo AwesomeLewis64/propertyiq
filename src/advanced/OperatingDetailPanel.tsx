@@ -218,7 +218,7 @@ export default function OperatingDetailPanel({ p, set }: ProjectEditor) {
             Add operating record
           </button>
           <button
-            className="button small"
+            className="button"
             onClick={() =>
               download(
                 "propertyiq-operating-detail-template.csv",

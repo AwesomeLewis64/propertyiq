@@ -110,7 +110,7 @@ export default function VisualAdditions(props: Props) {
           entered loan and reset rates subject to existing caps.
         </p>
         <div className="adv-form">
-          <label>
+          <label className="adv-field">
             Rent / operating cost change (%)
             <input
               type="number"
@@ -126,7 +126,7 @@ export default function VisualAdditions(props: Props) {
               }
             />
           </label>
-          <label>
+          <label className="adv-field">
             Vacancy / exit cap / rate change (pp)
             <input
               type="number"

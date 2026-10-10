@@ -111,35 +111,39 @@ export default function DecisionsPanel({ p, set }: ProjectEditor) {
           title="Deal decisions and milestones"
           note="Record the reason for a decision, supporting evidence, conditions and eventual outcome. Milestone due dates also appear on the calendar."
         >
-          <button
-            className="button"
-            onClick={() =>
-              set({
-                ...p,
-                tools: {
-                  ...t,
-                  decisions: [
-                    ...t.decisions,
-                    {
-                      id: uid(),
-                      date: today(),
-                      kind: "decision",
-                      title: "New decision",
-                      status: "pending",
-                      owner: "",
-                      due: "",
-                      rationale: "",
-                      outcome: "",
-                      evidenceId: "",
-                    },
-                  ],
-                },
-              })
-            }
-          >
-            Add decision or milestone
-          </button>
-          {!t.decisions.length && <p>No decisions recorded yet.</p>}
+          <div className="adv-add-row">
+            <button
+              className="button"
+              onClick={() =>
+                set({
+                  ...p,
+                  tools: {
+                    ...t,
+                    decisions: [
+                      ...t.decisions,
+                      {
+                        id: uid(),
+                        date: today(),
+                        kind: "decision",
+                        title: "New decision",
+                        status: "pending",
+                        owner: "",
+                        due: "",
+                        rationale: "",
+                        outcome: "",
+                        evidenceId: "",
+                      },
+                    ],
+                  },
+                })
+              }
+            >
+              Add decision or milestone
+            </button>
+            {!t.decisions.length && (
+              <p className="adv-empty">No decisions recorded yet.</p>
+            )}
+          </div>
           {t.decisions.map((d) => (
             <details className="adv-details" key={d.id} open>
               <summary>

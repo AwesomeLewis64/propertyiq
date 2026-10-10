@@ -1,3 +1,4 @@
+import Collapsible from "../ui/Collapsible";
 import LoadingFeedback, { BusyLabel } from "../ui/LoadingFeedback";
 import { provenance } from "../data/provenance";
 import { useMemo, useState } from "react";
@@ -220,30 +221,35 @@ export default function PortfolioPanel({
           labels={calendar.map((v) => v.month)}
           title="Owner contributions and distributions"
         />
-        <div className="table-scroll" tabIndex={0}>
-          <table>
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th>Gross contributions</th>
-                <th>Distributions</th>
-                <th>Net owner funding</th>
-              </tr>
-            </thead>
-            <tbody>
-              {calendar
-                .filter((v) => v.calls || v.distributions)
-                .map((v) => (
-                  <tr key={v.month}>
-                    <td>{v.month}</td>
-                    <td>{money(v.calls)}</td>
-                    <td>{money(v.distributions)}</td>
-                    <td>{money(v.calls - v.distributions)}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
+        <Collapsible
+          title="Month-by-month owner funding"
+          count={calendar.filter((v) => v.calls || v.distributions).length}
+        >
+          <div className="table-scroll" tabIndex={0}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Gross contributions</th>
+                  <th>Distributions</th>
+                  <th>Net owner funding</th>
+                </tr>
+              </thead>
+              <tbody>
+                {calendar
+                  .filter((v) => v.calls || v.distributions)
+                  .map((v) => (
+                    <tr key={v.month}>
+                      <td>{v.month}</td>
+                      <td>{money(v.calls)}</td>
+                      <td>{money(v.distributions)}</td>
+                      <td>{money(v.calls - v.distributions)}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </Collapsible>
         <p>
           Project-level simulations do not estimate correlated portfolio losses
           or lender concentration. Contributions assume owners can supply the
@@ -304,32 +310,34 @@ export default function PortfolioPanel({
           />
           <TextField label="Revision note" value={note} onChange={setNote} />
         </div>
-        <button
-          className="button"
-          disabled={!!busy || forecast(current).errors.length > 0}
-          onClick={() => {
-            onWorkspace({
-              ...workspace,
-              revisions: [
-                ...workspace.revisions,
-                {
-                  id: uid(),
-                  projectId: current.id,
-                  name: current.name,
-                  date: new Date().toISOString(),
-                  author,
-                  note,
-                  project: structuredClone(current),
-                },
-              ].slice(-100),
-            });
-            setStatus(
-              "Revision recorded. The latest 100 revisions are retained.",
-            );
-          }}
-        >
-          Record named revision
-        </button>
+        <div className="adv-actions">
+          <button
+            className="button"
+            disabled={!!busy || forecast(current).errors.length > 0}
+            onClick={() => {
+              onWorkspace({
+                ...workspace,
+                revisions: [
+                  ...workspace.revisions,
+                  {
+                    id: uid(),
+                    projectId: current.id,
+                    name: current.name,
+                    date: new Date().toISOString(),
+                    author,
+                    note,
+                    project: structuredClone(current),
+                  },
+                ].slice(-100),
+              });
+              setStatus(
+                "Revision recorded. The latest 100 revisions are retained.",
+              );
+            }}
+          >
+            Record named revision
+          </button>
+        </div>
         <div className="table-scroll" tabIndex={0}>
           <table>
             <thead>
