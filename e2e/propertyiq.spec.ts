@@ -403,6 +403,52 @@ test("report metrics explain themselves and link to their calculation", async ({
 });
 test.describe("motion polish with motion on", () => {
   test.use({ reducedMotion: "no-preference" });
+  test("the headline lens follows the pointer and lets go", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    test.skip(
+      !(await page.evaluate(() => matchMedia("(hover: hover)").matches)),
+      "needs a hovering pointer",
+    );
+    const h1 = page.locator(".iq-hero h1");
+    const word = page.locator(".iq-hero h1 .iq-word").first();
+    await expect(page.locator(".iq-hero h1 .iq-word").last()).toHaveCSS(
+      "opacity",
+      "1",
+    );
+    const box = (await word.boundingBox())!;
+    await page.mouse.move(box.x + 20, box.y + box.height / 2);
+    await expect(h1).toHaveAttribute("data-shine", "");
+    await expect
+      .poll(() => word.evaluate((el) => el.style.getPropertyValue("--mx")))
+      .toMatch(/px$/);
+    await page.mouse.move(5, 5);
+    await expect(h1).not.toHaveAttribute("data-shine", "");
+  });
+  test("the sample card tilts toward the pointer from every side", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    test.skip(
+      !(await page.evaluate(() => matchMedia("(hover: hover)").matches)),
+      "needs a hovering pointer",
+    );
+    const card = page.locator(".iq-story-card");
+    await card.scrollIntoViewIfNeeded();
+    const box = (await card.boundingBox())!;
+    const zone = page.locator(".iq-story-zone");
+    const tilt = (name: string) =>
+      zone.evaluate((el, n) => el.style.getPropertyValue(n), name);
+    await page.mouse.move(box.x + 8, box.y + 8);
+    await expect.poll(() => tilt("--tilt-y")).toMatch(/^-/);
+    await expect.poll(() => tilt("--tilt-x")).toMatch(/^[0-9]/);
+    await page.mouse.move(box.x + box.width - 8, box.y + box.height - 8);
+    await expect.poll(() => tilt("--tilt-y")).toMatch(/^[0-9]/);
+    await expect.poll(() => tilt("--tilt-x")).toMatch(/^-/);
+    await page.mouse.move(box.x - 40, box.y - 40);
+    await expect.poll(() => tilt("--tilt-x")).toBe("");
+  });
   test("the primary action has a border beam and a theme switch cleans up after itself", async ({
     page,
   }) => {

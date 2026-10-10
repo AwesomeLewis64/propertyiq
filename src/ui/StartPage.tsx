@@ -547,7 +547,22 @@ export default function StartPage({
         ) : (
           <>
             <section className="iq-hero">
-              <h1>
+              <h1
+                onPointerMove={(e) => {
+                  if (e.pointerType !== "mouse") return;
+                  const h = e.currentTarget;
+                  h.dataset.shine = "";
+                  // Each word gets the pointer in its own coordinates.
+                  h.querySelectorAll<HTMLElement>(".iq-word").forEach((w) => {
+                    const r = w.getBoundingClientRect();
+                    w.style.setProperty("--mx", `${e.clientX - r.left}px`);
+                    w.style.setProperty("--my", `${e.clientY - r.top}px`);
+                  });
+                }}
+                onPointerLeave={(e) => {
+                  delete e.currentTarget.dataset.shine;
+                }}
+              >
                 {/* Words sharpen in one after another; the key phrase lands last. */}
                 {["Analyze", "cash", "flow"].map((word, i) => (
                   <span

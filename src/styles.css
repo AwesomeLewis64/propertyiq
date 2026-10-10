@@ -5224,10 +5224,24 @@ h3 {
       transform var(--duration-spring) var(--ease-spring),
       box-shadow var(--duration-spring) var(--ease-out-expo);
   }
-  .iq-sample-card:hover,
   .metric:hover {
     transform: perspective(900px) rotateX(1.5deg) translateY(-4px);
     box-shadow: var(--shadow-raised);
+  }
+  /* The sample card leans toward the pointer (StoryCard sets --tilt-x/-y). */
+  .iq-sample-card:hover {
+    transform: perspective(900px) rotateX(1.5deg) translateY(-4px);
+    box-shadow: var(--shadow-raised);
+  }
+  .iq-story-zone:hover > .iq-story-card {
+    transform: perspective(900px) rotateX(var(--tilt-x, 1.5deg))
+      rotateY(var(--tilt-y, 0deg)) translateY(-4px);
+    box-shadow: var(--shadow-raised);
+  }
+  .iq-story-zone[data-tilting] > .iq-story-card {
+    transition:
+      transform 90ms linear,
+      box-shadow var(--duration-spring) var(--ease-out-expo);
   }
   .iq-question-actions button:hover {
     transform: translateY(-2px);
@@ -5502,9 +5516,12 @@ h3 {
 .iq-story-pin {
   position: relative;
 }
-.iq-story-card {
+.iq-story-zone {
   position: sticky;
   top: calc(50vh - 220px);
+}
+.iq-story-card {
+  position: relative;
 }
 .iq-story-layers {
   display: grid;
@@ -6673,6 +6690,69 @@ button.theme-toggle[role="switch"]:hover {
     grid-column: 1 / -1;
     justify-self: start;
     text-align: left;
+  }
+}
+
+/* Headline lens: a prismatic highlight follows the pointer through the letters
+   (StartPage sets --mx/--my per word). Light theme: a white-hot core with
+   cyan and pink fringes. Dark theme: a blue-violet glow in the pale letters. */
+@property --iq-shine {
+  syntax: "<number>";
+  initial-value: 0;
+  inherits: false;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  @supports ((background-clip: text) or (-webkit-background-clip: text)) {
+    .iq-hero h1 .iq-word {
+      --mx: -999px;
+      --my: -999px;
+      --word-base: linear-gradient(var(--color-ink), var(--color-ink));
+      --lens-core: light-dark(#ffffff, #7aaaff);
+      --lens-mid: light-dark(var(--color-pastel-cyan), #a58bff);
+      --lens-edge: light-dark(
+        var(--color-pastel-pink),
+        var(--color-pastel-pink)
+      );
+      background-image:
+        radial-gradient(
+          circle 150px at var(--mx) var(--my),
+          color-mix(
+              in srgb,
+              var(--lens-core) calc(var(--iq-shine) * 100%),
+              transparent
+            )
+            0%,
+          color-mix(
+              in srgb,
+              var(--lens-mid) calc(var(--iq-shine) * 100%),
+              transparent
+            )
+            38%,
+          color-mix(
+              in srgb,
+              var(--lens-edge) calc(var(--iq-shine) * 85%),
+              transparent
+            )
+            62%,
+          transparent 100%
+        ),
+        var(--word-base);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      transition: --iq-shine 380ms ease-out;
+    }
+    .iq-hero h1 .iq-key {
+      --word-base: linear-gradient(
+        100deg,
+        var(--color-key-from) 10%,
+        var(--color-key-to) 90%
+      );
+    }
+    .iq-hero h1[data-shine] .iq-word {
+      --iq-shine: 1;
+    }
   }
 }
 

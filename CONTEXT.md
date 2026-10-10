@@ -32,3 +32,5 @@ Terms used in the redesign ADRs (`docs/adr/`) and code. Financial terms are defi
 - **Zero default**: an input that starts at 0 on a pasted or new analysis (vacancy, management, CapEx and others). The input review screen flags the ones that most change returns; the value is unchanged.
 - **Section menu**: on phones, the one-line "Section: …" (Quick analysis) or "Tool: …" (Monthly planner) summary that opens the full list of sections; wide screens show the list directly.
 - **Project panel**: on phones, the planner's "Project: name · saved time" summary that holds the project picker, origin note and project actions.
+- **Headline lens**: the prismatic highlight that follows the pointer through the start-page headline letters (hover-capable pointers, motion allowed).
+- **Tilt zone**: the stationary wrapper around the pinned sample card; the card inside leans toward the pointer, and the zone keeps hover steady at the edges.

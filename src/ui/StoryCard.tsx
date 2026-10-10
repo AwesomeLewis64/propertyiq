@@ -5,10 +5,35 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import type { PointerEvent } from "react";
 import { ArrowUpRight, Check } from "lucide-react";
 import { demo } from "../finance/demo";
 import { calculate } from "../finance/model";
 import { money, pct, multiple } from "./format";
+
+// The pinned card leans toward the pointer, in any direction, up to this angle.
+const TILT_DEG = 7;
+const canTilt = () =>
+  matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)")
+    .matches;
+const tilt = {
+  onPointerMove(e: PointerEvent<HTMLElement>) {
+    if (e.pointerType !== "mouse" || !canTilt()) return;
+    const el = e.currentTarget;
+    const r = el.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    const y = ((e.clientY - r.top) / r.height) * 2 - 1;
+    el.dataset.tilting = "";
+    el.style.setProperty("--tilt-y", `${(x * TILT_DEG).toFixed(2)}deg`);
+    el.style.setProperty("--tilt-x", `${(-y * TILT_DEG).toFixed(2)}deg`);
+  },
+  onPointerLeave(e: PointerEvent<HTMLElement>) {
+    const el = e.currentTarget;
+    delete el.dataset.tilting;
+    el.style.removeProperty("--tilt-x");
+    el.style.removeProperty("--tilt-y");
+  },
+};
 
 /**
  * Start-page story (docs/adr/0005): three steps on the left, one sticky card on
@@ -173,33 +198,37 @@ export default function StoryCard({ onReport }: { onReport: () => void }) {
         </div>
         {/* Wide screens: one pinned card that changes with the step. */}
         <div className="iq-story-pin">
-          <article className="iq-sample-card iq-story-card" data-step={step}>
-            {head}
-            <div className="iq-story-layers">
-              {views.map((v, i) => (
-                <div
-                  key={v.title}
-                  className="iq-story-layer"
-                  data-active={step === i ? "" : undefined}
-                  aria-hidden={step === i ? undefined : true}
-                  inert={step !== i}
-                >
-                  {v.card}
-                </div>
-              ))}
-            </div>
-            <ol className="iq-story-dots" aria-label="Story steps">
-              {views.map((v, i) => (
-                <li
-                  key={v.title}
-                  aria-current={step === i ? "step" : undefined}
-                >
-                  <span className="sr-only">{v.title}</span>
-                </li>
-              ))}
-            </ol>
-            {foot}
-          </article>
+          {/* The zone holds still; only the card inside tilts, so the pointer
+              never "leaves" because the card moved away from it. */}
+          <div className="iq-story-zone" {...tilt}>
+            <article className="iq-sample-card iq-story-card" data-step={step}>
+              {head}
+              <div className="iq-story-layers">
+                {views.map((v, i) => (
+                  <div
+                    key={v.title}
+                    className="iq-story-layer"
+                    data-active={step === i ? "" : undefined}
+                    aria-hidden={step === i ? undefined : true}
+                    inert={step !== i}
+                  >
+                    {v.card}
+                  </div>
+                ))}
+              </div>
+              <ol className="iq-story-dots" aria-label="Story steps">
+                {views.map((v, i) => (
+                  <li
+                    key={v.title}
+                    aria-current={step === i ? "step" : undefined}
+                  >
+                    <span className="sr-only">{v.title}</span>
+                  </li>
+                ))}
+              </ol>
+              {foot}
+            </article>
+          </div>
         </div>
       </div>
     </section>
