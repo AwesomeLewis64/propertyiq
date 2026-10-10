@@ -9,7 +9,7 @@
 - Saving: Quick shows last saved, unsaved changes and a backup reminder. Rent-roll import lists what will change, offers undo and a recovery path after a failed file. Sensitivity cells mark above/below target without color.
 - New Quick analysis views: Refinance check (loan sizing, cash out, payment and DSCR change, months to repay closing costs) and Sell vs hold (cash today vs the hold case at your target return, return on equity, break-even exit cap).
 - Fixes: top bars fit from 320px; planner tools wrap instead of scrolling sideways; the theme reveal covers the page evenly with no white corner; honest social metadata (no AI claim) with a new preview image.
-- Start page hook: "Is it a good deal?" with one line saying what to paste and what comes back; the social preview matches.
+- Start page hook: "Analyze cash flow and financing." with one line saying what to paste and what comes back; the social preview matches.
 - Monthly planner forms share one control system: equal-height inputs, selects and file pickers, aligned label rows, identical action buttons, a steady project card (the model-status note opens as an overlay), a centered empty state for decisions, and long month-by-month tables that fold away with a row count.
 - Tests: 236 unit tests and a six-project browser suite covering phone menus, import undo, save status, the guided start and the new views.
 
