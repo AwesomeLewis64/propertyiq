@@ -403,34 +403,6 @@ test("report metrics explain themselves and link to their calculation", async ({
 });
 test.describe("motion polish with motion on", () => {
   test.use({ reducedMotion: "no-preference" });
-  test("text on the start page glints under the pointer and lets go", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    test.skip(
-      !(await page.evaluate(() => matchMedia("(hover: hover)").matches)),
-      "needs a hovering pointer",
-    );
-    await expect(page.locator(".iq-hero h1 .iq-word").last()).toHaveCSS(
-      "opacity",
-      "1",
-    );
-    const sub = page.locator(".iq-hero-subtitle");
-    const box = (await sub.boundingBox())!;
-    await page.mouse.move(box.x + 20, box.y + box.height / 2);
-    await expect(sub).toHaveAttribute("data-lit", "");
-    await expect
-      .poll(() => sub.evaluate((el) => el.style.getPropertyValue("--mx")))
-      .toMatch(/px$/);
-    await page.mouse.move(5, 5);
-    await expect(sub).not.toHaveAttribute("data-lit", "");
-    // Back to plain text once the glint has faded.
-    await expect(sub).not.toHaveAttribute("data-glint", "");
-    // Form controls are left alone.
-    const analyze = (await page.locator(".iq-analyze").boundingBox())!;
-    await page.mouse.move(analyze.x + 10, analyze.y + analyze.height / 2);
-    await expect(page.locator("[data-glint]")).toHaveCount(0);
-  });
   test("the sample card tilts toward the pointer from every side", async ({
     page,
   }) => {

@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type PointerEvent } from "react";
+import { useState, type CSSProperties } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -51,60 +51,6 @@ const liveLabels: Record<string, string> = {
   ltv: "LTV %",
   loan: "loan amount",
   expenses: "annual expenses",
-};
-// A small glint under the pointer on the page's own text (not form controls).
-// The CSS keys off data-glint (styled) and data-lit (shining); see styles.css.
-const GLINT_TEXT = [
-  ".iq-word",
-  ".iq-hero-subtitle",
-  ".iq-trust li",
-  ".iq-trust a",
-  ".iq-trust button",
-  ".iq-other h2",
-  ".iq-other-modes strong",
-  ".iq-other-modes span",
-  ".iq-other-more button",
-  ".iq-story h2",
-  ".iq-story-step h3",
-  ".iq-story-step > [data-reveal] > p",
-  ".iq-footer p",
-  ".iq-footer-links a",
-  ".iq-footer-links button",
-].join(",");
-let lit: HTMLElement | null = null;
-const unlight = () => {
-  const el = lit;
-  lit = null;
-  if (!el) return;
-  el.removeAttribute("data-lit");
-  // Plain text again once the glint has faded.
-  setTimeout(() => {
-    if (!el.hasAttribute("data-lit")) el.removeAttribute("data-glint");
-  }, 400);
-};
-const glint = {
-  onPointerMove(e: PointerEvent<HTMLElement>) {
-    if (
-      e.pointerType !== "mouse" ||
-      !matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)")
-        .matches
-    )
-      return;
-    const el = (e.target as Element).closest<HTMLElement>(GLINT_TEXT);
-    if (el !== lit) {
-      unlight();
-      if (el) {
-        el.dataset.glint = "";
-        el.dataset.lit = "";
-        lit = el;
-      }
-    }
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
-    el.style.setProperty("--my", `${e.clientY - r.top}px`);
-  },
-  onPointerLeave: unlight,
 };
 const now = new Date();
 const blank: SetupValues = {
@@ -253,7 +199,7 @@ export default function StartPage({
     values.strategy === "acquisition";
   const existingOwner = intent === "refinance" || intent === "sellhold";
   return (
-    <div className="iq-start" {...glint}>
+    <div className="iq-start">
       <a className="skip-link" href="#start-content">
         Skip to main content
       </a>
