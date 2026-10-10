@@ -658,14 +658,8 @@ export default function StartPage({
               </div>
               <ul
                 className="iq-trust"
-                aria-label="Try a sample, privacy and validation"
+                aria-label="Privacy, a sample and validation"
               >
-                <li>
-                  <button onClick={() => onAnnual()}>
-                    <Play size={14} aria-hidden="true" />
-                    Try a sample
-                  </button>
-                </li>
                 <li>
                   <Check size={14} aria-hidden="true" />
                   Free, no account
@@ -673,6 +667,10 @@ export default function StartPage({
                 <li>
                   <Check size={14} aria-hidden="true" />
                   Your files stay in this browser
+                </li>
+                <li>
+                  <Play size={14} aria-hidden="true" />
+                  <button onClick={() => onAnnual()}>Try a sample</button>
                 </li>
                 <li>
                   <ShieldCheck size={14} aria-hidden="true" />

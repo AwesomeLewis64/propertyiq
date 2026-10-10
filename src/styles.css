@@ -6126,23 +6126,20 @@ button.theme-toggle[role="switch"]:hover {
 .iq-trust a:hover {
   color: var(--color-ink);
 }
-/* The sample action is a row item, not a boxed button: same size and baseline
-   as its neighbours, a step darker so it still reads as the thing to try. */
+/* The sample action reads as a link like its neighbour: same weight, color and
+   underline, with its own icon. */
 .iq-trust button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-4);
   border: 0;
   background: none;
   padding: 0;
   font: inherit;
-  font-weight: var(--weight-semibold);
-  color: var(--color-ink);
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
 }
 .iq-trust button:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  color: var(--color-ink);
 }
 .iq-trust button:focus-visible {
   outline: var(--stroke-focus) solid var(--color-accent);
