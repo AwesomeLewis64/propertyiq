@@ -6209,7 +6209,7 @@ button.theme-toggle[role="switch"]:hover {
   display: grid;
   grid-template-columns: repeat(3, max-content);
   justify-content: center;
-  gap: var(--space-4) var(--space-32);
+  gap: var(--space-4) var(--space-8);
   margin-top: var(--space-16);
 }
 @media (max-width: 600px) {
@@ -6224,7 +6224,8 @@ button.theme-toggle[role="switch"]:hover {
   gap: var(--space-8);
   border: 0;
   background: none;
-  padding: var(--space-8) 0;
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-control);
   color: var(--color-accent);
   font-size: var(--text-14);
 }
@@ -6437,6 +6438,47 @@ button.theme-toggle[role="switch"]:hover {
   .iq-story-step:first-child {
     padding-top: 0;
   }
+}
+
+/* Hover and press states. Primary buttons keep their own fill (a slightly
+   softer shade) instead of turning accent blue; the start button gains a
+   rainbow glow to match its beam. Link rows and cards get a visible pill. */
+.button.primary:hover,
+.button.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-ink) 86%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-ink) 86%, var(--color-surface));
+}
+.iq-composer .iq-analyze:hover,
+.iq-composer .iq-analyze:focus-visible {
+  box-shadow:
+    0 10px 28px -8px color-mix(in srgb, var(--color-key-to) 70%, transparent),
+    0 4px 14px -6px
+      color-mix(in srgb, var(--color-pastel-pink) 80%, transparent);
+}
+.iq-other-more button,
+.iq-other-modes button,
+.iq-guided-options button {
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+.iq-other-more button:hover {
+  background: var(--color-surface-soft);
+  color: var(--color-ink);
+}
+.iq-other-more button:active {
+  transform: translateY(1px);
+}
+.iq-other-modes button:hover,
+.iq-guided-options button:hover {
+  background: var(--color-surface-soft);
+  transform: translateY(-1px);
+}
+.iq-other-modes button:active,
+.iq-guided-options button:active {
+  transform: translateY(0);
 }
 
 /* One reduced-motion rule for everything, present and future (ADR-0002). */
